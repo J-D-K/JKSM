@@ -1,5 +1,6 @@
 #include <3ds.h>
 #include <cstring>
+#include <ctime>
 
 #include "util.h"
 #include "fs.h"
@@ -41,12 +42,7 @@ namespace util
 		return std::u32string((char32_t *)tmp);
 	}
 
-	std::string getBasePath()
-	{
-		return std::string("/JKSV/");
-	}
-
-	std::u16string createPath(data::titleData dat, const uint32_t& mode)
+	std::u16string createPath(data::titleData& dat, const uint32_t& mode)
 	{
 		std::u16string ret;
 		switch(mode)
@@ -116,6 +112,19 @@ namespace util
 		return ret;
 	}
 
+	std::u16string getDateString()
+	{
+		char tmp[32];
+
+		time_t rawTime;
+		time(&rawTime);
+		tm *local = localtime(&rawTime);
+
+		sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
+
+		return util::toUtf16(tmp);
+	}
+
 	std::string getWrappedString(const std::string& s, const unsigned& maxWidth)
 	{
 		if(gfx::getTextWidth(s) < maxWidth)
@@ -155,7 +164,7 @@ namespace util
 		s.erase(last + 1, s.length());
 	}
 
-	void createTitleDir(data::titleData dat, const uint32_t& mode)
+	void createTitleDir(data::titleData& dat, const uint32_t& mode)
 	{
 		std::u16string cr;
 		switch(mode)

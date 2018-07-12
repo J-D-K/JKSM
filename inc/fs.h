@@ -78,6 +78,8 @@ namespace fs
 
 	void backupArchive(const std::u16string& outpath);
 	void restoreToArchive(const std::u16string& inpath);
+
+	void backupAll();
 }
 
 #endif // FS_H

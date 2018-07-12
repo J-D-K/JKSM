@@ -15,7 +15,7 @@ namespace ui
 	void drawTopBar(const std::string& info);
 	void runApp(const uint32_t& down, const uint32_t& held);
 
-	//These are locked into because the archive is opened
+	//These are locked into because the archive is opened. NOT ANYMORE THANK YOU SWITCH VERSION
 	std::u16string getFolder(const data::titleData& dat, const uint32_t& mode, const FS_Archive& arch, const bool& newFolder);
 	void advMode(const FS_Archive& arch);
 

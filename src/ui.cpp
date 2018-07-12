@@ -120,6 +120,8 @@ namespace ui
 	{
 		//Much needed Jump button
 		static ui::button jumpTo("Jump To", 0, 208, 320, 32);
+		//Dump all button
+		static ui::button dumpAll("Dump All", 0, 174, 320, 32);
 
 		data::cartCheck();
 
@@ -129,6 +131,7 @@ namespace ui
 		hidTouchRead(&p);
 
 		jumpTo.update(p);
+		dumpAll.update(p);
 
 		if(down & KEY_A)
 		{
@@ -159,6 +162,10 @@ namespace ui
 				}
 			}
 		}
+		else if(dumpAll.getEvent() == BUTTON_RELEASED)
+		{
+			fs::backupAll();
+		}
 
 		gfx::frameBegin();
 		gfx::frameStartTop();
@@ -167,10 +174,11 @@ namespace ui
 		gfx::frameStartBot();
 		data::titles[titleMenu.getSelected()].drawInfo(8, 8);
 		jumpTo.draw();
+		dumpAll.draw();
 		gfx::frameEnd();
 	}
 
-	void prepFolderMenu(const data::titleData& dat, const uint32_t& mode)
+	void prepFolderMenu(data::titleData& dat, const uint32_t& mode)
 	{
 		std::u16string path = util::createPath(dat, mode);
 

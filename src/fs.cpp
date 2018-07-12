@@ -550,4 +550,46 @@ namespace fs
 		commitData(saveMode);
 		deleteSv(saveMode);
 	}
+
+	void backupAll()
+	{
+		ui::progressBar prog(data::titles.size());
+		for(unsigned i = 0; i < data::titles.size(); i++)
+		{
+			std::string copyStr = "Working on \"" + util::toUtf8(data::titles[i].getTitle()) + "\"...";
+			prog.update(i);
+
+			//Sue me
+			gfx::frameBegin();
+			gfx::frameStartBot();
+			prog.draw(copyStr);
+			gfx::frameEnd();
+
+			if(fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA))
+			{
+				util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
+
+				std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::getDateString();
+				FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
+				outpath += util::toUtf16("/");
+
+				backupArchive(outpath);
+
+				FSUSER_CloseArchive(fs::getSaveArch());
+			}
+
+			if(fs::openArchive(data::titles[i], ARCHIVE_EXTDATA))
+			{
+				util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
+
+				std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::getDateString();
+				FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
+				outpath += util::toUtf16("/");
+
+				backupArchive(outpath);
+
+				FSUSER_CloseArchive(fs::getSaveArch());
+			}
+		}
+	}
 }

@@ -242,7 +242,7 @@ namespace data
 	{
 		titles.clear();
 
-		std::fstream cache(util::getBasePath() + "titles", std::ios::in | std::ios::binary);
+		std::fstream cache("/JKSV/titles", std::ios::in | std::ios::binary);
 		if(cache.is_open())
 		{
 			uint16_t count = 0;
@@ -318,7 +318,7 @@ namespace data
 
 			std::sort(titles.begin(), titles.end(), sortTitles);
 
-			cache.open(util::getBasePath() + "titles", std::ios::out | std::ios::binary);
+			cache.open("/JKSV/titles", std::ios::out | std::ios::binary);
 			if(cache.is_open())
 			{
 				uint16_t countOut = titles.size();
@@ -354,7 +354,7 @@ namespace data
 	{
 		nand.clear();
 
-		std::fstream cache(util::getBasePath() + "nand", std::ios::in | std::ios::binary);
+		std::fstream cache("/JKSV/nand", std::ios::in | std::ios::binary);
 		if(cache.is_open())
 		{
 			uint16_t count;
@@ -412,7 +412,7 @@ namespace data
 			std::sort(nand.begin(), nand.end(), sortTitles);
 
 			uint16_t countOut = nand.size();
-			cache.open(util::getBasePath() + "nand", std::ios::out | std::ios::binary);
+			cache.open("/JKSV/nand", std::ios::out | std::ios::binary);
 			cache.write((char *)&countOut, sizeof(uint16_t));
 			cache.put(0x00);
 			for(unsigned i = 0; i < nand.size(); i++)
