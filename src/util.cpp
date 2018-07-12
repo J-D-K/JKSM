@@ -76,12 +76,13 @@ namespace util
 		return ret;
 	}
 
-	std::u16string getString()
+	std::u16string getString(const std::string& hint)
 	{
 		SwkbdState state;
 		char input[64];
 
 		swkbdInit(&state, SWKBD_TYPE_NORMAL, 2, 64);
+		swkbdSetHintText(&state, hint.c_str());
 		swkbdInputText(&state, input, 64);
 
 		return toUtf16(input);
@@ -222,5 +223,10 @@ namespace util
 
 			FSUSER_CloseArchive(fs::getSaveArch());
 		}
+	}
+
+	bool touchPressed(const touchPosition& p)
+	{
+		return p.px > 0 && p.py > 0;
 	}
 }

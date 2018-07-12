@@ -145,61 +145,6 @@ namespace data
 		return ret;
 	}
 
-	uint64_t titleData::getID()
-	{
-		return id;
-	}
-
-	uint32_t titleData::getLow()
-	{
-		return low;
-	}
-
-	uint32_t titleData::getHigh()
-	{
-		return high;
-	}
-
-	uint32_t titleData::getUnique()
-	{
-		return unique;
-	}
-
-	uint32_t titleData::getExtData()
-	{
-		return extdata;
-	}
-
-	uint8_t titleData::getMedia()
-	{
-		return m;
-	}
-
-	void titleData::setExtdata(const uint32_t& ex)
-	{
-		extdata = ex;
-	}
-
-	std::string titleData::getProdCode()
-	{
-		return prodCode;
-	}
-
-	std::u16string titleData::getTitle()
-	{
-		return title;
-	}
-
-	std::u16string titleData::getTitleSafe()
-	{
-		return titleSafe;
-	}
-
-	std::u32string titleData::getTitleWide()
-	{
-		return wideTitle;
-	}
-
 	void titleData::drawInfo(unsigned x, unsigned y)
 	{
 		std::string media;

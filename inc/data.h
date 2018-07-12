@@ -16,19 +16,19 @@ namespace data
 			bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const uint8_t& mt);
 			bool isOpenable();
 
-			uint64_t getID();
-			uint32_t getLow();
-			uint32_t getHigh();
-			uint32_t getUnique();
-			uint32_t getExtData();
-			uint8_t getMedia();
+			uint64_t getID() { return id; }
+			uint32_t getLow() { return low; }
+			uint32_t getHigh() { return high; }
+			uint32_t getUnique() { return unique; }
+			uint32_t getExtData() { return extdata; }
+			uint8_t getMedia() { return m; }
 
-			void setExtdata(const uint32_t& ex);
+			void setExtdata(const uint32_t& ex) { extdata = ex; }
 
-			std::string getProdCode();
-			std::u16string getTitle();
-			std::u16string getTitleSafe();
-			std::u32string getTitleWide();
+			std::string getProdCode() { return prodCode; }
+			std::u16string getTitle() { return title; }
+			std::u16string getTitleSafe() { return titleSafe; }
+			std::u32string getTitleWide() { return wideTitle; }
 
 			void drawInfo(unsigned x, unsigned y);
 

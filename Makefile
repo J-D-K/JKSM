@@ -33,9 +33,9 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	JKSM
 BUILD		:=	build
-SOURCES		:=	src
+SOURCES		:=	src src/ui
 #DATA		:=	data
-INCLUDES	:=	inc
+INCLUDES	:=	inc inc/ui
 #GRAPHICS	:=	gfx
 #GFXBUILD	:=	$(BUILD)
 #GFXBUILD	:=	$(ROMFS)/gfx

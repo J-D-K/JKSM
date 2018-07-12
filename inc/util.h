@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <string>
+#include <3ds.h>
 #include "data.h"
 #include "fs.h"
 #include "ui.h"
@@ -14,7 +15,7 @@ namespace util
 	std::u32string toUtf32(const std::u16string& conv);
 	std::string getBasePath();
 	std::u16string createPath(data::titleData dat, const uint32_t& mode);
-	std::u16string getString();
+	std::u16string getString(const std::string& hint);
 	int getInt(const std::string& hint, const int& init, const int& max);
 
 	std::string getWrappedString(const std::string& s, const unsigned& maxWidth);
@@ -25,6 +26,8 @@ namespace util
 	void copyDirlistToMenu(fs::dirList& d, ui::menu& m);
 
 	void setPC();
+
+	bool touchPressed(const touchPosition& p);
 }
 
 #endif

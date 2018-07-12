@@ -118,9 +118,17 @@ namespace ui
 
 	void stateTitleMenu(const uint32_t& down, const uint32_t& held)
 	{
+		//Much needed Jump button
+		static ui::button jumpTo("Jump To", 0, 208, 320, 32);
+
 		data::cartCheck();
 
 		titleMenu.handleInput(down, held);
+
+		touchPosition p;
+		hidTouchRead(&p);
+
+		jumpTo.update(p);
 
 		if(down & KEY_A)
 		{
@@ -132,6 +140,25 @@ namespace ui
 		{
 			state = MAIN_MENU;
 		}
+		else if(jumpTo.getEvent() == BUTTON_RELEASED)
+		{
+			std::string getChar = util::toUtf8(util::getString("Enter a letter to jump to."));
+			if(!getChar.empty())
+			{
+				//Only use first char
+				char jmpTo = std::tolower(getChar[0]);
+
+				//Skip cart
+				for(unsigned i = 1; i < titleMenu.getCount(); i++)
+				{
+					if(std::tolower(titleMenu.getOpt(i)[0]) == jmpTo)
+					{
+						titleMenu.setSelected(i);
+						break;
+					}
+				}
+			}
+		}
 
 		gfx::frameBegin();
 		gfx::frameStartTop();
@@ -139,6 +166,7 @@ namespace ui
 		titleMenu.draw(40, 34, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
 		gfx::frameStartBot();
 		data::titles[titleMenu.getSelected()].drawInfo(8, 8);
+		jumpTo.draw();
 		gfx::frameEnd();
 	}
 
@@ -193,6 +221,20 @@ namespace ui
 					break;
 
 				case 3:
+					{
+						std::string confStr = "Are you 100% sure you want to delete the Extra Data for \"" + util::toUtf8(data::curData.getTitle()) + "\"?";
+						if(confirm(confStr))
+						{
+							FS_ExtSaveDataInfo del = { MEDIATYPE_SD, 0, 0, data::curData.getExtData(), 0 };
+
+							Result res = FSUSER_DeleteExtSaveData(del);
+							if(R_SUCCEEDED(res))
+								showMessage("Extdata deleted!");
+						}
+					}
+					break;
+
+				case 4:
 					state = TITLE_MENU;
 					break;
 			}
@@ -296,7 +338,7 @@ namespace ui
 			//New
 			if(sel == 0)
 			{
-				std::u16string newFolder = util::getString();
+				std::u16string newFolder = util::getString("Enter a new folder name");
 				if(!newFolder.empty())
 				{
 					std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + newFolder;
@@ -339,6 +381,20 @@ namespace ui
 
 				//Restore from restPath
 				fs::restoreToArchive(restPath);
+			}
+		}
+		else if(down & KEY_X && sel != 0)
+		{
+			sel--;
+			fs::dirList titleDir(fs::getSDMCArch(), util::createPath(data::curData, fs::getSaveMode()));
+			std::string confStr = "Are you sure you want to delete \"" + util::toUtf8(titleDir.getItem(sel)) + "\"?";
+			if(confirm(confStr))
+			{
+				std::u16string delPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel);
+
+				FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), fsMakePath(PATH_UTF16, delPath.data()));
+
+				prepFolderMenu(data::curData, fs::getSaveMode());
 			}
 		}
 		else if(down & KEY_B)
@@ -563,6 +619,22 @@ namespace ui
 		start = 0;
 	}
 
+	void menu::setSelected(const int& newSel)
+	{
+		if(newSel < start || newSel > start + 15)
+		{
+			int size = opt.size() - 1;
+			if(newSel + 15 > size)
+				start = size - 14;
+			else
+				start = newSel;
+
+			selected = newSel;
+		}
+		else
+			selected = newSel;
+	}
+
 	void menu::handleInput(const uint32_t& key, const uint32_t& held)
 	{
 		if( (held & KEY_UP) || (held & KEY_DOWN))
@@ -647,11 +719,6 @@ namespace ui
 		}
 	}
 
-	const int menu::getSelected()
-	{
-		return selected;
-	}
-
 	progressBar::progressBar(const uint32_t& _max)
 	{
 		max = (float)_max;
@@ -673,53 +740,6 @@ namespace ui
 		gfx::drawText(text, 16, 16, C2D_Color32(0, 0, 0, 0xFF));
 	}
 
-	button::button(const std::string& _txt, unsigned _x, unsigned _y, unsigned _w, unsigned _h)
-	{
-		x = _x;
-		y = _y;
-		w = _w;
-		h = _h;
-		txt = _txt;
-
-		tX = x + 8;
-		tY = y + 8;
-	}
-
-	void button::draw()
-	{
-		C2D_DrawRectSolid(x - 1, y - 1, 0.5f, w + 2, h + 2, 0xFF404040);
-		if(pressed)
-			C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFC8C8C8);
-		else
-			C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFF4F4F4);
-
-		gfx::drawText(txt, tX, tY, 0xFF000000);
-	}
-
-	bool button::isOver(const touchPosition& p)
-	{
-		return (p.px > x && p.px < x + w) && (p.py > y && p.py < y + h);
-	}
-
-	bool button::released(const touchPosition& p)
-	{
-		prev = p;
-		if(isOver(p))
-			pressed = true;
-		else
-		{
-			if(pressed && p.px == 0 && p.py == 0)
-			{
-				pressed = false;
-				return true;
-			}
-			else
-				pressed = false;
-		}
-
-		return false;
-	}
-
 	bool confirm(const std::string& mess)
 	{
 		std::string wrapped = util::getWrappedString(mess, 288);
@@ -735,9 +755,9 @@ namespace ui
 			touchPosition p;
 			hidTouchRead(&p);
 
-			if(down & KEY_A || yes.released(p))
+			if(down & KEY_A || yes.getEvent() == BUTTON_RELEASED)
 				return true;
-			else if(down & KEY_B || no.released(p))
+			else if(down & KEY_B || no.getEvent() == BUTTON_RELEASED)
 				return false;
 
 			gfx::frameBegin();

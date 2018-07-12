@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "data.h"
+#include "ui/button.h"
 
 namespace ui
 {
@@ -23,11 +24,14 @@ namespace ui
 		public:
 			void addOpt(const std::string& add);
 			void reset();
+			void setSelected(const int& newSel);
 
 			void handleInput(const uint32_t& key, const uint32_t& held);
 			void draw(const int& x, const int&y, const uint32_t& baseClr, const uint32_t& rectWidth);
 
-			const int getSelected();
+			int getSelected() { return selected; }
+			unsigned getCount() { return opt.size(); }
+			std::string getOpt(const int& g) { return opt[g]; }
 
 		private:
 			uint8_t clrSh = 0;
@@ -46,23 +50,6 @@ namespace ui
 
 		private:
 			float max, prog, width;
-	};
-
-	class button
-	{
-		public:
-			button(const std::string& _txt, unsigned _x, unsigned _y, unsigned _w, unsigned _h);
-			void draw();
-
-			bool isOver(const touchPosition& p);
-			bool released(const touchPosition& p);
-
-		private:
-			bool pressed = false;
-			unsigned x, y, w, h;
-			unsigned tX, tY;
-			std::string txt;
-			touchPosition prev;
 	};
 
 	bool confirm(const std::string& mess);
