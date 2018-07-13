@@ -9,47 +9,51 @@
 
 namespace data
 {
-	class titleData
-	{
-		public:
-			bool init(const uint64_t& _id, const FS_MediaType& mt);
-			bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const uint8_t& mt);
-			bool isOpenable();
+    class titleData
+    {
+        public:
+            bool init(const uint64_t& _id, const FS_MediaType& mt);
+            bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const uint8_t& mt);
+            bool isOpenable();
 
-			uint64_t getID() { return id; }
-			uint32_t getLow() { return low; }
-			uint32_t getHigh() { return high; }
-			uint32_t getUnique() { return unique; }
-			uint32_t getExtData() { return extdata; }
-			uint8_t getMedia() { return m; }
+            uint64_t getID() { return id; }
+            uint32_t getLow() { return low; }
+            uint32_t getHigh() { return high; }
+            uint32_t getUnique() { return unique; }
+            uint32_t getExtData() { return extdata; }
+            uint8_t getMedia() { return m; }
 
-			void setExtdata(const uint32_t& ex) { extdata = ex; }
+            void setExtdata(const uint32_t& ex) { extdata = ex; }
 
-			std::string getProdCode() { return prodCode; }
-			std::u16string getTitle() { return title; }
-			std::u16string getTitleSafe() { return titleSafe; }
-			std::u32string getTitleWide() { return wideTitle; }
+            std::string getProdCode() { return prodCode; }
+            std::u16string getTitle() { return title; }
+            std::u16string getTitleSafe() { return titleSafe; }
+            std::u32string getTitleWide() { return wideTitle; }
 
-			void drawInfo(unsigned x, unsigned y);
+            void drawInfo(unsigned x, unsigned y);
 
-		private:
-			uint64_t id;
-			uint32_t high, low, unique, extdata;
-			std::string prodCode;
-			std::u16string title, titleSafe;
-			std::u32string wideTitle;
-			FS_MediaType m;
-	};
+        private:
+            uint64_t id;
+            uint32_t high, low, unique, extdata;
+            std::string prodCode;
+            std::u16string title, titleSafe;
+            std::u32string wideTitle;
+            FS_MediaType m;
+    };
 
-	void cartCheck();
+    void cartCheck();
 
-	extern std::vector<titleData> titles;
-	extern std::vector<titleData> nand;
-	extern titleData curData;
+    extern std::vector<titleData> titles;
+    extern std::vector<titleData> nand;
+    extern titleData curData;
 
-	smdh_s *loadSMDH(const uint32_t& low, const uint32_t& high, const uint8_t& media);
-	void loadTitles();
-	void loadNand();
+    smdh_s *loadSMDH(const uint32_t& low, const uint32_t& high, const uint8_t& media);
+    void loadTitles();
+    void loadNand();
+
+    //Hax entry point
+    void haxDataInit();
+    extern bool haxMode;
 }
 
 #endif // DATA_H

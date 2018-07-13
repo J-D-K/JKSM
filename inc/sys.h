@@ -5,10 +5,10 @@
 
 namespace sys
 {
-	void init();
-	void exit();
+    void init();
+    void exit();
 
-	extern bool run;
+    extern bool run;
 }
 
 #endif // SYS_H

@@ -7,79 +7,82 @@
 
 namespace fs
 {
-	void init();
-	void exit();
+    void init();
+    void exit();
 
-	enum fsSeek
-	{
-		seek_beg,
-		seek_cur,
-		seek_end
-	};
+    void fsStartSession();
+    void fsEndSession();
 
-	FS_Archive getSDMCArch();
-	FS_Archive getSaveArch();
-	FS_ArchiveID getSaveMode();
+    enum fsSeek
+    {
+        seek_beg,
+        seek_cur,
+        seek_end
+    };
 
-	bool openArchive(data::titleData& dat, const uint32_t& arch);
-	void commitData(const uint32_t& mode);
-	void deleteSv(const uint32_t& mode);
+    FS_Archive getSDMCArch();
+    FS_Archive getSaveArch();
+    FS_ArchiveID getSaveMode();
 
-	class fsfile
-	{
-		public:
-			fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags);
-			fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags, const uint64_t& crSize);
-			fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags);
-			fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
-			~fsfile();
+    bool openArchive(data::titleData& dat, const uint32_t& arch);
+    void commitData(const uint32_t& mode);
+    void deleteSv(const uint32_t& mode);
 
-			void read(uint8_t *buf, uint32_t& readOut, const uint32_t& max);
-			void write(const uint8_t *buf, uint32_t& written, const uint32_t& size);
-			void writeString(const std::string& str);
-			uint8_t getByte();
-			void putByte(const uint8_t& put);
-			bool eof();
+    class fsfile
+    {
+        public:
+            fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags);
+            fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags, const uint64_t& crSize);
+            fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags);
+            fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
+            ~fsfile();
 
-			void seek(const int& pos, const uint8_t& seekfrom);
+            void read(uint8_t *buf, uint32_t& readOut, const uint32_t& max);
+            void write(const uint8_t *buf, uint32_t& written, const uint32_t& size);
+            void writeString(const std::string& str);
+            uint8_t getByte();
+            void putByte(const uint8_t& put);
+            bool eof();
 
-			uint32_t getError();
-			uint64_t getOffset();
-			uint64_t getSize();
+            void seek(const int& pos, const uint8_t& seekfrom);
 
-			bool isOpen();
+            uint32_t getError();
+            uint64_t getOffset();
+            uint64_t getSize();
 
-		private:
-			Handle fHandle;
-			uint32_t error;
-			uint64_t fSize, offset = 0;
-			bool open = false;
-	};
+            bool isOpen();
 
-	class dirList
-	{
-		public:
-			dirList(const FS_Archive& arch, const std::u16string& path);
-			~dirList();
+        private:
+            Handle fHandle;
+            uint32_t error;
+            uint64_t fSize, offset = 0;
+            bool open = false;
+    };
 
-			void rescan();
-			void reassign(const std::u16string& p);
-			const uint32_t getCount();
+    class dirList
+    {
+        public:
+            dirList(const FS_Archive& arch, const std::u16string& path);
+            ~dirList();
 
-			bool isDir(unsigned i);
-			const std::u16string getItem(unsigned i);
+            void rescan();
+            void reassign(const std::u16string& p);
+            const uint32_t getCount();
 
-		private:
-			Handle d;
-			FS_Archive a;
-			std::u16string path;
-			std::vector<FS_DirectoryEntry> entry;
-	};
+            bool isDir(unsigned i);
+            const std::u16string getItem(unsigned i);
 
-	void backupArchive(const std::u16string& outpath);
-	void restoreToArchive(const std::u16string& inpath);
+        private:
+            Handle d;
+            FS_Archive a;
+            std::u16string path;
+            std::vector<FS_DirectoryEntry> entry;
+    };
 
-	void backupAll();
+    void backupArchive(const std::u16string& outpath);
+    void restoreToArchive(const std::u16string& inpath);
+
+    void backupAll();
 }
 
 #endif // FS_H

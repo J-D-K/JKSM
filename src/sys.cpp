@@ -5,16 +5,16 @@
 
 namespace sys
 {
-	bool run = true;
-	void init()
-	{
-		hidInit();
-		amInit();
-	}
+    bool run = true;
+    void init()
+    {
+        hidInit();
+        amInit();
+    }
 
-	void exit()
-	{
-		hidExit();
-		amExit();
-	}
+    void exit()
+    {
+        hidExit();
+        amExit();
+    }
 }
