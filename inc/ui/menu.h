@@ -13,7 +13,7 @@ namespace ui
             void reset();
             void setSelected(const int& newSel);
 
-            void handleInput(const uint32_t& key, const uint32_t& held);
+            void handleInput(const uint32_t& down, const uint32_t& held);
             void draw(const int& x, const int&y, const uint32_t& baseClr, const uint32_t& rectWidth);
 
             int getSelected() { return selected; }

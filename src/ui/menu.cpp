@@ -35,11 +35,11 @@ namespace ui
 
     void menu::setSelected(const int& newSel)
     {
-        if(newSel < start || newSel > start + 15)
+        if(newSel < start || newSel > start + 16)
         {
             int size = opt.size() - 1;
-            if(newSel + 15 > size)
-                start = size - 14;
+            if(newSel + 16 > size)
+                start = size - 16;
             else
                 start = newSel;
 
@@ -49,7 +49,7 @@ namespace ui
             selected = newSel;
     }
 
-    void menu::handleInput(const uint32_t& key, const uint32_t& held)
+    void menu::handleInput(const uint32_t& down, const uint32_t& held)
     {
         if( (held & KEY_UP) || (held & KEY_DOWN))
             fc++;
@@ -59,39 +59,39 @@ namespace ui
             fc = 0;
 
         int size = opt.size() - 1;
-        if((key & KEY_UP) || ((held & KEY_UP) && fc == 10))
+        if((down & KEY_UP) || ((held & KEY_UP) && fc == 10))
         {
             selected--;
             if(selected < 0)
                 selected = size;
 
-            if((start > selected)  && (start > 0))
-                start--;
-            if(size < 15)
+            if(size < 17)
                 start = 0;
-            if(selected == size && size > 15)
-                start = size - 14;
+            else if(start > selected)
+                start--;
+            else if(selected == size && size > 16)
+                start = size - 16;
         }
-        else if((key & KEY_DOWN) || ((held & KEY_DOWN) && fc == 10))
+        else if((down & KEY_DOWN) || ((held & KEY_DOWN) && fc == 10))
         {
             selected++;
             if(selected > size)
                 selected = 0;
 
-            if((selected > (start + 14)) && ((start + 14) < size))
+            if((selected > (start + 16)) && ((start + 16) < size))
                 start++;
             if(selected == 0)
                 start = 0;
         }
-        else if(key & KEY_RIGHT)
+        else if(down & KEY_RIGHT)
         {
-            selected += 7;
+            selected += 8;
             if(selected > size)
                 selected = size;
-            if((selected - 14) > start)
-                start = selected - 14;
+            if((selected - 16) > start)
+                start = selected - 16;
         }
-        else if(key & KEY_LEFT)
+        else if(down & KEY_LEFT)
         {
             selected -= 7;
             if(selected < 0)
@@ -117,10 +117,10 @@ namespace ui
         }
 
         int length = 0;
-        if((opt.size() - 1) < 15)
+        if((opt.size() - 1) < 17)
             length = opt.size();
         else
-            length = start + 15;
+            length = start + 17;
 
         uint32_t rectClr = 0xFF << 24 | ((0xBB + clrSh) & 0xFF) << 16 | ((0x88 + clrSh) << 8) | 0x00;
 

@@ -176,7 +176,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a Title");
-        titleMenu.draw(40, 34, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        titleMenu.draw(40, 24, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         data::titles[titleMenu.getSelected()].drawInfo(8, 8);
         jumpTo.draw();
@@ -424,7 +424,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a Folder");
-        folderMenu.draw(40, 34, 0xFFFFFFFF, 320);
+        folderMenu.draw(40, 24, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::drawText("A = Select\nY = Restore\nX = Delete\nB = Back", 16, 16, 0xFFFFFFFF);
         gfx::frameEnd();
