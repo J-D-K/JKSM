@@ -14,9 +14,9 @@ namespace util
     std::u16string toUtf16(const std::string& conv);
     std::u32string toUtf32(const std::u16string& conv);
     std::u16string createPath(data::titleData& dat, const uint32_t& mode);
-    std::u16string getString(const std::string& hint);
+    std::string getString(const std::string& hint, bool def);
     int getInt(const std::string& hint, const int& init, const int& max);
-    std::u16string getDateString();
+    std::string getDateString();
 
     std::string getWrappedString(const std::string& s, const unsigned& maxWidth);
     void removeLastDirFromString(std::u16string& s);

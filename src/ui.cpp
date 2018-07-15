@@ -33,46 +33,46 @@ namespace ui
     {
         titleMenu.reset();
         for(unsigned i = 0; i < data::titles.size(); i++)
-            titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()));
+            titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()), 320);
     }
 
     void loadNandMenu()
     {
         nandMenu.reset();
         for(unsigned i = 0; i < data::nand.size(); i++)
-            nandMenu.addOpt(util::toUtf8(data::nand[i].getTitle()));
+            nandMenu.addOpt(util::toUtf8(data::nand[i].getTitle()), 320);
     }
 
     void prepMenus()
     {
         //Main
-        mainMenu.addOpt("Titles");
-        mainMenu.addOpt("System Titles");
-        mainMenu.addOpt("Reload Titles");
-        mainMenu.addOpt("Play Coins");
-        mainMenu.addOpt("Exit");
+        mainMenu.addOpt("Titles", 0);
+        mainMenu.addOpt("System Titles", 0);
+        mainMenu.addOpt("Reload Titles", 0);
+        mainMenu.addOpt("Play Coins", 0);
+        mainMenu.addOpt("Exit", 0);
 
         //Title menu
         loadTitleMenu();
 
         loadNandMenu();
 
-        backupMenu.addOpt("Save Data");
-        backupMenu.addOpt("Delete Save Data");
-        backupMenu.addOpt("Extra Data");
-        backupMenu.addOpt("Delete Extra Data");
-        backupMenu.addOpt("Back");
+        backupMenu.addOpt("Save Data", 0);
+        backupMenu.addOpt("Delete Save Data", 0);
+        backupMenu.addOpt("Extra Data", 0);
+        backupMenu.addOpt("Delete Extra Data", 0);
+        backupMenu.addOpt("Back", 0);
 
-        haxMenu.addOpt("Save Data");
-        haxMenu.addOpt("Delete Save Data");
-        haxMenu.addOpt("Extra Data");
-        haxMenu.addOpt("Delete Extra Data");
-        haxMenu.addOpt("Exit");
+        haxMenu.addOpt("Save Data", 0);
+        haxMenu.addOpt("Delete Save Data", 0);
+        haxMenu.addOpt("Extra Data", 0);
+        haxMenu.addOpt("Delete Extra Data", 0);
+        haxMenu.addOpt("Exit", 0);
 
-        nandBackupMenu.addOpt("System Save");
-        nandBackupMenu.addOpt("Extra Data");
-        nandBackupMenu.addOpt("BOSS Extra Data");
-        nandBackupMenu.addOpt("Back");
+        nandBackupMenu.addOpt("System Save", 0);
+        nandBackupMenu.addOpt("Extra Data", 0);
+        nandBackupMenu.addOpt("BOSS Extra Data", 0);
+        nandBackupMenu.addOpt("Back", 0);
     }
 
     void drawTopBar(const std::string& info)
@@ -116,7 +116,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 7/13/2018");
+        drawTopBar("JKSM - 7/14/2018");
         mainMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -151,7 +151,7 @@ namespace ui
         }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
-            std::string getChar = util::toUtf8(util::getString("Enter a letter to jump to."));
+            std::string getChar = util::getString("Enter a letter to jump to", false);
             if(!getChar.empty())
             {
                 //Only use first char
@@ -191,10 +191,10 @@ namespace ui
         fs::dirList bakDir(fs::getSDMCArch(), path);
 
         folderMenu.reset();
-        folderMenu.addOpt("New");
+        folderMenu.addOpt("New", 0);
 
         for(unsigned i = 0; i < bakDir.getCount(); i++)
-            folderMenu.addOpt(util::toUtf8(bakDir.getItem(i)));
+            folderMenu.addOpt(util::toUtf8(bakDir.getItem(i)), 320);
     }
 
     void stateBackupMenu(const uint32_t& down, const uint32_t& held)
@@ -352,7 +352,7 @@ namespace ui
             //New
             if(sel == 0)
             {
-                std::u16string newFolder = util::getString("Enter a new folder name");
+                std::u16string newFolder = util::toUtf16(util::getString("Enter a new folder name", true));
                 if(!newFolder.empty())
                 {
                     std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + newFolder;
@@ -369,16 +369,20 @@ namespace ui
                 sel--;
 
                 fs::dirList titleDir(fs::getSDMCArch(), util::createPath(data::curData, fs::getSaveMode()));
-                std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel);
+                std::string confStr = "Are you sure you want to overwrite \"" + util::toUtf8(titleDir.getItem(sel)) + "\"?";
+                if(ui::confirm(confStr))
+                {
+                    std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel);
 
-                //Del
-                FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), fsMakePath(PATH_UTF16, fullPath.data()));
+                    //Del
+                    FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), fsMakePath(PATH_UTF16, fullPath.data()));
 
-                //Recreate
-                FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, fullPath.data()), 0);
+                    //Recreate
+                    FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, fullPath.data()), 0);
 
-                fullPath += util::toUtf16("/");
-                fs::backupArchive(fullPath);
+                    fullPath += util::toUtf16("/");
+                    fs::backupArchive(fullPath);
+                }
             }
         }
         else if(down &  KEY_Y && sel != 0)
@@ -509,11 +513,11 @@ namespace ui
         util::copyDirlistToMenu(svList, svMenu);
         util::copyDirlistToMenu(sdList, sdMenu);
 
-        copyMenu.addOpt("Copy");
-        copyMenu.addOpt("Delete");
-        copyMenu.addOpt("Rename");
-        copyMenu.addOpt("Make Dir");
-        copyMenu.addOpt("Back");
+        copyMenu.addOpt("Copy", 0);
+        copyMenu.addOpt("Delete", 0);
+        copyMenu.addOpt("Rename", 0);
+        copyMenu.addOpt("Make Dir", 0);
+        copyMenu.addOpt("Back", 0);
 
         int cMenu = 0, pMenu = 0;
 
@@ -666,119 +670,6 @@ namespace ui
         }
     }
 
-    void menu::addOpt(const std::string& add)
-    {
-        opt.push_back(add);
-    }
-
-    void menu::reset()
-    {
-        opt.clear();
-
-        selected = 0;
-        start = 0;
-    }
-
-    void menu::setSelected(const int& newSel)
-    {
-        if(newSel < start || newSel > start + 15)
-        {
-            int size = opt.size() - 1;
-            if(newSel + 15 > size)
-                start = size - 14;
-            else
-                start = newSel;
-
-            selected = newSel;
-        }
-        else
-            selected = newSel;
-    }
-
-    void menu::handleInput(const uint32_t& key, const uint32_t& held)
-    {
-        if( (held & KEY_UP) || (held & KEY_DOWN))
-            fc++;
-        else
-            fc = 0;
-        if(fc > 10)
-            fc = 0;
-
-        int size = opt.size() - 1;
-        if((key & KEY_UP) || ((held & KEY_UP) && fc == 10))
-        {
-            selected--;
-            if(selected < 0)
-                selected = size;
-
-            if((start > selected)  && (start > 0))
-                start--;
-            if(size < 15)
-                start = 0;
-            if(selected == size && size > 15)
-                start = size - 14;
-        }
-        else if((key & KEY_DOWN) || ((held & KEY_DOWN) && fc == 10))
-        {
-            selected++;
-            if(selected > size)
-                selected = 0;
-
-            if((selected > (start + 14)) && ((start + 14) < size))
-                start++;
-            if(selected == 0)
-                start = 0;
-        }
-        else if(key & KEY_RIGHT)
-        {
-            selected += 7;
-            if(selected > size)
-                selected = size;
-            if((selected - 14) > start)
-                start = selected - 14;
-        }
-        else if(key & KEY_LEFT)
-        {
-            selected -= 7;
-            if(selected < 0)
-                selected = 0;
-            if(selected < start)
-                start = selected;
-        }
-    }
-
-    void menu::draw(const int& x, const int& y, const uint32_t& baseClr, const uint32_t& rectWidth)
-    {
-        if(clrAdd)
-        {
-            clrSh += 4;
-            if(clrSh > 63)
-                clrAdd = false;
-        }
-        else
-        {
-            clrSh--;
-            if(clrSh == 0)
-                clrAdd = true;
-        }
-
-        int length = 0;
-        if((opt.size() - 1) < 15)
-            length = opt.size();
-        else
-            length = start + 15;
-
-        uint32_t rectClr = 0xFF << 24 | ((0xBB + clrSh) & 0xFF) << 16 | ((0x88 + clrSh) << 8) | 0x00;
-
-        for(int i = start; i < length; i++)
-        {
-            if(i == selected)
-                C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, rectClr);
-
-            gfx::drawText(opt[i], x, y + ((i - start) * 12), 0xFFFFFFFF);
-        }
-    }
-
     progressBar::progressBar(const uint32_t& _max)
     {
         max = (float)_max;
@@ -814,6 +705,10 @@ namespace ui
             uint32_t down = hidKeysDown();
             touchPosition p;
             hidTouchRead(&p);
+
+            //Oops
+            yes.update(p);
+            no.update(p);
 
             if(down & KEY_A || yes.getEvent() == BUTTON_RELEASED)
                 return true;

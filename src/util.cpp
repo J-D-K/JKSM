@@ -74,16 +74,27 @@ namespace util
         return ret;
     }
 
-    std::u16string getString(const std::string& hint)
+    std::string getString(const std::string& hint, bool def)
     {
         SwkbdState state;
-        char input[64];
+        char input[128];
 
-        swkbdInit(&state, SWKBD_TYPE_NORMAL, 2, 64);
+        swkbdInit(&state, SWKBD_TYPE_NORMAL, 2, 128);
         swkbdSetHintText(&state, hint.c_str());
-        swkbdInputText(&state, input, 64);
 
-        return toUtf16(input);
+        if(def)//If default text/date suggestion
+        {
+            //FUTURE PROOFING DIS TIME. Just grab current year
+            std::string year = std::string(util::getDateString()).substr(0, 4);
+            swkbdSetFeatures(&state, SWKBD_PREDICTIVE_INPUT);
+            SwkbdDictWord date;
+            swkbdSetDictWord(&date, year.c_str(), util::getDateString().c_str());
+            swkbdSetDictionary(&state, &date, 1);
+        }
+
+        swkbdInputText(&state, input, 128);
+
+        return std::string(input);
     }
 
     int getInt(const std::string& hint, const int& init, const int& max)
@@ -114,7 +125,7 @@ namespace util
         return ret;
     }
 
-    std::u16string getDateString()
+    std::string getDateString()
     {
         char tmp[128];
 
@@ -124,7 +135,7 @@ namespace util
 
         sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
 
-        return util::toUtf16(tmp);
+        return std::string(tmp);
     }
 
     std::string getWrappedString(const std::string& s, const unsigned& maxWidth)
@@ -201,15 +212,15 @@ namespace util
     {
         m.reset();
 
-        m.addOpt(".");
-        m.addOpt("..");
+        m.addOpt(".", 320);
+        m.addOpt("..", 320);
 
         for(unsigned i = 0; i < d.getCount(); i++)
         {
             if(d.isDir(i))
-                m.addOpt("D " + toUtf8(d.getItem(i)));
+                m.addOpt("D " + toUtf8(d.getItem(i)), 320);
             else
-                m.addOpt("F " + toUtf8(d.getItem(i)));
+                m.addOpt("F " + toUtf8(d.getItem(i)), 320);
         }
     }
 
@@ -239,7 +250,7 @@ namespace util
 
     bool touchPressed(const touchPosition& p)
     {
-        return p.px > 0 && p.py > 0;
+        return p.px != 0 && p.py != 0;
     }
 
     bool fexists(const std::string& path)

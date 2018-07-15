@@ -25,6 +25,7 @@ namespace fs
     FS_ArchiveID getSaveMode();
 
     bool openArchive(data::titleData& dat, const uint32_t& arch);
+    void closeSaveArch();
     void commitData(const uint32_t& mode);
     void deleteSv(const uint32_t& mode);
 
