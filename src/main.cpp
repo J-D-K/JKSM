@@ -7,8 +7,6 @@
 #include "data.h"
 #include "sys.h"
 
-extern int state;
-
 int main(int argc, const char *argv[])
 {
     sys::init();

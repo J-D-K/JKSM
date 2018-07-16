@@ -10,11 +10,13 @@ namespace sys
     {
         hidInit();
         amInit();
+        aptInit();
     }
 
     void exit()
     {
         hidExit();
         amExit();
+        aptExit();
     }
 }

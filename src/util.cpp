@@ -164,7 +164,7 @@ namespace util
         {
             tmp += s[i];
 
-            if(s[i] == ' ')
+            if(s[i] == ' ' || s[i] == '/')
                 lastSpace = i;
 
             if(gfx::getTextWidth(tmp) >= maxWidth)
