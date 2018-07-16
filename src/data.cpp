@@ -71,6 +71,7 @@ namespace data
             else
                 ret += s[i];
         }
+
         return ret;
     }
 
@@ -286,25 +287,15 @@ namespace data
 
             ui::progressBar prog(count);
 
-            fs::fsfile deb(fs::getSDMCArch(), "/JKSV/titledeb.txt", FS_OPEN_CREATE | FS_OPEN_WRITE);
-            char tmp[256];
-            sprintf(tmp, "Total titles found: %u\n", (unsigned)count);
-            deb.writeString(tmp);
-
             for(unsigned i = 0; i < count; i++)
             {
                 if(checkHigh(ids[i]))
                 {
                     titleData newTitle;
-                    sprintf(tmp, "Attempt to add: %016llX - ", ids[i]);
-                    deb.writeString(tmp);
                     if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.isOpenable())
                     {
                         titles.push_back(newTitle);
-                        deb.writeString("Success!\n");
                     }
-                    else
-                        deb.writeString("Failed.\n");
                 }
 
                 prog.update(i);

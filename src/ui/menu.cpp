@@ -93,7 +93,7 @@ namespace ui
         }
         else if(down & KEY_LEFT)
         {
-            selected -= 7;
+            selected -= 8;
             if(selected < 0)
                 selected = 0;
             if(selected < start)

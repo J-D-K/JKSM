@@ -116,7 +116,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 7/14/2018");
+        drawTopBar("JKSM - 7/16/2018");
         mainMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -352,7 +352,14 @@ namespace ui
             //New
             if(sel == 0)
             {
-                std::u16string newFolder = util::toUtf16(util::getString("Enter a new folder name", true));
+                std::u16string newFolder;
+                if(held & KEY_L)
+                    newFolder = util::toUtf16(util::getDateString(util::DATE_FMT_YDM));
+                else if(held & KEY_R)
+                    newFolder = util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
+                else
+                    newFolder = util::toUtf16(util::getString("Enter a new folder name", true));
+
                 if(!newFolder.empty())
                 {
                     std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + newFolder;

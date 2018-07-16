@@ -85,11 +85,17 @@ namespace util
         if(def)//If default text/date suggestion
         {
             //FUTURE PROOFING DIS TIME. Just grab current year
-            std::string year = std::string(util::getDateString()).substr(0, 4);
+            std::string year = std::string(util::getDateString(DATE_FMT_YMD)).substr(0, 4);
+
+            char tmpDate[128];
+            sprintf(tmpDate, "%s", util::getDateString(DATE_FMT_YMD).c_str());
+            swkbdSetInitialText(&state, tmpDate);
+
             swkbdSetFeatures(&state, SWKBD_PREDICTIVE_INPUT);
-            SwkbdDictWord date;
-            swkbdSetDictWord(&date, year.c_str(), util::getDateString().c_str());
-            swkbdSetDictionary(&state, &date, 1);
+            SwkbdDictWord date[2];
+            swkbdSetDictWord(&date[0], year.c_str(), util::getDateString(DATE_FMT_YMD).c_str());
+            swkbdSetDictWord(&date[1], year.c_str(), util::getDateString(DATE_FMT_YDM).c_str());
+            swkbdSetDictionary(&state, date, 2);
         }
 
         swkbdInputText(&state, input, 128);
@@ -125,15 +131,23 @@ namespace util
         return ret;
     }
 
-    std::string getDateString()
+    std::string getDateString(const int& fmt)
     {
         char tmp[128];
 
         time_t rawTime;
         time(&rawTime);
         tm *local = localtime(&rawTime);
+        switch(fmt)
+        {
+            case DATE_FMT_YMD:
+                sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
+                break;
 
-        sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
+            case DATE_FMT_YDM:
+                sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mday, local->tm_mon + 1, local->tm_hour, local->tm_min, local->tm_sec);
+                break;
+        }
 
         return std::string(tmp);
     }

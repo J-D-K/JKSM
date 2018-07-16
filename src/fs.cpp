@@ -604,7 +604,7 @@ namespace fs
             {
                 util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
 
-                std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString());
+                std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
                 FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
                 outpath += util::toUtf16("/");
 
@@ -617,7 +617,7 @@ namespace fs
             {
                 util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
 
-                std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString());
+                std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
                 FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
                 outpath += util::toUtf16("/");
 
