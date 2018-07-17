@@ -11,7 +11,7 @@
 #include "ui.h"
 #include "gfx.h"
 
-static const char16_t verboten[] = { L',', L'/', L'\\', L'<', L'>', L':', L'"', L'|', L'?', L'*'};
+static const char16_t verboten[] = { L'.', L',', L'/', L'\\', L'<', L'>', L':', L'"', L'|', L'?', L'*' };
 
 static uint32_t extdataRedirect(const uint32_t& low)
 {
@@ -52,7 +52,7 @@ namespace data
 
     bool isVerboten(const char16_t& c)
     {
-        for(unsigned i = 0; i < 10; i++)
+        for(unsigned i = 0; i < 11; i++)
         {
             if(c == verboten[i])
                 return true;
@@ -71,6 +71,10 @@ namespace data
             else
                 ret += s[i];
         }
+
+        //Erase space if last char
+        if(ret[ret.length() - 1] == L' ')
+            ret.erase(ret.length() - 1, ret.length());
 
         return ret;
     }
