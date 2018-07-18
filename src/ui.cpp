@@ -116,7 +116,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 7/16/2018");
+        drawTopBar("JKSM - 7/18/2018");
         mainMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -216,7 +216,7 @@ namespace ui
                     break;
 
                 case 1:
-                    if(confirm("Are you sure you want to delete all data for this game?") && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA))
+                    if(confirm(std::string("Are you 100% sure you want to delete all currently saved data for this game?")) && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA))
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_USER_SAVEDATA);
@@ -236,7 +236,7 @@ namespace ui
 
                 case 3:
                     {
-                        std::string confStr = "Are you 100% sure you want to delete the Extra Data for \"" + util::toUtf8(data::curData.getTitle()) + "\"?";
+                        std::string confStr = "Are you 100% sure you want to delete the currently saved Extra Data for \"" + util::toUtf8(data::curData.getTitle()) + "\"?";
                         if(confirm(confStr))
                         {
                             FS_ExtSaveDataInfo del = { MEDIATYPE_SD, 0, 0, data::curData.getExtData(), 0 };

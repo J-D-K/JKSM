@@ -92,7 +92,7 @@ namespace gfx
         C2D_TextBufDelete(tmpBuf);
     }
 
-    uint32_t getTextWidth(const std::string& str)
+    size_t getTextWidth(const std::string& str)
     {
         float ret = 0;
         C2D_Text tmpTxt;
@@ -102,7 +102,8 @@ namespace gfx
         C2D_TextOptimize(&tmpTxt);
 
         C2D_TextGetDimensions(&tmpTxt, 0.5f, 0.5f, &ret, NULL);
+        C2D_TextBufDelete(tmpBuf);
 
-        return (uint32_t)ret;
+        return static_cast<size_t>(ret);
     }
 }

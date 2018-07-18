@@ -61,7 +61,7 @@ namespace data
         return false;
     }
 
-    const std::u16string safeTitle(const std::u16string& s)
+    std::u16string safeTitle(const std::u16string& s)
     {
         std::u16string ret;
         for(unsigned i = 0; i < s.length(); i++)

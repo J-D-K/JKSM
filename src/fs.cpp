@@ -449,7 +449,8 @@ namespace fs
         }
 
         uint8_t *buff = new uint8_t[buff_size];
-        std::string copyString = util::getWrappedString("Copying \n" + util::toUtf8(from) + "...", 224);
+        std::string copyString = "Copying " + util::toUtf8(from) + "...";
+        copyString = util::getWrappedString(copyString, 224);
         ui::progressBar prog((uint32_t)in.getSize());
         do
         {
@@ -529,8 +530,9 @@ namespace fs
         }
 
         uint8_t *buff = new uint8_t[buff_size];
-        std::string copyString = util::getWrappedString("Copying \n" + util::toUtf8(from) + "...", 224);
-        ui::progressBar prog((uint32_t)in.getSize());
+        std::string copyString = "Copying " + util::toUtf8(from) + "...";
+        copyString = util::getWrappedString(copyString, 224);
+        ui::progressBar prog(in.getSize());
         do
         {
             uint32_t read, written;

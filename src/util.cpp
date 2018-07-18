@@ -154,6 +154,7 @@ namespace util
 
     std::string getWrappedString(const std::string& s, const unsigned& maxWidth)
     {
+
         if(gfx::getTextWidth(s) < maxWidth)
             return s;
 
