@@ -19,28 +19,12 @@ namespace util
         return std::string((char *)tmp);
     }
 
-    std::string toUtf8(const std::u32string& conv)
-    {
-        uint8_t tmp[1024];
-        std::memset(tmp, 0, 1024);
-        utf32_to_utf8(tmp, (uint32_t *)conv.data(), 1024);
-        return std::string((char *)tmp);
-    }
-
     std::u16string toUtf16(const std::string& conv)
     {
         char16_t tmp[1024];
         std::memset(tmp, 0, 1024 * sizeof(char16_t));
         utf8_to_utf16((uint16_t *)tmp, (uint8_t *)conv.data(), 1024);
         return std::u16string(tmp);
-    }
-
-    std::u32string toUtf32(const std::u16string& conv)
-    {
-        uint32_t tmp[1024];
-        std::memset(tmp, 0, 1024 * 4);
-        utf16_to_utf32(tmp, (uint16_t *)conv.data(), 1024);
-        return std::u32string((char32_t *)tmp);
     }
 
     std::u16string createPath(data::titleData& dat, const uint32_t& mode)

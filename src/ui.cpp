@@ -260,7 +260,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar(util::toUtf8(data::curData.getTitleWide()));
+        drawTopBar(util::toUtf8(data::curData.getTitle()));
         backupMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -335,7 +335,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar(util::toUtf8(data::curData.getTitleWide()));
+        drawTopBar(util::toUtf8(data::curData.getTitle()));
         nandBackupMenu.draw(40, 88, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();

@@ -93,9 +93,8 @@ namespace data
         if(smdh == NULL)
             return false;
 
-        title = (char16_t *)smdh->applicationTitles[1].shortDescription;
+        title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
         titleSafe.assign(safeTitle(title));
-        wideTitle = util::toUtf32(title);
 
         char tmp[16];
         AM_GetTitleProductCode(m, id, tmp);
@@ -118,7 +117,6 @@ namespace data
 
         title.assign(_title);
         titleSafe.assign(safeTitle(title));
-        wideTitle.assign(util::toUtf32(title));
         prodCode.assign(code);
 
         return true;
@@ -252,6 +250,19 @@ namespace data
         std::fstream cache("/JKSV/titles", std::ios::in | std::ios::binary);
         if(cache.is_open())
         {
+            uint8_t cacheRev = 0;
+            cache.seekg(2, cache.beg);
+            cacheRev = cache.get();
+            cache.seekg(0, cache.beg);
+
+            if(cacheRev < 2)
+            {
+                cache.close();
+                std::remove("/JKSV/titles");
+                loadTitles();
+                return;
+            }
+
             uint16_t count = 0;
             cache.read((char *)&count, sizeof(uint16_t));
 
@@ -301,6 +312,7 @@ namespace data
                         titles.push_back(newTitle);
                     }
                 }
+                else
 
                 prog.update(i);
 
@@ -320,7 +332,7 @@ namespace data
             {
                 uint16_t countOut = titles.size();
                 cache.write((char *)&countOut, sizeof(uint16_t));
-                cache.put(0x00);
+                cache.put(0x02);
 
                 for(unsigned i = 0; i < titles.size(); i++)
                 {
@@ -354,6 +366,18 @@ namespace data
         std::fstream cache("/JKSV/nand", std::ios::in | std::ios::binary);
         if(cache.is_open())
         {
+            uint8_t cacheRev = 0;
+            cache.seekg(2, cache.beg);
+            cacheRev = cache.get();
+            cache.seekg(0, cache.beg);
+            if(cacheRev < 2)
+            {
+                cache.close();
+                std::remove("/JKSV/nand");
+                loadNand();
+                return;
+            }
+
             uint16_t count;
             cache.read((char *)&count, sizeof(uint16_t));
 
@@ -411,7 +435,7 @@ namespace data
             uint16_t countOut = nand.size();
             cache.open("/JKSV/nand", std::ios::out | std::ios::binary);
             cache.write((char *)&countOut, sizeof(uint16_t));
-            cache.put(0x00);
+            cache.put(0x02);
             for(unsigned i = 0; i < nand.size(); i++)
             {
                 char16_t titleOut[0x40];

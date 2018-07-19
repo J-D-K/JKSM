@@ -16,7 +16,6 @@ namespace gfx
 
     void drawText(const std::string& str, const int& x, const int& y, const uint32_t& clr);
     void drawU16Text(const std::u16string& str, const int& x, const int& y, const uint32_t& clr);
-    void drawU32Text(const std::u32string& str, const int& x, const int& y, const uint32_t& clr);
     size_t getTextWidth(const std::string& str);
 }
 

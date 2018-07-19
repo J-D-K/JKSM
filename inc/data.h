@@ -28,7 +28,6 @@ namespace data
             std::string getProdCode() { return prodCode; }
             std::u16string getTitle() { return title; }
             std::u16string getTitleSafe() { return titleSafe; }
-            std::u32string getTitleWide() { return wideTitle; }
 
             void drawInfo(unsigned x, unsigned y);
 
@@ -37,7 +36,6 @@ namespace data
             uint32_t high, low, unique, extdata;
             std::string prodCode;
             std::u16string title, titleSafe;
-            std::u32string wideTitle;
             FS_MediaType m;
     };
 

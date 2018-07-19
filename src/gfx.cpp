@@ -79,19 +79,6 @@ namespace gfx
         C2D_TextBufDelete(tmpBuf);
     }
 
-    void drawU32Text(const std::u32string& str, const int& x, const int& y, const uint32_t& clr)
-    {
-        C2D_Text tmpTxt;
-        C2D_TextBuf tmpBuf = C2D_TextBufNew(1024);
-
-        std::string tmp = util::toUtf8(str);
-
-        C2D_TextParse(&tmpTxt, tmpBuf, tmp.c_str());
-        C2D_TextOptimize(&tmpTxt);
-        C2D_DrawText(&tmpTxt, C2D_WithColor, (float)x, (float) y, 0.5f, 0.5f, 0.5f, clr);
-        C2D_TextBufDelete(tmpBuf);
-    }
-
     size_t getTextWidth(const std::string& str)
     {
         float ret = 0;
