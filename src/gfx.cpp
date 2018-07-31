@@ -30,7 +30,6 @@ namespace gfx
         C2D_Fini();
         C3D_Fini();
         gfxExit();
-        romfsExit();
     }
 
     void frameBegin()

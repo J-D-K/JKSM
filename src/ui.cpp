@@ -14,17 +14,6 @@
 
 static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu, haxMenu;
 
-enum states
-{
-    MAIN_MENU,
-    TITLE_MENU,
-    BACK_MENU,
-    SYS_MENU,
-    SYS_BAKMENU,
-    FLDR_MENU,
-    HAX_MENU
-};
-
 int state = MAIN_MENU, prev = MAIN_MENU;
 
 namespace ui
@@ -53,9 +42,11 @@ namespace ui
         mainMenu.addOpt("Exit", 0);
 
         //Title menu
-        loadTitleMenu();
-
-        loadNandMenu();
+        if(!data::haxMode)
+        {
+            loadTitleMenu();
+            loadNandMenu();
+        }
 
         backupMenu.addOpt("Save Data", 0);
         backupMenu.addOpt("Delete Save Data", 0);
@@ -281,7 +272,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a NAND Title");
-        nandMenu.draw(40, 34, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        nandMenu.draw(40, 24, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         data::nand[nandMenu.getSelected()].drawInfo(8, 8);
         gfx::frameEnd();
@@ -475,6 +466,14 @@ namespace ui
                     break;
             }
         }
+
+        gfx::frameBegin();
+        gfx::frameStartTop();
+        drawTopBar("JKSM - *hax Mode - " + util::toUtf8(data::curData.getTitle()));
+        haxMenu.draw(40, 82, 0xFFFFFFFF, 320);
+        gfx::frameStartBot();
+        data::curData.drawInfo(8, 8);
+        gfx::frameEnd();
     }
 
     void runApp(const uint32_t& down, const uint32_t& held)

@@ -8,6 +8,18 @@
 #include "ui/button.h"
 #include "ui/menu.h"
 
+enum states
+{
+    MAIN_MENU,
+    TITLE_MENU,
+    BACK_MENU,
+    SYS_MENU,
+    SYS_BAKMENU,
+    FLDR_MENU,
+    HAX_MENU,
+    ADV_MENU
+};
+
 namespace ui
 {
     void prepMenus();
