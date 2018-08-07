@@ -67,7 +67,7 @@ namespace fs
             ~dirList();
 
             void rescan();
-            void reassign(const std::u16string& p);
+            void reassign(const FS_Archive& arch, const std::u16string& p);
             const uint32_t getCount();
 
             bool isDir(unsigned i);

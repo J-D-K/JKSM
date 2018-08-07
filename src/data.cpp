@@ -362,6 +362,9 @@ namespace data
 
     void blacklistAdd(titleData& t)
     {
+        if(t.getMedia() == MEDIATYPE_GAME_CARD)
+            return;
+
         std::fstream bl("/JKSV/blacklist.txt", std::ios::app);
 
         std::string titleLine = "#" + util::toUtf8(t.getTitle()) + "\n";

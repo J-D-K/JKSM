@@ -17,7 +17,7 @@ namespace ui
                 tmp += add[i];
                 if((int)gfx::getTextWidth(tmp) >= maxWidth)
                 {
-                    tmp.replace(i - 1, 2, "[]");
+                    tmp.replace(i - 2, 3, "...");
                     opt.push_back(tmp);
                     break;
                 }
@@ -129,7 +129,7 @@ namespace ui
             if(i == selected)
                 C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, rectClr);
 
-            gfx::drawText(opt[i], x, y + ((i - start) * 12), 0xFFFFFFFF);
+            gfx::drawText(opt[i], x, y + ((i - start) * 12), baseClr);
         }
     }
 }

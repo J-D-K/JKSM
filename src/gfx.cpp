@@ -90,6 +90,6 @@ namespace gfx
         C2D_TextGetDimensions(&tmpTxt, 0.5f, 0.5f, &ret, NULL);
         C2D_TextBufDelete(tmpBuf);
 
-        return static_cast<size_t>(ret);
+        return (size_t)ret;
     }
 }

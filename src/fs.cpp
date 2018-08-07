@@ -176,66 +176,61 @@ namespace fs
 
     fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags)
     {
-        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0);
-        if(error)
-            open = false;
-        else
+        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0)))
         {
             FSFILE_GetSize(fHandle, &fSize);
             open = true;
         }
+        else
+            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags, const uint64_t& crSize)
     {
-        error = FSUSER_CreateFile(_arch, fsMakePath(PATH_ASCII, _path.data()), 0, crSize);
-        if(error == 0)
+        if(R_SUCCEEDED(FSUSER_CreateFile(_arch, fsMakePath(PATH_ASCII, _path.data()), 0, crSize)))
         {
-            error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0);
-            if(error)
-                open = false;
-            else
+            if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0)))
             {
                 FSFILE_GetSize(fHandle, &fSize);
                 open = true;
             }
+            else
+                open = false;
         }
+        else
+            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags)
     {
-        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0);
-        if(error)
-            open = false;
-        else
+        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
         {
             FSFILE_GetSize(fHandle, &fSize);
             open = true;
         }
+        else
+            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize)
     {
-        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), FS_OPEN_WRITE, 0);
-        if(error)
+        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
         {
-            error = FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.data()), 0, crSize);
-            if(error == 0)
-            {
-                error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0);
-                if(error)
-                    open = false;
-                else
-                {
-                    FSFILE_GetSize(fHandle, &fSize);
-                    open = true;
-                }
-            }
+            FSFILE_GetSize(fHandle, &fSize);
+            open = true;
         }
         else
         {
-            open = true;
+            if(R_SUCCEEDED(FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.data()), 0, crSize)) && \
+               R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
+            {
+                FSFILE_GetSize(fHandle, &fSize);
+                open = true;
+            }
+            else
+                open = false;
         }
+
     }
 
     fsfile::~fsfile()
@@ -394,11 +389,12 @@ namespace fs
         std::sort(entry.begin(), entry.end(), sortDirs);
     }
 
-    void dirList::reassign(const std::u16string& p)
+    void dirList::reassign(const FS_Archive& arch, const std::u16string& p)
     {
         entry.clear();
 
         path = p;
+        a = arch;
 
         FSUSER_OpenDirectory(&d, a, fsMakePath(PATH_UTF16, path.data()));
         uint32_t read = 0;

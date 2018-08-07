@@ -421,6 +421,11 @@ namespace ui
                 prepFolderMenu(data::curData, fs::getSaveMode());
             }
         }
+        else if(down & KEY_SELECT)
+        {
+            advModePrep();
+            state = ADV_MENU;
+        }
         else if(down & KEY_B)
         {
             FSUSER_CloseArchive(fs::getSaveArch());
@@ -515,153 +520,10 @@ namespace ui
             case HAX_MENU:
                 stateHaxMenu(down, held);
                 break;
-        }
-    }
 
-    void advMode(const FS_Archive& arch)
-    {
-        std::u16string svPath = util::toUtf16("/"), sdPath = util::toUtf16("/");
-        ui::menu svMenu, sdMenu, copyMenu;
-        fs::dirList svList(arch, svPath), sdList(fs::getSDMCArch(), sdPath);
-
-        util::copyDirlistToMenu(svList, svMenu);
-        util::copyDirlistToMenu(sdList, sdMenu);
-
-        copyMenu.addOpt("Copy", 0);
-        copyMenu.addOpt("Delete", 0);
-        copyMenu.addOpt("Rename", 0);
-        copyMenu.addOpt("Make Dir", 0);
-        copyMenu.addOpt("Back", 0);
-
-        int cMenu = 0, pMenu = 0;
-
-        while(true)
-        {
-            hidScanInput();
-
-            uint32_t down = hidKeysDown();
-            uint32_t held = hidKeysHeld();
-
-            if(down & KEY_A)
-            {
-                switch(cMenu)
-                {
-                    //save
-                    case 0:
-                        {
-                            if(svMenu.getSelected() > 1)
-                            {
-                                int sel = svMenu.getSelected() - 2;
-                                if(svList.isDir(sel))
-                                {
-                                    svPath += svList.getItem(sel) + util::toUtf16("/");
-                                    svList.reassign(svPath);
-                                    svMenu.reset();
-                                    util::copyDirlistToMenu(svList, svMenu);
-                                }
-                            }
-                        }
-                        break;
-
-                    //sd
-                    case 1:
-                        {
-                            if(sdMenu.getSelected() > 1)
-                            {
-                                int sel = sdMenu.getSelected() - 2;
-                                if(sdList.isDir(sel))
-                                {
-                                    sdPath += sdList.getItem(sel) + util::toUtf16("/");
-                                    sdList.reassign(sdPath);
-                                    sdMenu.reset();
-                                    util::copyDirlistToMenu(sdList, sdMenu);
-                                }
-                            }
-                        }
-                        break;
-                }
-            }
-            else if(down & KEY_B)
-            {
-                switch(cMenu)
-                {
-                    case 0:
-                        if(svPath != util::toUtf16("/"))
-                        {
-                            util::removeLastDirFromString(svPath);
-                            svList.reassign(svPath);
-                            svMenu.reset();
-                            util::copyDirlistToMenu(svList, svMenu);
-                        }
-                        break;
-
-                    case 1:
-                        if(sdPath != util::toUtf16("/"))
-                        {
-                            util::removeLastDirFromString(sdPath);
-                            sdList.reassign(sdPath);
-                            sdMenu.reset();
-                            util::copyDirlistToMenu(sdList, sdMenu);
-                        }
-                        break;
-                }
-            }
-            else if(down & KEY_X)
-            {
-                if(cMenu == 2)
-                    cMenu = pMenu;
-                else
-                {
-                    pMenu = cMenu;
-                    cMenu = 2;
-                }
-            }
-            else if(down & KEY_R || down & KEY_L)
-            {
-                if(cMenu == 0)
-                    cMenu = 1;
-                else
-                    cMenu = 0;
-            }
-            else if(down & KEY_SELECT)
+            case ADV_MENU:
+                stateAdvMode(down, held);
                 break;
-
-            switch(cMenu)
-            {
-                //save
-                case 0:
-                    svMenu.handleInput(down, held);
-                    break;
-
-                //sd
-                case 1:
-                    sdMenu.handleInput(down, held);
-                    break;
-
-                //copy
-                case 2:
-                    copyMenu.handleInput(down, held);
-                    break;
-            }
-
-            gfx::frameBegin();
-            gfx::frameStartTop();
-            ui::drawTopBar("Adv. Mode");
-            gfx::drawU16Text(util::toUtf16("sv:") + svPath, 0, 16, 0xFFFFFFFF);
-            svMenu.draw(40, 32, 0xFFFFFFFF, 320);
-            if(cMenu == 2 && pMenu == 0)
-            {
-                copyMenu.draw(120, 90, 0xFFFFFFFF, 160);
-            }
-
-            gfx::frameStartBot();
-            gfx::drawU16Text(util::toUtf16("sd:") + sdPath, 0, 0, 0xFFFFFFFF);
-            sdMenu.draw(0, 32, 0xFFFFFFFF, 320);
-            if(cMenu == 2 && pMenu == 1)
-            {
-                copyMenu.draw(80, 90, 0xFFFFFFFF, 160);
-            }
-            gfx::frameEnd();
         }
     }
 
