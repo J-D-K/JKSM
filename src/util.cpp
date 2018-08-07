@@ -154,7 +154,7 @@ namespace util
 
             if(gfx::getTextWidth(tmp) >= maxWidth)
             {
-                tmp.assign(s, first, lastSpace - first);
+                tmp.assign(s, first, (lastSpace + 1) - first);
 
                 ret += tmp + "\n";
 
@@ -243,7 +243,7 @@ namespace util
                 playCoin.putByte(coinAmount >> 8);
             }
 
-            FSUSER_CloseArchive(fs::getSaveArch());
+            fs::closeSaveArch();
         }
     }
 

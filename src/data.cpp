@@ -158,7 +158,7 @@ namespace data
 
         }
 
-        FSUSER_CloseArchive(fs::getSaveArch());
+        fs::closeSaveArch();
 
         return ret;
     }
@@ -278,11 +278,8 @@ namespace data
                 {
                     titleData newTitle;
                     if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.isOpenable())
-                    {
                         titles.push_back(newTitle);
-                    }
                 }
-                else
 
                 prog.update(i);
 
@@ -299,7 +296,6 @@ namespace data
 
             createCache(titles, "/JKSV/titles");
         }
-        curData = titles[0];
     }
 
     void loadNand()

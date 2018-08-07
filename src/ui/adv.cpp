@@ -17,6 +17,117 @@ static int advMenuCtrl = 0, advPrev = 0;
 //Program state
 extern int state;
 
+enum
+{
+    SD_TO_ARCH,
+    ARCH_TO_SD
+};
+
+bool confirmTransfer(const std::u16string& from, const std::u16string& to, int way)
+{
+    std::string fromDrive, toDrive;
+    switch(way)
+    {
+        case SD_TO_ARCH:
+            fromDrive = "sd:";
+            toDrive   = "sv:";
+            break;
+
+        case ARCH_TO_SD:
+            fromDrive = "sv:";
+            toDrive   = "sd:";
+            break;
+    }
+
+    std::string conf = "Are you sure you want to copy \"" + fromDrive + util::toUtf8(from) + "\" to \"" + toDrive + util::toUtf8(to) + "\"?";
+
+    return ui::confirm(conf);
+}
+
+void performCopyOps()
+{
+    switch(copyMenu.getSelected())
+    {
+        //Copy From
+        case 0:
+            {
+                switch(advPrev)
+                {
+                    case 0://Save was active
+                        {
+                            if(saveMenu.getSelected() == 0)
+                            {
+                                if(confirmTransfer(savePath, sdPath, ARCH_TO_SD))
+                                    fs::copyDirToSD(fs::getSaveArch(), savePath, sdPath);
+                            }
+                            else if(saveMenu.getSelected() > 1)
+                            {
+                                int saveSel = saveMenu.getSelected() - 2;
+                                if(saveList.isDir(saveSel))
+                                {
+                                    std::u16string fromPath = savePath + saveList.getItem(saveSel) + util::toUtf16("/");
+                                    std::u16string toPath = sdPath + saveList.getItem(saveSel);
+                                    if(confirmTransfer(fromPath, toPath, ARCH_TO_SD))
+                                    {
+                                        FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, toPath.data()), 0);
+                                        toPath += util::toUtf16("/");
+
+                                        fs::copyDirToSD(fs::getSaveArch(), fromPath, toPath);
+                                    }
+                                }
+                                else
+                                {
+                                    std::u16string fromPath = savePath + saveList.getItem(saveSel);
+                                    std::u16string toPath = sdPath + saveList.getItem(saveSel);
+                                    if(confirmTransfer(fromPath, toPath, ARCH_TO_SD))
+                                        fs::copyFileToSD(fs::getSaveArch(), fromPath, toPath);
+                                }
+                            }
+                        }
+
+                    case 1://SD was active
+                        if(sdMenu.getSelected() == 0)
+                        {
+                            if(confirmTransfer(sdPath, savePath, SD_TO_ARCH))
+                                fs::copyDirToArch(fs::getSaveArch(), sdPath, savePath);
+                        }
+                        else if(sdMenu.getSelected() > 1)
+                        {
+                            int sdSel = sdMenu.getSelected() - 2;
+                            if(sdList.isDir(sdSel))
+                            {
+                                std::u16string fromPath = sdPath + sdList.getItem(sdSel) + util::toUtf16("/");
+                                std::u16string toPath   = savePath + sdList.getItem(sdSel);
+                                if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
+                                {
+                                    FSUSER_CreateDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, toPath.data()), 0);
+                                    toPath += util::toUtf16("/");
+
+                                    fs::copyDirToArch(fs::getSaveArch(), fromPath, toPath);
+                                }
+                            }
+                            else
+                            {
+                                std::u16string fromPath = sdPath + sdList.getItem(sdSel);
+                                std::u16string toPath   = savePath + sdList.getItem(sdSel);
+
+                                if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
+                                    fs::copyFileToArch(fs::getSaveArch(), fromPath, toPath);
+                            }
+                        }
+                        break;
+
+                }
+            }
+    }
+
+    //Update lists + menus
+    saveList.reassign(fs::getSaveArch(), savePath);
+    util::copyDirlistToMenu(saveList, saveMenu);
+    sdList.reassign(fs::getSDMCArch(), sdPath);
+    util::copyDirlistToMenu(sdList, sdMenu);
+}
+
 namespace ui
 {
     void advModePrep()
@@ -38,11 +149,6 @@ namespace ui
         copyMenu.addOpt("Rename", 0);
         copyMenu.addOpt("Make Dir", 0);
         copyMenu.addOpt("Back", 0);
-    }
-
-    void performCopyOps()
-    {
-
     }
 
     void stateAdvMode(const uint64_t& down, const uint64_t& held)

@@ -90,7 +90,7 @@ namespace ui
                     break;
 
                 case 2:
-                    remove("/JKSV/titles");
+                    std::remove("/JKSV/titles");
                     data::loadTitles();
                     loadTitleMenu();
                     break;
@@ -145,7 +145,9 @@ namespace ui
         }
         else if(down & KEY_X || bl.getEvent() == BUTTON_RELEASED)
         {
-            data::blacklistAdd(data::titles[titleMenu.getSelected()]);
+            std::string confString = "Are you sure you want to add " + util::toUtf8(data::titles[titleMenu.getSelected()].getTitle()) + " to the blacklist?";
+            if(confirm(confString))
+                data::blacklistAdd(data::titles[titleMenu.getSelected()]);
         }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
@@ -219,7 +221,7 @@ namespace ui
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_USER_SAVEDATA);
-                        FSUSER_CloseArchive(fs::getSaveArch());
+                        fs::closeSaveArch();
                     }
                     break;
 
@@ -428,7 +430,7 @@ namespace ui
         }
         else if(down & KEY_B)
         {
-            FSUSER_CloseArchive(fs::getSaveArch());
+            fs::closeSaveArch();
             state = prev;
         }
 
@@ -464,7 +466,7 @@ namespace ui
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_SAVEDATA);
-                        FSUSER_CloseArchive(fs::getSaveArch());
+                        fs::closeSaveArch();
                     }
                     break;
 
@@ -529,6 +531,7 @@ namespace ui
 
     void showMessage(const std::string& mess)
     {
+        std::string disp = util::getWrappedString(mess, 224);
         while(1)
         {
             hidScanInput();
@@ -541,7 +544,7 @@ namespace ui
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, C2D_Color32(231, 231, 231, 0xFF));
-            gfx::drawText(mess, 16, 16, C2D_Color32(0, 0, 0, 0xFF));
+            gfx::drawText(disp, 16, 16, C2D_Color32(0, 0, 0, 0xFF));
             gfx::frameEnd();
         }
     }

@@ -47,11 +47,11 @@ namespace fs
 
             void seek(const int& pos, const uint8_t& seekfrom);
 
-            uint32_t getError();
-            uint64_t getOffset();
-            uint64_t getSize();
+            uint32_t getError(){ return error; }
+            uint64_t getOffset(){ return offset; }
+            uint64_t getSize(){ return fSize; }
 
-            bool isOpen();
+            bool isOpen(){ return open; }
 
         private:
             Handle fHandle;
@@ -68,10 +68,10 @@ namespace fs
 
             void rescan();
             void reassign(const FS_Archive& arch, const std::u16string& p);
-            const uint32_t getCount();
+            const uint32_t getCount(){ return entry.size(); }
 
-            bool isDir(unsigned i);
-            const std::u16string getItem(unsigned i);
+            bool isDir(unsigned i){ return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY; }
+            const std::u16string getItem(unsigned i){ return std::u16string((char16_t *)entry[i].name); }
 
         private:
             Handle d;
@@ -82,6 +82,11 @@ namespace fs
 
     void backupArchive(const std::u16string& outpath);
     void restoreToArchive(const std::u16string& inpath);
+
+    void copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
+    void copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
+    void copyDirToSD(const FS_Archive& arch, const std::u16string&  from, const std::u16string& to);
+    void copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
 
     void backupAll();
 }

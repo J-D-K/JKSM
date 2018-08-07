@@ -64,6 +64,11 @@ namespace fs
         return saveArch;
     }
 
+    void closeSaveArch()
+    {
+        FSUSER_CloseArchive(saveArch);
+    }
+
     FS_ArchiveID getSaveMode()
     {
         return saveMode;
@@ -132,11 +137,6 @@ namespace fs
         }
 
         return R_SUCCEEDED(res);
-    }
-
-    void closeSaveArch()
-    {
-        FSUSER_CloseArchive(saveArch);
     }
 
     void commitData(const uint32_t& mode)
@@ -304,26 +304,6 @@ namespace fs
         }
     }
 
-    uint64_t fsfile::getSize()
-    {
-        return fSize;
-    }
-
-    uint32_t fsfile::getError()
-    {
-        return error;
-    }
-
-    uint64_t fsfile::getOffset()
-    {
-        return offset;
-    }
-
-    bool fsfile::isOpen()
-    {
-        return open;
-    }
-
     struct
     {
         bool operator()(const FS_DirectoryEntry& a, const FS_DirectoryEntry& b)
@@ -413,21 +393,6 @@ namespace fs
         std::sort(entry.begin(), entry.end(), sortDirs);
     }
 
-    const uint32_t dirList::getCount()
-    {
-        return entry.size();
-    }
-
-    bool dirList::isDir(unsigned i)
-    {
-        return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY;
-    }
-
-    const std::u16string dirList::getItem(unsigned i)
-    {
-        return std::u16string((char16_t *)entry[i].name);
-    }
-
     void copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
     {
         fsfile in(arch, from, FS_OPEN_READ);
@@ -446,7 +411,7 @@ namespace fs
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying " + util::toUtf8(from) + "...";
-        copyString = util::getWrappedString(copyString, 224);
+        //copyString = util::getWrappedString(copyString, 224);
         ui::progressBar prog((uint32_t)in.getSize());
         do
         {
@@ -457,6 +422,7 @@ namespace fs
             if(written != read)
             {
                 ui::showMessage("Size mismatch.");
+                break;
             }
 
             prog.update((uint32_t)in.getOffset());
@@ -511,12 +477,12 @@ namespace fs
 
         if(!in.isOpen())
         {
-            ui::showMessage("There was an error opening the\n file for reading.");
+            ui::showMessage("There was an error opening the file for reading.");
             return;
         }
         else if(!out.isOpen())
         {
-            ui::showMessage("There was an error opening the\n file for writing.");
+            ui::showMessage("There was an error opening the file for writing.");
 
             char tmp[16];
             std::sprintf(tmp, "0x%08X", (unsigned)out.getError());
@@ -527,13 +493,19 @@ namespace fs
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying " + util::toUtf8(from) + "...";
-        copyString = util::getWrappedString(copyString, 224);
+        //copyString = util::getWrappedString(copyString, 224);
         ui::progressBar prog(in.getSize());
         do
         {
             uint32_t read, written;
             in.read(buff, read, buff_size);
             out.write(buff, written, read);
+
+            if(written != read)
+            {
+                ui::showMessage("Size mismatch.");
+                break;
+            }
 
             prog.update((uint64_t)in.getOffset());
 
@@ -608,7 +580,7 @@ namespace fs
 
                 backupArchive(outpath);
 
-                FSUSER_CloseArchive(fs::getSaveArch());
+                closeSaveArch();
             }
 
             if(fs::openArchive(data::titles[i], ARCHIVE_EXTDATA))
@@ -621,7 +593,7 @@ namespace fs
 
                 backupArchive(outpath);
 
-                FSUSER_CloseArchive(fs::getSaveArch());
+                closeSaveArch();
             }
         }
     }
