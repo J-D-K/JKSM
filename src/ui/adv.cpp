@@ -44,6 +44,24 @@ bool confirmTransfer(const std::u16string& from, const std::u16string& to, int w
     return ui::confirm(conf);
 }
 
+bool confirmDelete(const std::u16string& del, int way)
+{
+    std::string drive;
+    switch(way)
+    {
+        case SD_TO_ARCH:
+            drive = "sd:";
+            break;
+
+        case ARCH_TO_SD:
+            drive = "sv:";
+            break;
+    }
+
+    std::string conf = "Are you sure you want to delete \"" + drive + util::toUtf8(del) + "\"?";
+    return ui::confirm(conf);
+}
+
 void performCopyOps()
 {
     switch(copyMenu.getSelected())
@@ -122,6 +140,68 @@ void performCopyOps()
 
                 }
             }
+            break;
+
+        //Delete
+        case 1:
+            {
+                switch(advPrev)
+                {
+                    case 0://Save was active
+                        if(saveMenu.getSelected() == 0)
+                        {
+                            if(confirmDelete(savePath, ARCH_TO_SD))
+                            {
+                                FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_UTF16, savePath.data()));
+                                fs::commitData(fs::getSaveMode());
+                            }
+                        }
+                        else if(saveMenu.getSelected() > 1)
+                        {
+                            int saveSel = saveMenu.getSelected() - 2;
+                            if(saveList.isDir(saveSel))
+                            {
+                                std::u16string delPath = savePath + saveList.getItem(saveSel);
+                                if(confirmDelete(delPath, ARCH_TO_SD))
+                                    FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_UTF16, delPath.data()));
+                            }
+                            else
+                            {
+                                std::u16string delPath = savePath + saveList.getItem(saveSel);
+                                if(confirmDelete(delPath, ARCH_TO_SD))
+                                    FSUSER_DeleteFile(fs::getSaveArch(), fsMakePath(PATH_UTF16, delPath.data()));
+                            }
+                            fs::commitData(fs::getSaveMode());
+                        }
+                        break;
+
+                    case 1://SD was active
+                        if(sdMenu.getSelected() == 0 && sdPath != util::toUtf16("/"))//I'm going to block it before it's my fault
+                        {
+                            if(confirmDelete(sdPath, SD_TO_ARCH))
+                                FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), fsMakePath(PATH_UTF16, sdPath.data()));
+                        }
+                        else if(sdMenu.getSelected() > 1)
+                        {
+                            int sdSel = sdMenu.getSelected() - 2;
+                            if(sdList.isDir(sdSel))
+                            {
+                                std::u16string delPath = sdPath + sdList.getItem(sdSel);
+                                if(confirmDelete(delPath, SD_TO_ARCH))
+                                    FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), fsMakePath(PATH_UTF16, delPath.data()));
+                            }
+                            else
+                            {
+                                std::u16string delPath = sdPath + sdList.getItem(sdSel);
+                                if(confirmDelete(delPath, SD_TO_ARCH))
+                                    FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, delPath.data()));
+                            }
+                        }
+                        break;
+                }
+            }
+            break;
+
     }
 
     //Update lists + menus
