@@ -49,6 +49,13 @@ namespace data
     void loadTitles();
     void loadNand();
 
+    void loadBlacklist();
+    void blacklistAdd(titleData& t);
+
+    //Writes title data cache to path
+    bool readCache(std::vector<titleData>& t, const std::string& path, bool nand);
+    void createCache(std::vector<titleData>& t, const std::string& path);
+
     //Hax entry point
     void haxDataInit();
     extern bool haxMode;

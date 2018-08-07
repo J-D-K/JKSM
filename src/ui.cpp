@@ -107,7 +107,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 7/18/2018");
+        drawTopBar("JKSM - 08/07/2018");
         mainMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -119,6 +119,8 @@ namespace ui
         static ui::button jumpTo("Jump To", 0, 208, 320, 32);
         //Dump all button
         static ui::button dumpAll("Dump All", 0, 174, 320, 32);
+        //Blacklist button
+        static ui::button bl("Add to Blacklist (X)", 0, 140, 320, 32);
 
         data::cartCheck();
 
@@ -129,6 +131,7 @@ namespace ui
 
         jumpTo.update(p);
         dumpAll.update(p);
+        bl.update(p);
 
         if(down & KEY_A)
         {
@@ -139,6 +142,10 @@ namespace ui
         else if(down & KEY_B)
         {
             state = MAIN_MENU;
+        }
+        else if(down & KEY_X || bl.getEvent() == BUTTON_RELEASED)
+        {
+            data::blacklistAdd(data::titles[titleMenu.getSelected()]);
         }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
@@ -172,6 +179,7 @@ namespace ui
         data::titles[titleMenu.getSelected()].drawInfo(8, 8);
         jumpTo.draw();
         dumpAll.draw();
+        bl.draw();
         gfx::frameEnd();
     }
 

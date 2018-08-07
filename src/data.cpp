@@ -40,6 +40,19 @@ static uint32_t extdataRedirect(const uint32_t& low)
     return (low >> 8);
 }
 
+std::vector<uint64_t> blacklist;
+
+bool isBlacklisted(const uint64_t& id)
+{
+    for(unsigned i = 0; i < blacklist.size(); i++)
+    {
+        if(id == blacklist[i])
+            return true;
+    }
+
+    return false;
+}
+
 namespace data
 {
     std::vector<titleData> titles;
@@ -246,53 +259,10 @@ namespace data
     void loadTitles()
     {
         titles.clear();
+        blacklist.clear();
+        loadBlacklist();
 
-        std::fstream cache("/JKSV/titles", std::ios::in | std::ios::binary);
-        if(cache.is_open())
-        {
-            uint8_t cacheRev = 0;
-            cache.seekg(2, cache.beg);
-            cacheRev = cache.get();
-            cache.seekg(0, cache.beg);
-
-            if(cacheRev < 2)
-            {
-                cache.close();
-                std::remove("/JKSV/titles");
-                loadTitles();
-                return;
-            }
-
-            uint16_t count = 0;
-            cache.read((char *)&count, sizeof(uint16_t));
-
-            cache.seekg(1, cache.cur);
-
-            for(unsigned i = 0; i < count; i++)
-            {
-                titleData newData;
-                char16_t title[0x40];
-                cache.read((char *)title, sizeof(char16_t) * 0x40);
-
-                cache.seekg(1, cache.cur);
-
-                char prodCode[16];
-                cache.read(prodCode, 16);
-
-                cache.seekg(1, cache.cur);
-
-                uint64_t newID = 0;
-                cache.read((char *)&newID, sizeof(uint64_t));
-
-                cache.seekg(1, cache.cur);
-
-                newData.initFromCache(newID, title, prodCode, MEDIATYPE_SD);
-                titles.push_back(newData);
-            }
-
-            cache.close();
-        }
-        else
+        if(!readCache(titles, "/JKSV/titles", false))
         {
             uint32_t count = 0;
             AM_GetTitleCount(MEDIATYPE_SD, &count);
@@ -304,7 +274,7 @@ namespace data
 
             for(unsigned i = 0; i < count; i++)
             {
-                if(checkHigh(ids[i]))
+                if(checkHigh(ids[i]) && !isBlacklisted(ids[i]))
                 {
                     titleData newTitle;
                     if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.isOpenable())
@@ -327,34 +297,7 @@ namespace data
 
             std::sort(titles.begin(), titles.end(), sortTitles);
 
-            cache.open("/JKSV/titles", std::ios::out | std::ios::binary);
-            if(cache.is_open())
-            {
-                uint16_t countOut = titles.size();
-                cache.write((char *)&countOut, sizeof(uint16_t));
-                cache.put(0x02);
-
-                for(unsigned i = 0; i < titles.size(); i++)
-                {
-                    char16_t titleOut[0x40];
-                    std::memset(titleOut, 0, 0x40 * 2);
-                    std::memcpy((void *)titleOut, (void *)titles[i].getTitle().data(), titles[i].getTitle().length() * 2);
-                    cache.write((char *)titleOut, 0x40 * 2);
-                    cache.put(0x00);
-
-                    char prodOut[16];
-                    std::memset(prodOut, 0, 16);
-                    std::memcpy(prodOut, titles[i].getProdCode().c_str(), 16);
-                    cache.write(prodOut, 16);
-                    cache.put(0x00);
-
-                    uint64_t idOut = titles[i].getID();
-                    cache.write((char *)&idOut, sizeof(uint64_t));
-                    cache.put(0x00);
-                }
-
-                cache.close();
-            }
+            createCache(titles, "/JKSV/titles");
         }
         curData = titles[0];
     }
@@ -363,46 +306,7 @@ namespace data
     {
         nand.clear();
 
-        std::fstream cache("/JKSV/nand", std::ios::in | std::ios::binary);
-        if(cache.is_open())
-        {
-            uint8_t cacheRev = 0;
-            cache.seekg(2, cache.beg);
-            cacheRev = cache.get();
-            cache.seekg(0, cache.beg);
-            if(cacheRev < 2)
-            {
-                cache.close();
-                std::remove("/JKSV/nand");
-                loadNand();
-                return;
-            }
-
-            uint16_t count;
-            cache.read((char *)&count, sizeof(uint16_t));
-
-            cache.seekg(1, cache.cur);
-
-            for(uint16_t i = 0; i < count; i++)
-            {
-                char16_t title[0x40];
-                cache.read((char *)title, 0x40 * 2);
-                cache.seekg(1, cache.cur);
-
-                char code[16];
-                cache.read(code, 16);
-                cache.seekg(1, cache.cur);
-
-                uint64_t newID = 0;
-                cache.read((char *)&newID, sizeof(uint64_t));
-                cache.seekg(1, cache.cur);
-
-                titleData newNand;
-                newNand.initFromCache(newID, title, code, MEDIATYPE_NAND);
-                nand.push_back(newNand);
-            }
-        }
-        else
+        if(!readCache(nand, "/JKSV/nand", true))
         {
             uint32_t count;
             AM_GetTitleCount(MEDIATYPE_NAND, &count);
@@ -432,31 +336,142 @@ namespace data
 
             std::sort(nand.begin(), nand.end(), sortTitles);
 
-            uint16_t countOut = nand.size();
-            cache.open("/JKSV/nand", std::ios::out | std::ios::binary);
-            cache.write((char *)&countOut, sizeof(uint16_t));
-            cache.put(0x02);
-            for(unsigned i = 0; i < nand.size(); i++)
-            {
-                char16_t titleOut[0x40];
-                std::memset(titleOut, 0, 0x40 * 2);
-                std::memcpy((void *)titleOut, nand[i].getTitle().data(), nand[i].getTitle().length() * 2);
-
-                char prodCodeOut[16];
-                std::memset(prodCodeOut, 0, 16);
-                std::memcpy(prodCodeOut, nand[i].getProdCode().c_str(), nand[i].getProdCode().length());
-
-                uint64_t idOut = nand[i].getID();
-
-                cache.write((char *)titleOut, 0x40 * 2);
-                cache.put(0x00);
-                cache.write(prodCodeOut, 16);
-                cache.put(0x00);
-                cache.write((char *)&idOut, sizeof(uint64_t));
-                cache.put(0x00);
-            }
-            cache.close();
+            createCache(nand, "/JKSV/nand");
         }
+    }
+
+    void loadBlacklist()
+    {
+        if(util::fexists("/JKSV/blacklist.txt"))
+        {
+            std::fstream bl("/JKSV/blacklist.txt", std::ios::in);
+
+            std::string line;
+            while(std::getline(bl, line))
+            {
+                if(line[0] == '#' || line[0] == '\n')
+                    continue;
+
+                uint64_t pushID = std::strtoull(line.c_str(), NULL, 16);
+
+                blacklist.push_back(pushID);
+            }
+            bl.close();
+        }
+    }
+
+    void blacklistAdd(titleData& t)
+    {
+        std::fstream bl("/JKSV/blacklist.txt", std::ios::app);
+
+        std::string titleLine = "#" + util::toUtf8(t.getTitle()) + "\n";
+        char idLine[32];
+        sprintf(idLine, "0x%016llX\n", t.getID());
+
+        bl.write(titleLine.c_str(), titleLine.length());
+        bl.write(idLine, std::strlen(idLine));
+        bl.close();
+
+        //Remove it
+        for(unsigned i = 0; i < titles.size(); i++)
+        {
+            if(titles[i].getID() == t.getID())
+            {
+                titles.erase(titles.begin() + i);
+                break;
+            }
+        }
+
+        //Erase cart if it's there
+        if(titles[0].getMedia() == MEDIATYPE_GAME_CARD)
+            titles.erase(titles.begin());
+
+        //Recreate cache with title missing now
+        createCache(titles, "/JKSV/titles");
+
+        //Reinit title menu
+        ui::loadTitleMenu();
+    }
+
+    void createCache(std::vector<titleData>& t, const std::string& path)
+    {
+        //JIC
+        std::remove(path.c_str());
+
+        std::fstream cache(path, std::ios::out | std::ios::binary);
+
+        uint16_t countOut = t.size();
+        cache.write((char *)&countOut, sizeof(uint16_t));
+        cache.put(0x02);
+
+        for(unsigned i = 0; i < t.size(); i++)
+        {
+            char16_t titleOut[0x40];
+            std::memset(titleOut, 0, 0x40 * 2);
+            std::memcpy((void *)titleOut, (void *)t[i].getTitle().data(), t[i].getTitle().length() * 2);
+            cache.write((char *)titleOut, 0x40 * 2);
+            cache.put(0x00);
+
+            char prodOut[16];
+            std::memset(prodOut, 0, 16);
+            std::memcpy(prodOut, t[i].getProdCode().data(), 16);
+            cache.write(prodOut, 16);
+            cache.put(0x00);
+
+            uint64_t idOut = t[i].getID();
+            cache.write((char *)&idOut, sizeof(uint64_t));
+            cache.put(0x00);
+        }
+
+        cache.close();
+    }
+
+    bool readCache(std::vector<titleData>& t, const std::string& path, bool nand)
+    {
+        if(!util::fexists(path))
+            return false;
+
+        std::fstream cache(path, std::ios::in | std::ios::binary);
+        //Check revision
+        uint8_t rev = 0;
+        cache.seekg(2, cache.beg);
+        rev = cache.get();
+        cache.seekg(0, cache.beg);
+
+        if(rev != 2)
+        {
+            cache.close();
+            return false;
+        }
+
+        uint16_t count = 0;
+        cache.read((char *)&count, sizeof(uint16_t));
+
+        cache.seekg(1, cache.cur);
+
+        for(unsigned i = 0; i < count; i++)
+        {
+            titleData newData;
+
+            char16_t title[0x40];
+            cache.read((char *)title, sizeof(char16_t) * 0x40);
+            cache.seekg(1, cache.cur);
+
+            char prodCode[16];
+            cache.read(prodCode, 16);
+            cache.seekg(1, cache.cur);
+
+            uint64_t newID = 0;
+            cache.read((char *)&newID, sizeof(uint64_t));
+            cache.seekg(1, cache.cur);
+
+            newData.initFromCache(newID, title, prodCode, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
+            t.push_back(newData);
+        }
+
+        cache.close();
+
+        return true;
     }
 
     void haxDataInit()
