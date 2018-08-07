@@ -439,7 +439,7 @@ namespace ui
         drawTopBar("Select a Folder");
         folderMenu.draw(40, 24, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
-        gfx::drawText("A = Select\nY = Restore\nX = Delete\nB = Back", 16, 16, 0xFFFFFFFF);
+        gfx::drawText("A = Select\nY = Restore\nX = Delete\nSel. = Adv. Mode\nB = Back", 16, 16, 0xFFFFFFFF);
         gfx::frameEnd();
     }
 

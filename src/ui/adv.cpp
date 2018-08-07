@@ -84,35 +84,38 @@ void performCopyOps()
                                 }
                             }
                         }
+                        break;
 
                     case 1://SD was active
-                        if(sdMenu.getSelected() == 0)
                         {
-                            if(confirmTransfer(sdPath, savePath, SD_TO_ARCH))
-                                fs::copyDirToArch(fs::getSaveArch(), sdPath, savePath);
-                        }
-                        else if(sdMenu.getSelected() > 1)
-                        {
-                            int sdSel = sdMenu.getSelected() - 2;
-                            if(sdList.isDir(sdSel))
+                            if(sdMenu.getSelected() == 0)
                             {
-                                std::u16string fromPath = sdPath + sdList.getItem(sdSel) + util::toUtf16("/");
-                                std::u16string toPath   = savePath + sdList.getItem(sdSel);
-                                if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
-                                {
-                                    FSUSER_CreateDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, toPath.data()), 0);
-                                    toPath += util::toUtf16("/");
-
-                                    fs::copyDirToArch(fs::getSaveArch(), fromPath, toPath);
-                                }
+                                if(confirmTransfer(sdPath, savePath, SD_TO_ARCH))
+                                    fs::copyDirToArch(fs::getSaveArch(), sdPath, savePath);
                             }
-                            else
+                            else if(sdMenu.getSelected() > 1)
                             {
-                                std::u16string fromPath = sdPath + sdList.getItem(sdSel);
-                                std::u16string toPath   = savePath + sdList.getItem(sdSel);
+                                int sdSel = sdMenu.getSelected() - 2;
+                                if(sdList.isDir(sdSel))
+                                {
+                                    std::u16string fromPath = sdPath + sdList.getItem(sdSel) + util::toUtf16("/");
+                                    std::u16string toPath   = savePath + sdList.getItem(sdSel);
+                                    if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
+                                    {
+                                        FSUSER_CreateDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, toPath.data()), 0);
+                                        toPath += util::toUtf16("/");
 
-                                if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
-                                    fs::copyFileToArch(fs::getSaveArch(), fromPath, toPath);
+                                        fs::copyDirToArch(fs::getSaveArch(), fromPath, toPath);
+                                    }
+                                }
+                                else
+                                {
+                                    std::u16string fromPath = sdPath + sdList.getItem(sdSel);
+                                    std::u16string toPath   = savePath + sdList.getItem(sdSel);
+
+                                    if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
+                                        fs::copyFileToArch(fs::getSaveArch(), fromPath, toPath);
+                                }
                             }
                         }
                         break;
@@ -148,6 +151,7 @@ namespace ui
         copyMenu.addOpt("Delete", 0);
         copyMenu.addOpt("Rename", 0);
         copyMenu.addOpt("Make Dir", 0);
+        copyMenu.addOpt("Delete SV", 0);
         copyMenu.addOpt("Back", 0);
     }
 
@@ -269,15 +273,15 @@ namespace ui
         saveMenu.draw(40, 32, 0xFFFFFFFF, 320);
         if(advMenuCtrl == 2 && advPrev == 0)
         {
-            C2D_DrawRectSolid(144, 84, 0.5f, 112, 76, 0xFFCCCCCC);
-            copyMenu.draw(152, 90, 0xFF000000, 96);
+            C2D_DrawRectSolid(144, 78, 0.5f, 112, 88, 0xFFCCCCCC);
+            copyMenu.draw(152, 86, 0xFF000000, 96);
         }
         gfx::frameStartBot();
         sdMenu.draw(0, 24, 0xFFFFFFFF, 320);
         if(advMenuCtrl == 2 && advPrev == 1)
         {
-            C2D_DrawRectSolid(100, 84, 0.5f, 112, 76, 0xFFCCCCCC);
-            copyMenu.draw(108, 90, 0xFF000000, 96);
+            C2D_DrawRectSolid(100, 78, 0.5f, 112, 88, 0xFFCCCCCC);
+            copyMenu.draw(108, 86, 0xFF000000, 96);
         }
         gfx::frameEnd();
     }
