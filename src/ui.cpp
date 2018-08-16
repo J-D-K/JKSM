@@ -21,6 +21,7 @@ namespace ui
     void loadTitleMenu()
     {
         titleMenu.reset();
+        titleMenu.multiSet(true);
         for(unsigned i = 0; i < data::titles.size(); i++)
             titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()), 320);
     }
@@ -70,7 +71,7 @@ namespace ui
     {
         C2D_DrawRectSolid(0, 0, 0.5f, 400, 16, 0xFF505050);
         C2D_DrawRectSolid(0, 17, 0.5f, 400, 1, 0xFF1D1D1D);
-        gfx::drawText(info, 4, 0, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF));
+        gfx::drawText(info, 4, 0, 0xFFFFFFFF);
     }
 
     void stateMainMenu(const uint32_t& down, const uint32_t& held)
@@ -107,8 +108,8 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 08/07/2018");
-        mainMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        drawTopBar("JKSM - 08/15/2018");
+        mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -121,6 +122,8 @@ namespace ui
         static ui::button dumpAll("Dump All", 0, 174, 320, 32);
         //Blacklist button
         static ui::button bl("Add to Blacklist (X)", 0, 140, 320, 32);
+        //Selected Dump
+        static ui:: button ds("Dump Selected (Y)", 0, 106, 320, 32);
 
         data::cartCheck();
 
@@ -132,6 +135,7 @@ namespace ui
         jumpTo.update(p);
         dumpAll.update(p);
         bl.update(p);
+        ds.update(p);
 
         if(down & KEY_A)
         {
@@ -148,6 +152,33 @@ namespace ui
             std::string confString = "Are you sure you want to add " + util::toUtf8(data::titles[titleMenu.getSelected()].getTitle()) + " to the blacklist?";
             if(confirm(confString))
                 data::blacklistAdd(data::titles[titleMenu.getSelected()]);
+        }
+        else if(down & KEY_Y || ds.getEvent() == BUTTON_RELEASED)
+        {
+            for(unsigned i = 0; i < titleMenu.getCount(); i++)
+            {
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA))
+                {
+                    util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
+                    std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
+                    FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
+                    outpath += util::toUtf16("/");
+
+                    fs::backupArchive(outpath);
+                    fs::closeSaveArch();
+                }
+
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_EXTDATA))
+                {
+                    util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
+                    std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
+                    FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
+                    outpath += util::toUtf16("/");
+
+                    fs::backupArchive(outpath);
+                    fs::closeSaveArch();
+                }
+            }
         }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
@@ -176,12 +207,13 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a Title");
-        titleMenu.draw(40, 24, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        titleMenu.draw(40, 24, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         data::titles[titleMenu.getSelected()].drawInfo(8, 8);
         jumpTo.draw();
         dumpAll.draw();
         bl.draw();
+        ds.draw();
         gfx::frameEnd();
     }
 
@@ -262,7 +294,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar(util::toUtf8(data::curData.getTitle()));
-        backupMenu.draw(40, 82, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        backupMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -282,7 +314,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a NAND Title");
-        nandMenu.draw(40, 24, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        nandMenu.draw(40, 24, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         data::nand[nandMenu.getSelected()].drawInfo(8, 8);
         gfx::frameEnd();
@@ -337,7 +369,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar(util::toUtf8(data::curData.getTitle()));
-        nandBackupMenu.draw(40, 88, C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF), 320);
+        nandBackupMenu.draw(40, 88, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -543,8 +575,8 @@ namespace ui
 
             gfx::frameBegin();
             gfx::frameStartBot();
-            C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, C2D_Color32(231, 231, 231, 0xFF));
-            gfx::drawText(disp, 16, 16, C2D_Color32(0, 0, 0, 0xFF));
+            C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
+            gfx::drawText(disp, 16, 16,0xFF000000);
             gfx::frameEnd();
         }
     }
@@ -564,10 +596,10 @@ namespace ui
 
     void progressBar::draw(const std::string& text)
     {
-        C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, C2D_Color32(231, 231, 231, 0xFF));
-        C2D_DrawRectSolid(16, 200, 0.5f, 288, 16, C2D_Color32(0, 0, 0, 0xFF));
-        C2D_DrawRectSolid(16, 200, 0.5f, width, 16, C2D_Color32(0, 0xFF, 0, 0xFF));
-        gfx::drawText(text, 16, 16, C2D_Color32(0, 0, 0, 0xFF));
+        C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
+        C2D_DrawRectSolid(16, 200, 0.5f, 288, 16, 0xFF000000);
+        C2D_DrawRectSolid(16, 200, 0.5f, width, 16, 0xFF00FF00);
+        gfx::drawText(text, 16, 16, 0xFF000000);
     }
 
     bool confirm(const std::string& mess)

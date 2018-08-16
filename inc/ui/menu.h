@@ -10,6 +10,8 @@ namespace ui
     {
         public:
             void addOpt(const std::string& add, int maxWidth);
+            void multiSet(const bool& s);
+            bool multiIsSet(int ind){ return multiSel[ind]; }
             void reset();
             void setSelected(const int& newSel);
 
@@ -22,10 +24,11 @@ namespace ui
 
         private:
             uint8_t clrSh = 0;
-            bool clrAdd = true;
+            bool clrAdd = true, multi = false;
             int selected = 0, start = 0;
             int fc = 0;
             std::vector<std::string> opt;
+            std::vector<bool> multiSel;
     };
 }
 

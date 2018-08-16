@@ -23,14 +23,24 @@ namespace ui
                 }
             }
         }
+
+        if(multi)
+            multiSel.push_back(false);
+    }
+
+    void menu::multiSet(const bool& s)
+    {
+        multi = s;
     }
 
     void menu::reset()
     {
         opt.clear();
+        multiSel.clear();
 
         selected = 0;
         start = 0;
+        multi = false;
     }
 
     void menu::setSelected(const int& newSel)
@@ -99,6 +109,13 @@ namespace ui
             if(selected < start)
                 start = selected;
         }
+        else if(down & KEY_L && multi)
+        {
+            if(multiSel[selected] == true)
+                multiSel[selected] = false;
+            else
+                multiSel[selected] = true;
+        }
     }
 
     void menu::draw(const int& x, const int& y, const uint32_t& baseClr, const uint32_t& rectWidth)
@@ -128,6 +145,8 @@ namespace ui
         {
             if(i == selected)
                 C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, rectClr);
+            else if(multi && multiSel[i] == true)
+                C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, 0xFFAA6600);
 
             gfx::drawText(opt[i], x, y + ((i - start) * 12), baseClr);
         }
