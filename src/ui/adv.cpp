@@ -202,6 +202,83 @@ void performCopyOps()
             }
             break;
 
+        //Rename
+        case 2:
+            {
+                switch(advPrev)
+                {
+                    case 0:
+                        {
+                            std::u16string newName;
+                            if(saveMenu.getSelected() > 1 && !(newName = util::toUtf16(util::getString("New Name", false))).empty())
+                            {
+                                int sel = saveMenu.getSelected() - 2;
+                                std::u16string oldPath = savePath + saveList.getItem(sel);
+                                std::u16string newPath = savePath + newName;
+
+                                if(saveList.isDir(sel))
+                                    FSUSER_RenameDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSaveArch(), fsMakePath(PATH_UTF16, newPath.data()));
+                                else
+                                    FSUSER_RenameFile(fs::getSaveArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSaveArch(), fsMakePath(PATH_UTF16, newPath.data()));
+                            }
+                        }
+                        break;
+
+                    case 1:
+                        {
+                            std::u16string newName;
+                            if(sdMenu.getSelected() > 1 && !(newName = util::toUtf16(util::getString("New Name", false))).empty())
+                            {
+                                int sel = sdMenu.getSelected() - 2;
+                                std::u16string oldPath = sdPath + sdList.getItem(sel);
+                                std::u16string newPath = sdPath + newName;
+
+                                if(sdList.isDir(sel))
+                                    FSUSER_RenameDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSDMCArch(), fsMakePath(PATH_UTF16, newPath.data()));
+                                else
+                                    FSUSER_RenameFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSDMCArch(), fsMakePath(PATH_UTF16, newPath.data()));
+                            }
+                        }
+                        break;
+                }
+            }
+            break;
+
+        //mkdir
+        case 3:
+            {
+                std::u16string newDir;
+                if(!(newDir = util::toUtf16(util::getString("New Dir", false))).empty())
+                {
+                    switch(advPrev)
+                    {
+                        case 0:
+                            {
+                                std::u16string crPath = savePath + newDir;
+                                FSUSER_CreateDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, crPath.data()), 0);
+                            }
+                            break;
+
+                        case 1:
+                            {
+                                std::u16string crPath = sdPath + newDir;
+                                FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, crPath.data()), 0);
+                            }
+                            break;
+                    }
+                }
+            }
+            break;
+
+        //Del SV
+        case 4:
+            fs::deleteSv(fs::getSaveMode());
+            break;
+
+        case 5:
+            advMenuCtrl = advPrev;
+            break;
+
     }
 
     //Update lists + menus

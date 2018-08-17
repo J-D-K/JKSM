@@ -108,7 +108,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 08/15/2018");
+        drawTopBar("JKSM - 08/16/2018");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();

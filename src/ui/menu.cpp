@@ -111,7 +111,7 @@ namespace ui
         }
         else if(down & KEY_L && multi)
         {
-            if(multiSel[selected] == true)
+            if(multiSel[selected])
                 multiSel[selected] = false;
             else
                 multiSel[selected] = true;
@@ -145,7 +145,7 @@ namespace ui
         {
             if(i == selected)
                 C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, rectClr);
-            else if(multi && multiSel[i] == true)
+            else if(multi && multiSel[i])
                 C2D_DrawRectSolid(x, (y + 2) + ((i - start) * 12), 0.5f, rectWidth, 12, 0xFFAA6600);
 
             gfx::drawText(opt[i], x, y + ((i - start) * 12), baseClr);
