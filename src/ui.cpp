@@ -24,6 +24,8 @@ namespace ui
         titleMenu.multiSet(true);
         for(unsigned i = 0; i < data::titles.size(); i++)
             titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()), 320);
+
+        titleMenu.adjust();
     }
 
     void loadNandMenu()
@@ -108,7 +110,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 08/16/2018");
+        drawTopBar("JKSM - 08/18/2018");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -149,7 +151,7 @@ namespace ui
         }
         else if(down & KEY_X || bl.getEvent() == BUTTON_RELEASED)
         {
-            std::string confString = "Are you sure you want to add " + util::toUtf8(data::titles[titleMenu.getSelected()].getTitle()) + " to the blacklist?";
+            std::string confString = "Are you sure you want to add '" + util::toUtf8(data::titles[titleMenu.getSelected()].getTitle()) + "' to the blacklist?";
             if(confirm(confString))
                 data::blacklistAdd(data::titles[titleMenu.getSelected()]);
         }
@@ -228,6 +230,8 @@ namespace ui
 
         for(unsigned i = 0; i < bakDir.getCount(); i++)
             folderMenu.addOpt(util::toUtf8(bakDir.getItem(i)), 320);
+
+        folderMenu.adjust();
     }
 
     void stateBackupMenu(const uint32_t& down, const uint32_t& held)
@@ -269,7 +273,7 @@ namespace ui
 
                 case 3:
                     {
-                        std::string confStr = "Are you 100% sure you want to delete the currently saved Extra Data for \"" + util::toUtf8(data::curData.getTitle()) + "\"?";
+                        std::string confStr = "Are you 100% sure you want to delete the currently saved Extra Data for '" + util::toUtf8(data::curData.getTitle()) + "'?";
                         if(confirm(confStr))
                         {
                             FS_ExtSaveDataInfo del = { MEDIATYPE_SD, 0, 0, data::curData.getExtData(), 0 };
@@ -409,7 +413,7 @@ namespace ui
                 sel--;
 
                 fs::dirList titleDir(fs::getSDMCArch(), util::createPath(data::curData, fs::getSaveMode()));
-                std::string confStr = "Are you sure you want to overwrite \"" + util::toUtf8(titleDir.getItem(sel)) + "\"?";
+                std::string confStr = "Are you sure you want to overwrite '" + util::toUtf8(titleDir.getItem(sel)) + "'?";
                 if(ui::confirm(confStr))
                 {
                     std::u16string fullPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel);
@@ -429,7 +433,7 @@ namespace ui
         {
             sel--;
             fs::dirList titleDir(fs::getSDMCArch(), util::createPath(data::curData, fs::getSaveMode()));
-            std::string confStr = "Are you sure you want to restore \"" + util::toUtf8(titleDir.getItem(sel)) + "\"?";
+            std::string confStr = "Are you sure you want to restore '" + util::toUtf8(titleDir.getItem(sel)) + "'?";
             if(confirm(confStr))
             {
                 std::u16string restPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel) + util::toUtf16("/");
@@ -445,7 +449,7 @@ namespace ui
         {
             sel--;
             fs::dirList titleDir(fs::getSDMCArch(), util::createPath(data::curData, fs::getSaveMode()));
-            std::string confStr = "Are you sure you want to delete \"" + util::toUtf8(titleDir.getItem(sel)) + "\"?";
+            std::string confStr = "Are you sure you want to delete '" + util::toUtf8(titleDir.getItem(sel)) + "'?";
             if(confirm(confStr))
             {
                 std::u16string delPath = util::createPath(data::curData, fs::getSaveMode()) + titleDir.getItem(sel);
@@ -563,7 +567,6 @@ namespace ui
 
     void showMessage(const std::string& mess)
     {
-        std::string disp = util::getWrappedString(mess, 224);
         while(1)
         {
             hidScanInput();
@@ -576,7 +579,7 @@ namespace ui
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
-            gfx::drawText(disp, 16, 16,0xFF000000);
+            gfx::drawTextWrap(mess, 16, 16, 224, 0xFF000000);
             gfx::frameEnd();
         }
     }
@@ -599,13 +602,11 @@ namespace ui
         C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
         C2D_DrawRectSolid(16, 200, 0.5f, 288, 16, 0xFF000000);
         C2D_DrawRectSolid(16, 200, 0.5f, width, 16, 0xFF00FF00);
-        gfx::drawText(text, 16, 16, 0xFF000000);
+        gfx::drawTextWrap(text, 16, 16, 224, 0xFF000000);
     }
 
     bool confirm(const std::string& mess)
     {
-        std::string wrapped = util::getWrappedString(mess, 288);
-
         button yes("Yes (A)", 16, 192, 128, 32);
         button no("No (B)", 176, 192, 128, 32);
 
@@ -629,7 +630,7 @@ namespace ui
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFF4F4F4);
-            gfx::drawText(wrapped, 16, 16, 0xFF000000);
+            gfx::drawTextWrap(mess, 16, 16, 224, 0xFF000000);
             yes.draw();
             no.draw();
             gfx::frameEnd();

@@ -15,6 +15,7 @@ namespace gfx
     void frameStartBot();
 
     void drawText(const std::string& str, const int& x, const int& y, const uint32_t& clr);
+    void drawTextWrap(const std::string& str, const int& x, int y, const int& maxWidth, const uint32_t& clr);
     void drawU16Text(const std::u16string& str, const int& x, const int& y, const uint32_t& clr);
     size_t getTextWidth(const std::string& str);
 }

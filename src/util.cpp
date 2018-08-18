@@ -13,17 +13,17 @@ namespace util
 {
     std::string toUtf8(const std::u16string& conv)
     {
-        uint8_t tmp[1024];
-        std::memset(tmp, 0, 1024);
-        utf16_to_utf8(tmp, (uint16_t *)conv.data(), 1024);
+        uint8_t tmp[512];
+        std::memset(tmp, 0, 512);
+        utf16_to_utf8(tmp, (uint16_t *)conv.data(), 512);
         return std::string((char *)tmp);
     }
 
     std::u16string toUtf16(const std::string& conv)
     {
-        char16_t tmp[1024];
-        std::memset(tmp, 0, 1024 * sizeof(char16_t));
-        utf8_to_utf16((uint16_t *)tmp, (uint8_t *)conv.data(), 1024);
+        char16_t tmp[512];
+        std::memset(tmp, 0, 512 * sizeof(char16_t));
+        utf8_to_utf16((uint16_t *)tmp, (uint8_t *)conv.data(), 512);
         return std::u16string(tmp);
     }
 
@@ -136,40 +136,6 @@ namespace util
         return std::string(tmp);
     }
 
-    std::string getWrappedString(const std::string& s, const unsigned& maxWidth)
-    {
-
-        if(gfx::getTextWidth(s) < maxWidth)
-            return s;
-
-        std::string ret = "", tmp = "";
-        unsigned first = 0, lastSpace = 0;
-
-        for(unsigned i = 0; i < s.length(); i++)
-        {
-            tmp += s[i];
-
-            if(s[i] == ' ' || s[i] == '/')
-                lastSpace = i;
-
-            if(gfx::getTextWidth(tmp) >= maxWidth)
-            {
-                tmp.assign(s, first, (lastSpace + 1) - first);
-
-                ret += tmp + "\n";
-
-                first = lastSpace + 1;
-                i = lastSpace;
-
-                tmp.clear();
-            }
-        }
-        if(!tmp.empty())
-            ret += tmp;
-
-        return ret;
-    }
-
     void removeLastDirFromString(std::u16string& s)
     {
         unsigned last = s.find_last_of(L'/', s.length() - 2);
@@ -221,6 +187,8 @@ namespace util
             else
                 m.addOpt("F " + toUtf8(d.getItem(i)), 320);
         }
+
+        m.adjust();
     }
 
     void setPC()

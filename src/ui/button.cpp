@@ -60,9 +60,9 @@ namespace ui
     void button::draw()
     {
         if(pressed)
-            C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFDBDBDB);
+            C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFBBBBBB);
         else
-            C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFEBEBEB);
+            C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFDBDBDB);
 
         gfx::drawText(text, tx, ty, 0xFF000000);
     }

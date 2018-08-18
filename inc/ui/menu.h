@@ -10,9 +10,11 @@ namespace ui
     {
         public:
             void addOpt(const std::string& add, int maxWidth);
+            void editOpt(int ind, const std::string& ch){ opt[ind] = ch; }
             void multiSet(const bool& s);
             bool multiIsSet(int ind){ return multiSel[ind]; }
             void reset();
+            void adjust();
             void setSelected(const int& newSel);
 
             void handleInput(const uint32_t& down, const uint32_t& held);

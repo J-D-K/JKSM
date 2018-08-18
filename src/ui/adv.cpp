@@ -39,7 +39,7 @@ bool confirmTransfer(const std::u16string& from, const std::u16string& to, int w
             break;
     }
 
-    std::string conf = "Are you sure you want to copy \"" + fromDrive + util::toUtf8(from) + "\" to \"" + toDrive + util::toUtf8(to) + "\"?";
+    std::string conf = "Are you sure you want to copy '" + fromDrive + util::toUtf8(from) + "' to '" + toDrive + util::toUtf8(to) + "'?";
 
     return ui::confirm(conf);
 }
@@ -58,7 +58,7 @@ bool confirmDelete(const std::u16string& del, int way)
             break;
     }
 
-    std::string conf = "Are you sure you want to delete \"" + drive + util::toUtf8(del) + "\"?";
+    std::string conf = "Are you sure you want to delete '" + drive + util::toUtf8(del) + "'?";
     return ui::confirm(conf);
 }
 
@@ -109,7 +109,10 @@ void performCopyOps()
                             if(sdMenu.getSelected() == 0)
                             {
                                 if(confirmTransfer(sdPath, savePath, SD_TO_ARCH))
+                                {
                                     fs::copyDirToArch(fs::getSaveArch(), sdPath, savePath);
+                                    fs::commitData(fs::getSaveMode());
+                                }
                             }
                             else if(sdMenu.getSelected() > 1)
                             {
@@ -134,6 +137,7 @@ void performCopyOps()
                                     if(confirmTransfer(fromPath, toPath, SD_TO_ARCH))
                                         fs::copyFileToArch(fs::getSaveArch(), fromPath, toPath);
                                 }
+                                fs::commitData(fs::getSaveMode());
                             }
                         }
                         break;
@@ -220,6 +224,8 @@ void performCopyOps()
                                     FSUSER_RenameDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSaveArch(), fsMakePath(PATH_UTF16, newPath.data()));
                                 else
                                     FSUSER_RenameFile(fs::getSaveArch(), fsMakePath(PATH_UTF16, oldPath.data()), fs::getSaveArch(), fsMakePath(PATH_UTF16, newPath.data()));
+
+                                fs::commitData(fs::getSaveMode());
                             }
                         }
                         break;
@@ -256,6 +262,7 @@ void performCopyOps()
                             {
                                 std::u16string crPath = savePath + newDir;
                                 FSUSER_CreateDirectory(fs::getSaveArch(), fsMakePath(PATH_UTF16, crPath.data()), 0);
+                                fs::commitData(fs::getSaveMode());
                             }
                             break;
 
@@ -350,6 +357,7 @@ namespace ui
 
                             saveList.reassign(fs::getSaveArch(), savePath);
                             util::copyDirlistToMenu(saveList, saveMenu);
+                            saveMenu.setSelected(0);
                         }
                         else if(saveSel > 1 && saveList.isDir(saveSel - 2))
                         {
@@ -358,6 +366,7 @@ namespace ui
 
                             saveList.reassign(fs::getSaveArch(), savePath);
                             util::copyDirlistToMenu(saveList, saveMenu);
+                            saveMenu.setSelected(0);
                         }
                     }
                     break;
@@ -372,6 +381,7 @@ namespace ui
 
                             sdList.reassign(fs::getSDMCArch(), sdPath);
                             util::copyDirlistToMenu(sdList, sdMenu);
+                            sdMenu.setSelected(0);
                         }
                         else if(sdSel > 1 && sdList.isDir(sdSel - 2))
                         {
@@ -380,6 +390,7 @@ namespace ui
 
                             sdList.reassign(fs::getSDMCArch(), sdPath);
                             util::copyDirlistToMenu(sdList, sdMenu);
+                            sdMenu.setSelected(0);
                         }
                     }
                     break;
@@ -398,6 +409,7 @@ namespace ui
 
                 saveList.reassign(fs::getSaveArch(), savePath);
                 util::copyDirlistToMenu(saveList, saveMenu);
+                saveMenu.setSelected(0);
             }
             else if(advMenuCtrl == 1 && sdPath != util::toUtf16("/"))
             {
@@ -406,6 +418,7 @@ namespace ui
 
                 sdList.reassign(fs::getSDMCArch(), sdPath);
                 util::copyDirlistToMenu(sdList, sdMenu);
+                sdMenu.setSelected(0);
             }
             else if(advMenuCtrl == 2)
                 advMenuCtrl = advPrev;
@@ -427,16 +440,20 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         ui::drawTopBar("Adv. Mode");
+        gfx::drawU16Text(util::toUtf16("sv:") + savePath, 0, 20, 0xFFFFFFFF);
         saveMenu.draw(40, 32, 0xFFFFFFFF, 320);
         if(advMenuCtrl == 2 && advPrev == 0)
         {
+            copyMenu.editOpt(0, "Copy to SD");
             C2D_DrawRectSolid(144, 78, 0.5f, 112, 88, 0xFFCCCCCC);
             copyMenu.draw(152, 86, 0xFF000000, 96);
         }
         gfx::frameStartBot();
+        gfx::drawU16Text(util::toUtf16("sd:") + sdPath, 0, 0, 0xFFFFFFFF);
         sdMenu.draw(0, 24, 0xFFFFFFFF, 320);
         if(advMenuCtrl == 2 && advPrev == 1)
         {
+            copyMenu.editOpt(0, "Copy to Save");
             C2D_DrawRectSolid(100, 78, 0.5f, 112, 88, 0xFFCCCCCC);
             copyMenu.draw(108, 86, 0xFF000000, 96);
         }

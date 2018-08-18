@@ -410,8 +410,7 @@ namespace fs
         }
 
         uint8_t *buff = new uint8_t[buff_size];
-        std::string copyString = "Copying " + util::toUtf8(from) + "...";
-        //copyString = util::getWrappedString(copyString, 224);
+        std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
         ui::progressBar prog((uint32_t)in.getSize());
         do
         {
@@ -492,8 +491,7 @@ namespace fs
         }
 
         uint8_t *buff = new uint8_t[buff_size];
-        std::string copyString = "Copying " + util::toUtf8(from) + "...";
-        //copyString = util::getWrappedString(copyString, 224);
+        std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
         ui::progressBar prog(in.getSize());
         do
         {
@@ -561,7 +559,7 @@ namespace fs
         ui::progressBar prog(data::titles.size());
         for(unsigned i = 0; i < data::titles.size(); i++)
         {
-            std::string copyStr = "Working on \"" + util::toUtf8(data::titles[i].getTitle()) + "\"...";
+            std::string copyStr = "Working on '" + util::toUtf8(data::titles[i].getTitle()) + "'...";
             prog.update(i);
 
             //Sue me

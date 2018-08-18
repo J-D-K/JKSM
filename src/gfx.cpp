@@ -57,18 +57,55 @@ namespace gfx
     void drawText(const std::string& str, const int& x, const int& y, const uint32_t& clr)
     {
         C2D_Text tmpTxt;
-        C2D_TextBuf tmpBuf = C2D_TextBufNew(1024);
+        C2D_TextBuf tmpBuf = C2D_TextBufNew(512);
 
         C2D_TextParse(&tmpTxt, tmpBuf, str.c_str());
         C2D_TextOptimize(&tmpTxt);
-        C2D_DrawText(&tmpTxt, C2D_WithColor, (float)x, (float) y, 0.5f, 0.5f, 0.5f, clr);
+        C2D_DrawText(&tmpTxt, C2D_WithColor, (float)x, (float)y, 0.5f, 0.5f, 0.5f, clr);
+        C2D_TextBufDelete(tmpBuf);
+    }
+
+    void drawTextWrap(const std::string& str, const int& x, int y, const int& maxWidth, const uint32_t& clr)
+    {
+        C2D_Text tmpTxt;
+        C2D_TextBuf tmpBuf = C2D_TextBufNew(512);
+
+        int tmpX = x;
+        for(int i = 0; i < (int)str.length(); )
+        {
+            size_t nextBreak = str.find_first_of(" /", i, 2);
+            if(nextBreak == str.npos)
+            {
+                C2D_TextParse(&tmpTxt, tmpBuf, str.substr(i, str.length() - i).c_str());
+                C2D_TextOptimize(&tmpTxt);
+                C2D_DrawText(&tmpTxt, C2D_WithColor, (float)tmpX, (float)y, 0.5f, 0.5f, 0.5f, clr);
+                break;
+            }
+            else
+            {
+                std::string temp = str.substr(i, (nextBreak + 1) - i);
+                size_t width = getTextWidth(temp);
+                if((int)(tmpX + width) >= maxWidth)
+                {
+                    tmpX = x;
+                    y += 12;
+                }
+
+                C2D_TextParse(&tmpTxt, tmpBuf, temp.c_str());
+
+                C2D_TextOptimize(&tmpTxt);
+                C2D_DrawText(&tmpTxt, C2D_WithColor, (float)tmpX, (float)y, 0.5f, 0.5f, 0.5f, clr);
+                tmpX += width;
+                i += temp.length();
+            }
+        }
         C2D_TextBufDelete(tmpBuf);
     }
 
     void drawU16Text(const std::u16string& str, const int& x, const int& y, const uint32_t& clr)
     {
         C2D_Text tmpTxt;
-        C2D_TextBuf tmpBuf = C2D_TextBufNew(1024);
+        C2D_TextBuf tmpBuf = C2D_TextBufNew(512);
 
         std::string tmp = util::toUtf8(str);
 
@@ -82,10 +119,9 @@ namespace gfx
     {
         float ret = 0;
         C2D_Text tmpTxt;
-        C2D_TextBuf tmpBuf = C2D_TextBufNew(1024);
+        C2D_TextBuf tmpBuf = C2D_TextBufNew(512);
 
         C2D_TextParse(&tmpTxt, tmpBuf, str.c_str());
-        C2D_TextOptimize(&tmpTxt);
 
         C2D_TextGetDimensions(&tmpTxt, 0.5f, 0.5f, &ret, NULL);
         C2D_TextBufDelete(tmpBuf);

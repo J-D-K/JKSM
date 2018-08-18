@@ -37,10 +37,18 @@ namespace ui
     {
         opt.clear();
         multiSel.clear();
-
-        selected = 0;
-        start = 0;
         multi = false;
+    }
+
+    void menu::adjust()
+    {
+        if(selected > (int)opt.size() - 1)
+            selected = opt.size() - 1;
+
+        if(opt.size() < 16)
+            start = 0;
+        else if(opt.size() > 16 && start + 16 > (int)opt.size() - 1)
+            start--;
     }
 
     void menu::setSelected(const int& newSel)
