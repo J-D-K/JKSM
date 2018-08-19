@@ -110,7 +110,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 08/18/2018");
+        drawTopBar("JKSM - 08/19/2018");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -184,16 +184,18 @@ namespace ui
         }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
-            std::string getChar = util::getString("Enter a letter to jump to", false);
-            if(!getChar.empty())
+            char16_t getChar = util::toUtf16(util::getString("Enter a letter to jump to", false))[0];
+            if(getChar != 0x00)
             {
-                //Only use first char
-                char jmpTo = std::tolower(getChar[0]);
+                unsigned i;
+                if(data::titles[0].getMedia() == MEDIATYPE_GAME_CARD)
+                    i = 1;
+                else
+                    i = 0;
 
-                //Skip cart
-                for(unsigned i = 1; i < titleMenu.getCount(); i++)
+                for( ; i < titleMenu.getCount(); i++)
                 {
-                    if(std::tolower(titleMenu.getOpt(i)[0]) == jmpTo)
+                    if(std::tolower(data::titles[i].getTitle()[0]) == getChar)
                     {
                         titleMenu.setSelected(i);
                         break;
@@ -395,7 +397,7 @@ namespace ui
                 else if(held & KEY_R)
                     newFolder = util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
                 else
-                    newFolder = util::toUtf16(util::getString("Enter a new folder name", true));
+                    newFolder = util::safeString(util::toUtf16(util::getString("Enter a new folder name", true)));
 
                 if(!newFolder.empty())
                 {
@@ -567,18 +569,24 @@ namespace ui
 
     void showMessage(const std::string& mess)
     {
+        ui:: button ok("OK (A)", 96, 192, 128, 32);
         while(1)
         {
             hidScanInput();
 
             uint32_t down = hidKeysDown();
+            touchPosition p;
+            hidTouchRead(&p);
 
-            if(down & KEY_A)
+            ok.update(p);
+
+            if(down & KEY_A || ok.getEvent() == BUTTON_RELEASED)
                 break;
 
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
+            ok.draw();
             gfx::drawTextWrap(mess, 16, 16, 224, 0xFF000000);
             gfx::frameEnd();
         }

@@ -11,8 +11,6 @@
 #include "ui.h"
 #include "gfx.h"
 
-static const char16_t verboten[] = { L'.', L',', L'/', L'\\', L'<', L'>', L':', L'"', L'|', L'?', L'*' };
-
 static uint32_t extdataRedirect(const uint32_t& low)
 {
     //Pokemon Y
@@ -63,35 +61,6 @@ namespace data
 
     titleData curData;
 
-    bool isVerboten(const char16_t& c)
-    {
-        for(unsigned i = 0; i < 11; i++)
-        {
-            if(c == verboten[i])
-                return true;
-        }
-
-        return false;
-    }
-
-    std::u16string safeTitle(const std::u16string& s)
-    {
-        std::u16string ret;
-        for(unsigned i = 0; i < s.length(); i++)
-        {
-            if(isVerboten(s[i]))
-                ret += L' ';
-            else
-                ret += s[i];
-        }
-
-        //Erase space if last char
-        if(ret[ret.length() - 1] == L' ')
-            ret.erase(ret.length() - 1, ret.length());
-
-        return ret;
-    }
-
     bool titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     {
         m = mt;
@@ -107,7 +76,7 @@ namespace data
             return false;
 
         title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
-        titleSafe.assign(safeTitle(title));
+        titleSafe.assign(util::safeString(title));
 
         char tmp[16];
         AM_GetTitleProductCode(m, id, tmp);
@@ -129,7 +98,7 @@ namespace data
 
 
         title.assign(_title);
-        titleSafe.assign(safeTitle(title));
+        titleSafe.assign(util::safeString(title));
         prodCode.assign(code);
 
         return true;

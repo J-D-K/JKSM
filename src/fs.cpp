@@ -222,7 +222,7 @@ namespace fs
         else
         {
             if(R_SUCCEEDED(FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.data()), 0, crSize)) && \
-               R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
+                    R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
             {
                 FSFILE_GetSize(fHandle, &fSize);
                 open = true;

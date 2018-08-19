@@ -9,6 +9,19 @@
 
 #include "ui.h"
 
+static const char16_t verboten[] = { L'.', L',', L'/', L'\\', L'<', L'>', L':', L'"', L'|', L'?', L'*' };
+
+static inline bool isVerboten(const char16_t& c)
+{
+    for(unsigned i = 0; i < 11; i++)
+    {
+        if(c == verboten[i])
+            return true;
+    }
+
+    return false;
+}
+
 namespace util
 {
     std::string toUtf8(const std::u16string& conv)
@@ -85,6 +98,24 @@ namespace util
         swkbdInputText(&state, input, 128);
 
         return std::string(input);
+    }
+
+    std::u16string safeString(const std::u16string& s)
+    {
+        std::u16string ret;
+        for(unsigned i = 0; i < s.length(); i++)
+        {
+            if(isVerboten(s[i]))
+                ret += L' ';
+            else
+                ret += s[i];
+        }
+
+        //Erase space if last char
+        if(ret[ret.length() - 1] == L' ')
+            ret.erase(ret.length() - 1, ret.length());
+
+        return ret;
     }
 
     int getInt(const std::string& hint, const int& init, const int& max)
