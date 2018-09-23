@@ -1,6 +1,7 @@
 #include <3ds.h>
 #include <fstream>
 #include <cstring>
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -13,29 +14,50 @@
 
 static uint32_t extdataRedirect(const uint32_t& low)
 {
-    //Pokemon Y
-    if(low == 0x00055E00)
-        return 0x0000055D;
-    //Pokemon OR
-    else if(low == 0x0011C400)
-        return 0x000011C5;
-    //Pokemon Moon
-    else if(low == 0x00175E00)
-        return 0x00001648;
-    //Ultra Moon
-    else if(low == 0x001B5100)
-        return 0x00001B50;
-    //Fire Emblem Conquest + SE NA
-    else if(low == 0x00179600 || low == 0x00179800)
-        return 0x00001794;
-    //FE Conquest + SE EURO
-    else if(low == 0x00179700 || low == 0x0017A800)
-        return 0x00001795;
-    //FE If/JPN
-    else if(low == 0x0012DD00 || low == 0x0012DE00)
-        return 0x000012DC;
+    switch(low)
+    {
+        //Pokemon Y
+        case 0x00055E00:
+            return 0x0000055D;
+            break;
 
-    return (low >> 8);
+        //Pokemon OR
+        case 0x0011C400:
+            return 0x000011C5;
+            break;
+
+        //Pkmn moon
+        case 0x00175E00:
+            return 0x00001648;
+            break;
+
+        //Ultra moon
+        case 0x001B5100:
+            return 0x00001B50;
+            break;
+
+        //FE Conquest + SE NA
+        case 0x00179600:
+        case 0x00179800:
+            return 0x00001794;
+            break;
+
+        //FE Conquest + SE Euro
+        case 0x00179799:
+        case 0x0017A800:
+            return 0x00001795;
+            break;
+
+        //FE if JP
+        case 0x0012DD00:
+        case 0x0012DE00:
+            return 0x000012DC;
+            break;
+
+        default:
+            return low >> 8;
+            break;
+    }
 }
 
 std::vector<uint64_t> blacklist;
@@ -160,7 +182,7 @@ namespace data
         bool ins = false;
         FSUSER_CardSlotIsInserted(&ins);
 
-        if(titles[0].getMedia() != MEDIATYPE_GAME_CARD && ins)
+        if((titles.empty() || titles[0].getMedia() != MEDIATYPE_GAME_CARD) && ins)
         {
             uint64_t cartID = 0;
             AM_GetTitleList(NULL, MEDIATYPE_GAME_CARD, 1, &cartID);
@@ -228,7 +250,6 @@ namespace data
     void loadTitles()
     {
         titles.clear();
-        blacklist.clear();
         loadBlacklist();
 
         if(!readCache(titles, "/JKSV/titles", false))
@@ -307,6 +328,7 @@ namespace data
 
     void loadBlacklist()
     {
+        blacklist.clear();
         if(util::fexists("/JKSV/blacklist.txt"))
         {
             std::fstream bl("/JKSV/blacklist.txt", std::ios::in);
@@ -317,9 +339,7 @@ namespace data
                 if(line[0] == '#' || line[0] == '\n')
                     continue;
 
-                uint64_t pushID = std::strtoull(line.c_str(), NULL, 16);
-
-                blacklist.push_back(pushID);
+                blacklist.push_back(std::strtoull(line.c_str(), NULL, 16));
             }
             bl.close();
         }

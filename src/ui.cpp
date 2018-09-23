@@ -85,7 +85,8 @@ namespace ui
             switch(mainMenu.getSelected())
             {
                 case 0:
-                    state = TITLE_MENU;
+                    if(!data::titles.empty())
+                        state = TITLE_MENU;
                     break;
 
                 case 1:
@@ -118,6 +119,13 @@ namespace ui
 
     void stateTitleMenu(const uint32_t& down, const uint32_t& held)
     {
+        //Kick back if empty
+        if(data::titles.empty())
+        {
+            state = MAIN_MENU;
+            return;
+        }
+
         //Much needed Jump button
         static ui::button jumpTo("Jump To", 0, 208, 320, 32);
         //Dump all button
@@ -126,8 +134,6 @@ namespace ui
         static ui::button bl("Add to Blacklist (X)", 0, 140, 320, 32);
         //Selected Dump
         static ui:: button ds("Dump Selected (Y)", 0, 106, 320, 32);
-
-        data::cartCheck();
 
         titleMenu.handleInput(down, held);
 

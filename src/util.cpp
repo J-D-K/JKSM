@@ -1,5 +1,6 @@
 #include <3ds.h>
 #include <cstring>
+#include <cstdlib>
 #include <ctime>
 #include <fstream>
 
@@ -156,11 +157,11 @@ namespace util
         switch(fmt)
         {
             case DATE_FMT_YMD:
-                sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
+                sprintf(tmp, "%04d.%02d.%02d_%02d.%02d.%02d", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min, local->tm_sec);
                 break;
 
             case DATE_FMT_YDM:
-                sprintf(tmp, "%04d-%02d-%02d_%02d-%02d-%02d", local->tm_year + 1900, local->tm_mday, local->tm_mon + 1, local->tm_hour, local->tm_min, local->tm_sec);
+                sprintf(tmp, "%04d.%02d.%02d_%02d.%02d.%02d", local->tm_year + 1900, local->tm_mday, local->tm_mon + 1, local->tm_hour, local->tm_min, local->tm_sec);
                 break;
         }
 

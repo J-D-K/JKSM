@@ -400,12 +400,12 @@ namespace fs
 
         if(!in.isOpen())
         {
-            ui::showMessage("There was an error opening the\n file for reading.");
+            ui::showMessage("There was an error opening the file for reading.");
             return;
         }
         else if(!out.isOpen())
         {
-            ui::showMessage("There was an error opening the\n file for writing.");
+            ui::showMessage("There was an error opening the file for writing.");
             return;
         }
 
