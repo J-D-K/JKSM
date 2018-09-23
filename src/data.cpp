@@ -43,7 +43,7 @@ static uint32_t extdataRedirect(const uint32_t& low)
             break;
 
         //FE Conquest + SE Euro
-        case 0x00179799:
+        case 0x00179700:
         case 0x0017A800:
             return 0x00001795;
             break;
