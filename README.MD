@@ -1,7 +1,7 @@
 # JKSM for 3DS
 JKSM or JK's Save Manager for 3DS.
-* Dump and Restore save data for 3DS titles
-* Dump and Restore extra data for 3DS titles
+* Dump and Restore save data for Nintendo 3DS titles
+* Dump and Restore extra data for Nintendo 3DS titles
 * Dump and Restore data for system titles
 * Dump and Restore Boss extra data
 * Set Play Coins to any amount 300 or lower
