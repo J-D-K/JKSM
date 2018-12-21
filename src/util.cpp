@@ -227,7 +227,7 @@ namespace util
     {
         data::titleData tmp;
         tmp.setExtdata(0xF000000B);
-        if(fs::openArchive(tmp, ARCHIVE_SHARED_EXTDATA))
+        if(fs::openArchive(tmp, ARCHIVE_SHARED_EXTDATA, true))
         {
             fs::fsfile playCoin(fs::getSaveArch(), "/gamecoin.dat", FS_OPEN_READ | FS_OPEN_WRITE);
 

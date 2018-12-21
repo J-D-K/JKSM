@@ -74,7 +74,7 @@ namespace fs
         return saveMode;
     }
 
-    bool openArchive(data::titleData& dat, const uint32_t& arch)
+    bool openArchive(data::titleData& dat, const uint32_t& arch, bool error)
     {
         Result res;
         saveMode = (FS_ArchiveID)arch;
@@ -128,13 +128,13 @@ namespace fs
                 break;
         }
 
-        if(R_SUCCEEDED(res))
-            return true;
-        else
+        if(R_FAILED(res))
         {
-            ui::showMessage("Error opening archive!");
+            if(error){ ui::showMessage("The archive cannot be opened!"); }
             return false;
         }
+
+        return true;
     }
 
     void commitData(const uint32_t& mode)
@@ -161,7 +161,7 @@ namespace fs
 
             if(R_FAILED(FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &in, 8, &out, 1)))
             {
-                ui::showMessage("Failed to delete secure value");
+                ui::showMessage("Failed to delete secure value.");
             }
         }
 
@@ -564,7 +564,7 @@ namespace fs
             prog.draw(copyStr);
             gfx::frameEnd();
 
-            if(fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA))
+            if(fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA, false))
             {
                 util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
 
@@ -577,7 +577,7 @@ namespace fs
                 closeSaveArch();
             }
 
-            if(fs::openArchive(data::titles[i], ARCHIVE_EXTDATA))
+            if(fs::openArchive(data::titles[i], ARCHIVE_EXTDATA, false))
             {
                 util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
 

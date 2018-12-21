@@ -114,6 +114,8 @@ namespace ui
                     break;
             }
         }
+        else if(down & KEY_B)
+            sys::run = false;
 
         gfx::frameBegin();
         gfx::frameStartTop();
@@ -173,7 +175,7 @@ namespace ui
         {
             for(unsigned i = 0; i < titleMenu.getCount(); i++)
             {
-                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA))
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA, true))
                 {
                     util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
                     std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
@@ -184,7 +186,7 @@ namespace ui
                     fs::closeSaveArch();
                 }
 
-                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_EXTDATA))
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_EXTDATA, true))
                 {
                     util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
                     std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
@@ -259,7 +261,7 @@ namespace ui
             switch(backupMenu.getSelected())
             {
                 case 0:
-                    if(fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_USER_SAVEDATA);
                         prepFolderMenu(data::curData, ARCHIVE_USER_SAVEDATA);
@@ -269,7 +271,7 @@ namespace ui
                     break;
 
                 case 1:
-                    if(confirm(std::string("Are you 100% sure you want to delete all currently saved data for this game?")) && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA))
+                    if(confirm(std::string("Are you 100% sure you want to delete the current save data for this game? This is permanent!")) && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA, true))
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_USER_SAVEDATA);
@@ -278,7 +280,7 @@ namespace ui
                     break;
 
                 case 2:
-                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_EXTDATA);
                         prepFolderMenu(data::curData, ARCHIVE_EXTDATA);
@@ -349,7 +351,7 @@ namespace ui
             switch(nandBackupMenu.getSelected())
             {
                 case 0:
-                    if(fs::openArchive(data::curData, ARCHIVE_SYSTEM_SAVEDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_SYSTEM_SAVEDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_SYSTEM_SAVEDATA);
                         prepFolderMenu(data::curData, ARCHIVE_SYSTEM_SAVEDATA);
@@ -359,7 +361,7 @@ namespace ui
                     break;
 
                 case 1:
-                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_EXTDATA);
                         prepFolderMenu(data::curData, ARCHIVE_EXTDATA);
@@ -369,7 +371,7 @@ namespace ui
                     break;
 
                 case 2:
-                    if(fs::openArchive(data::curData, ARCHIVE_BOSS_EXTDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_BOSS_EXTDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_BOSS_EXTDATA);
                         prepFolderMenu(data::curData, ARCHIVE_BOSS_EXTDATA);
@@ -504,7 +506,7 @@ namespace ui
             switch(haxMenu.getSelected())
             {
                 case 0:
-                    if(fs::openArchive(data::curData, ARCHIVE_SAVEDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_SAVEDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_SAVEDATA);
                         prepFolderMenu(data::curData, ARCHIVE_SAVEDATA);
@@ -514,7 +516,7 @@ namespace ui
                     break;
 
                 case 1:
-                    if(confirm("Are you 100% sure you want to erase all save data for this game?") && fs::openArchive(data::curData, ARCHIVE_SAVEDATA))
+                    if(confirm("Are you 100% sure you want to erase the current save data for this game? This is permanent!") && fs::openArchive(data::curData, ARCHIVE_SAVEDATA, true))
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_SAVEDATA);
@@ -523,13 +525,31 @@ namespace ui
                     break;
 
                 case 2:
-                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA))
+                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA, true))
                     {
                         util::createTitleDir(data::curData, ARCHIVE_EXTDATA);
                         prepFolderMenu(data::curData, ARCHIVE_EXTDATA);
                         prev = HAX_MENU;
                         state = FLDR_MENU;
                     }
+                    break;
+
+                case 3:
+                    {
+                        std::string confStr = "Are you 100% sure you want to delete the currently saved Extra Data for '" + util::toUtf8(data::curData.getTitle()) + "'?";
+                        if(confirm(confStr))
+                        {
+                            FS_ExtSaveDataInfo del = { MEDIATYPE_SD, 0, 0, data::curData.getExtData(), 0 };
+
+                            Result res = FSUSER_DeleteExtSaveData(del);
+                            if(R_SUCCEEDED(res))
+                                showMessage("Extdata deleted!");
+                        }
+                    }
+                    break;
+
+                case 4:
+                    sys::run = false;
                     break;
             }
         }

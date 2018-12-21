@@ -132,20 +132,20 @@ namespace data
 
         if(getMedia() == MEDIATYPE_GAME_CARD || getMedia() == MEDIATYPE_SD)
         {
-            ret = fs::openArchive(*this, ARCHIVE_USER_SAVEDATA);
+            ret = fs::openArchive(*this, ARCHIVE_USER_SAVEDATA, false);
             if(!ret)
-                ret = fs::openArchive(*this, ARCHIVE_EXTDATA);
+                ret = fs::openArchive(*this, ARCHIVE_EXTDATA, false);
         }
 
         if(getMedia() == MEDIATYPE_NAND)
         {
-            ret = fs::openArchive(*this, ARCHIVE_SYSTEM_SAVEDATA);
+            ret = fs::openArchive(*this, ARCHIVE_SYSTEM_SAVEDATA, false);
 
             if(!ret)
-                ret = fs::openArchive(*this, ARCHIVE_EXTDATA);
+                ret = fs::openArchive(*this, ARCHIVE_EXTDATA, false);
 
             if(!ret)
-                ret = fs::openArchive(*this, ARCHIVE_BOSS_EXTDATA);
+                ret = fs::openArchive(*this, ARCHIVE_BOSS_EXTDATA, false);
 
         }
 

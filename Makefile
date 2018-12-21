@@ -41,7 +41,7 @@ INCLUDES	:=	inc inc/ui
 #GFXBUILD	:=	$(ROMFS)/gfx
 #ROMFS		:=  romfs
 APP_TITLE   := JKSM
-APP_AUTHOR  := JK_
+APP_AUTHOR  := JK
 APP_DESCRIPTION := 3DS Save Manager
 
 #---------------------------------------------------------------------------------
