@@ -45,8 +45,6 @@ int main(int argc, const char *argv[])
     {
         hidScanInput();
 
-        data::cartCheck();
-
         uint32_t down = hidKeysDown();
         uint32_t held = hidKeysHeld();
 

@@ -211,8 +211,7 @@ namespace data
         FS_Path binArchPath = {PATH_BINARY, 0x10, archPath};
         FS_Path binFilePath = {PATH_BINARY, 0x14, filePath};
 
-        Result res = FSUSER_OpenFileDirectly(&handle, ARCHIVE_SAVEDATA_AND_CONTENT, binArchPath, binFilePath, FS_OPEN_READ, 0);
-        if(res == 0)
+        if(R_SUCCEEDED(FSUSER_OpenFileDirectly(&handle, ARCHIVE_SAVEDATA_AND_CONTENT, binArchPath, binFilePath, FS_OPEN_READ, 0)))
         {
             uint32_t read = 0;
             smdh_s *ret = new smdh_s;
@@ -339,7 +338,7 @@ namespace data
                 if(line[0] == '#' || line[0] == '\n')
                     continue;
 
-                blacklist.push_back(std::strtoull(line.c_str(), NULL, 16));
+                blacklist.push_back(strtoull(line.c_str(), NULL, 16));
             }
             bl.close();
         }

@@ -84,10 +84,7 @@ namespace fs
             case ARCHIVE_USER_SAVEDATA:
                 {
                     uint32_t path[3] = {dat.getMedia(), dat.getLow(), dat.getHigh()};
-                    FS_Path binData = (FS_Path)
-                    {
-                        PATH_BINARY, 12, path
-                    };
+                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_USER_SAVEDATA, binData);
                 }
                 break;
@@ -101,10 +98,7 @@ namespace fs
             case ARCHIVE_EXTDATA:
                 {
                     uint32_t path[] = {MEDIATYPE_SD, dat.getExtData(), 0};
-                    FS_Path binData = (FS_Path)
-                    {
-                        PATH_BINARY, 12, path
-                    };
+                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_EXTDATA, binData);
                 }
                 break;
@@ -128,15 +122,19 @@ namespace fs
             case ARCHIVE_SHARED_EXTDATA:
                 {
                     uint32_t path[3] = {MEDIATYPE_NAND, dat.getExtData(), 0x00048000};
-
                     FS_Path binPath  = {PATH_BINARY, 0xC, path};
-
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_SHARED_EXTDATA, binPath);
                 }
                 break;
         }
 
-        return R_SUCCEEDED(res);
+        if(R_SUCCEEDED(res))
+            return true;
+        else
+        {
+            ui::showMessage("Error opening archive!");
+            return false;
+        }
     }
 
     void commitData(const uint32_t& mode)
@@ -161,8 +159,7 @@ namespace fs
             u64 in = ((u64)SECUREVALUE_SLOT_SD << 32) | (data::curData.getUnique() << 8);
             u8 out;
 
-            Result res = FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &in, 8, &out, 1);
-            if(res)
+            if(R_FAILED(FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &in, 8, &out, 1)))
             {
                 ui::showMessage("Failed to delete secure value");
             }
@@ -240,8 +237,7 @@ namespace fs
 
     void fsfile::read(uint8_t *buf, uint32_t& readOut, const uint32_t& max)
     {
-        Result res = FSFILE_Read(fHandle, &readOut, offset, buf, max);
-        if(R_FAILED(res))
+        if(R_FAILED(FSFILE_Read(fHandle, &readOut, offset, buf, max)))
         {
             if(readOut > max)
                 readOut = max;

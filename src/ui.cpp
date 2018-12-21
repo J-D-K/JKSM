@@ -85,8 +85,12 @@ namespace ui
             switch(mainMenu.getSelected())
             {
                 case 0:
+                    //do a cart check first
+                    data::cartCheck();
                     if(!data::titles.empty())
                         state = TITLE_MENU;
+                    else
+                        ui::showMessage("No titles found. Try reloading titles!");
                     break;
 
                 case 1:
@@ -94,8 +98,10 @@ namespace ui
                     break;
 
                 case 2:
-                    std::remove("/JKSV/titles");
+                    remove("/JKSV/titles");
+                    remove("/JKSV/nand");
                     data::loadTitles();
+                    data::loadNand();
                     loadTitleMenu();
                     break;
 
@@ -111,7 +117,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 08/19/2018");
+        drawTopBar("JKSM - 12/20/2018");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -119,6 +125,8 @@ namespace ui
 
     void stateTitleMenu(const uint32_t& down, const uint32_t& held)
     {
+        data::cartCheck();
+
         //Kick back if empty
         if(data::titles.empty())
         {
