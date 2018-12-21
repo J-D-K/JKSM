@@ -61,6 +61,7 @@ namespace ui
         haxMenu.addOpt("Delete Save Data", 0);
         haxMenu.addOpt("Extra Data", 0);
         haxMenu.addOpt("Delete Extra Data", 0);
+        haxMenu.addOpt("Set Play Coins", 0);
         haxMenu.addOpt("Exit", 0);
 
         nandBackupMenu.addOpt("System Save", 0);
@@ -549,6 +550,10 @@ namespace ui
                     break;
 
                 case 4:
+                    util::setPC();
+                    break;
+
+                case 5:
                     sys::run = false;
                     break;
             }
