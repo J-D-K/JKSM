@@ -441,21 +441,21 @@ namespace ui
         gfx::frameStartTop();
         ui::drawTopBar("Adv. Mode");
         gfx::drawU16Text(util::toUtf16("sv:") + savePath, 0, 20, 0xFFFFFFFF);
-        saveMenu.draw(40, 32, 0xFFFFFFFF, 320);
+        saveMenu.draw(40, 32, 0xFFFFFFFF, 320, false);
         if(advMenuCtrl == 2 && advPrev == 0)
         {
             copyMenu.editOpt(0, "Copy to SD");
-            C2D_DrawRectSolid(144, 78, 0.5f, 112, 88, 0xFFCCCCCC);
-            copyMenu.draw(152, 86, 0xFF000000, 96);
+            C2D_DrawRectSolid(144, 62, 0.5f, 112, 120, 0xFFEBEBEB);
+            copyMenu.draw(152, 70, 0xFF000000, 96, true);
         }
         gfx::frameStartBot();
         gfx::drawU16Text(util::toUtf16("sd:") + sdPath, 0, 0, 0xFFFFFFFF);
-        sdMenu.draw(0, 24, 0xFFFFFFFF, 320);
+        sdMenu.draw(0, 24, 0xFFFFFFFF, 320, false);
         if(advMenuCtrl == 2 && advPrev == 1)
         {
             copyMenu.editOpt(0, "Copy to Save");
-            C2D_DrawRectSolid(100, 78, 0.5f, 112, 88, 0xFFCCCCCC);
-            copyMenu.draw(108, 86, 0xFF000000, 96);
+            C2D_DrawRectSolid(100, 62, 0.5f, 112, 120, 0xFFEBEBEB);
+            copyMenu.draw(108, 70, 0xFF000000, 96, true);
         }
         gfx::frameEnd();
     }

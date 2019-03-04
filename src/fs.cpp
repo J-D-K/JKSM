@@ -130,7 +130,10 @@ namespace fs
 
         if(R_FAILED(res))
         {
-            if(error){ ui::showMessage("The archive cannot be opened!"); }
+            if(error)
+            {
+                ui::showMessage("The archive cannot be opened!");
+            }
             return false;
         }
 

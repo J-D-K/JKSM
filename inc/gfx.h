@@ -18,6 +18,8 @@ namespace gfx
     void drawTextWrap(const std::string& str, const int& x, int y, const int& maxWidth, const uint32_t& clr);
     void drawU16Text(const std::u16string& str, const int& x, const int& y, const uint32_t& clr);
     size_t getTextWidth(const std::string& str);
+
+    void drawBoundingBox(const int& x, const int& y, const int& w, const int& h, const uint32_t& clr, bool light);
 }
 
 #endif // GFX_H

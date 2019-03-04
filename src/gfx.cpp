@@ -128,4 +128,13 @@ namespace gfx
 
         return (size_t)ret;
     }
+
+    void drawBoundingBox(const int& x, const int& y, const int& w, const int& h, const uint32_t& clr, bool light)
+    {
+        C2D_DrawRectSolid(x, y + 1, 0.5f, w, h - 2, light ? 0xFFFDFDFD : 0xFF272221);
+        C2D_DrawRectSolid(x + 1, y, 0.5f, w - 2, 2, clr);
+        C2D_DrawRectSolid(x, y + 1, 0.5f, 2, h - 2, clr);
+        C2D_DrawRectSolid(x + 1, (y + h - 2), 0.5f, w - 2, 2, clr);
+        C2D_DrawRectSolid((x + w) - 2, y + 1, 0.5f, 2, h - 2, clr);
+    }
 }

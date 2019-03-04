@@ -120,8 +120,8 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 12/20/2018");
-        mainMenu.draw(40, 82, 0xFFFFFFFF, 320);
+        drawTopBar("JKSM - 03.03.2019");
+        mainMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -164,6 +164,7 @@ namespace ui
         }
         else if(down & KEY_B)
         {
+            titleMenu.setSelected(0);
             state = MAIN_MENU;
         }
         else if(down & KEY_X || bl.getEvent() == BUTTON_RELEASED)
@@ -228,7 +229,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a Title");
-        titleMenu.draw(40, 24, 0xFFFFFFFF, 320);
+        titleMenu.draw(40, 24, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         data::titles[titleMenu.getSelected()].drawInfo(8, 8);
         jumpTo.draw();
@@ -305,19 +306,21 @@ namespace ui
                     break;
 
                 case 4:
+                    backupMenu.setSelected(0);
                     state = TITLE_MENU;
                     break;
             }
         }
         else if(down & KEY_B)
         {
+            backupMenu.setSelected(0);
             state = TITLE_MENU;
         }
 
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar(util::toUtf8(data::curData.getTitle()));
-        backupMenu.draw(40, 82, 0xFFFFFFFF, 320);
+        backupMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -332,12 +335,15 @@ namespace ui
             state = SYS_BAKMENU;
         }
         else if(down & KEY_B)
+        {
+            nandMenu.setSelected(0);
             state = MAIN_MENU;
+        }
 
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a NAND Title");
-        nandMenu.draw(40, 24, 0xFFFFFFFF, 320);
+        nandMenu.draw(40, 24, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         data::nand[nandMenu.getSelected()].drawInfo(8, 8);
         gfx::frameEnd();
@@ -382,17 +388,21 @@ namespace ui
                     break;
 
                 case 3:
+                    nandBackupMenu.setSelected(0);
                     state = SYS_MENU;
                     break;
             }
         }
         else if(down & KEY_B)
+        {
+            nandBackupMenu.setSelected(0);
             state = SYS_MENU;
+        }
 
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar(util::toUtf8(data::curData.getTitle()));
-        nandBackupMenu.draw(40, 88, 0xFFFFFFFF, 320);
+        nandBackupMenu.draw(40, 88, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -485,6 +495,7 @@ namespace ui
         }
         else if(down & KEY_B)
         {
+            folderMenu.setSelected(0);
             fs::closeSaveArch();
             state = prev;
         }
@@ -492,7 +503,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("Select a Folder");
-        folderMenu.draw(40, 24, 0xFFFFFFFF, 320);
+        folderMenu.draw(40, 24, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::drawText("A = Select\nY = Restore\nX = Delete\nSel. = Adv. Mode\nB = Back", 16, 16, 0xFFFFFFFF);
         gfx::frameEnd();
@@ -562,7 +573,7 @@ namespace ui
         gfx::frameBegin();
         gfx::frameStartTop();
         drawTopBar("JKSM - *hax Mode - " + util::toUtf8(data::curData.getTitle()));
-        haxMenu.draw(40, 82, 0xFFFFFFFF, 320);
+        haxMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         data::curData.drawInfo(8, 8);
         gfx::frameEnd();
