@@ -14,31 +14,8 @@ int main(int argc, const char *argv[])
     sys::init();
     gfx::init();
     fs::init();
-
-    if(envIsHomebrew())
-    {
-        std::string path = argv[0];
-        size_t lastSlash = path.find_last_of('/');
-        path.erase(lastSlash + 1, path.length());
-        if(util::fexists(path + "JKSM.xml"))
-        {
-            data::haxDataInit();
-            data::haxMode = true;
-            fs::fsStartSession();
-            state = HAX_MENU;
-        }
-        //I'll fix this later
-        else
-        {
-            data::loadTitles();
-            data::loadNand();
-        }
-    }
-    else
-    {
-        data::loadTitles();
-        data::loadNand();
-    }
+    data::loadTitles();
+    data::loadNand();
     ui::prepMenus();
 
     while(aptMainLoop() && sys::run)

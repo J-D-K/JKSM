@@ -56,9 +56,7 @@ namespace data
     bool readCache(std::vector<titleData>& t, const std::string& path, bool nand);
     void createCache(std::vector<titleData>& t, const std::string& path);
 
-    //Hax entry point
-    void haxDataInit();
-    extern bool haxMode;
+    extern uint8_t lang;
 }
 
 #endif // DATA_H

@@ -101,6 +101,14 @@ namespace util
         return std::string(input);
     }
 
+    void removeEndSpaces(std::u16string& rem)
+    {
+        while(rem[rem.length() - 1] == L' ')
+        {
+            rem.erase(rem.length() - 1, 1);
+        }
+    }
+
     std::u16string safeString(const std::u16string& s)
     {
         std::u16string ret;
@@ -112,9 +120,7 @@ namespace util
                 ret += s[i];
         }
 
-        //Erase space if last char
-        if(ret[ret.length() - 1] == L' ')
-            ret.erase(ret.length() - 1, ret.length());
+        removeEndSpaces(ret);
 
         return ret;
     }

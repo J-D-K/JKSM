@@ -6,11 +6,16 @@
 namespace sys
 {
     bool run = true;
+    uint8_t lang;
+
     void init()
     {
         hidInit();
         amInit();
         aptInit();
+        cfguInit();
+        romfsInit();
+        CFGU_GetSystemLanguage(&lang);
     }
 
     void exit()
@@ -18,5 +23,7 @@ namespace sys
         hidExit();
         amExit();
         aptExit();
+        cfguExit();
+        romfsExit();
     }
 }

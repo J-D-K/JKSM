@@ -1,6 +1,8 @@
 #include <3ds.h>
 #include <citro2d.h>
 #include <string>
+#include <cstring>
+#include <fstream>
 #include <vector>
 
 #include <stdio.h>
@@ -12,7 +14,9 @@
 #include "fs.h"
 #include "sys.h"
 
-static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu, haxMenu;
+#include "smdh.h"
+
+static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu;
 
 int state = MAIN_MENU, prev = MAIN_MENU;
 
@@ -37,7 +41,6 @@ namespace ui
 
     void prepMenus()
     {
-        //Main
         mainMenu.addOpt("Titles", 0);
         mainMenu.addOpt("System Titles", 0);
         mainMenu.addOpt("Reload Titles", 0);
@@ -45,24 +48,14 @@ namespace ui
         mainMenu.addOpt("Exit", 0);
 
         //Title menu
-        if(!data::haxMode)
-        {
-            loadTitleMenu();
-            loadNandMenu();
-        }
+        loadTitleMenu();
+        loadNandMenu();
 
         backupMenu.addOpt("Save Data", 0);
         backupMenu.addOpt("Delete Save Data", 0);
         backupMenu.addOpt("Extra Data", 0);
         backupMenu.addOpt("Delete Extra Data", 0);
         backupMenu.addOpt("Back", 0);
-
-        haxMenu.addOpt("Save Data", 0);
-        haxMenu.addOpt("Delete Save Data", 0);
-        haxMenu.addOpt("Extra Data", 0);
-        haxMenu.addOpt("Delete Extra Data", 0);
-        haxMenu.addOpt("Set Play Coins", 0);
-        haxMenu.addOpt("Exit", 0);
 
         nandBackupMenu.addOpt("System Save", 0);
         nandBackupMenu.addOpt("Extra Data", 0);
@@ -120,7 +113,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 03.03.2019");
+        drawTopBar("JKSM - 03.24.2020");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -142,9 +135,9 @@ namespace ui
         //Dump all button
         static ui::button dumpAll("Dump All", 0, 174, 320, 32);
         //Blacklist button
-        static ui::button bl("Add to Blacklist (X)", 0, 140, 320, 32);
+        static ui::button bl("Add to Blacklist \ue002", 0, 140, 320, 32);
         //Selected Dump
-        static ui:: button ds("Dump Selected (Y)", 0, 106, 320, 32);
+        static ui:: button ds("Dump Selected \ue003", 0, 106, 320, 32);
 
         titleMenu.handleInput(down, held);
 
@@ -177,7 +170,7 @@ namespace ui
         {
             for(unsigned i = 0; i < titleMenu.getCount(); i++)
             {
-                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA, true))
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA, false))
                 {
                     util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
                     std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
@@ -188,7 +181,7 @@ namespace ui
                     fs::closeSaveArch();
                 }
 
-                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_EXTDATA, true))
+                if(titleMenu.multiIsSet(i) && fs::openArchive(data::titles[i], ARCHIVE_EXTDATA, false))
                 {
                     util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
                     std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
@@ -505,77 +498,7 @@ namespace ui
         drawTopBar("Select a Folder");
         folderMenu.draw(40, 24, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
-        gfx::drawText("A = Select\nY = Restore\nX = Delete\nSel. = Adv. Mode\nB = Back", 16, 16, 0xFFFFFFFF);
-        gfx::frameEnd();
-    }
-
-    void stateHaxMenu(const uint64_t& down, const uint64_t& held)
-    {
-        haxMenu.handleInput(down, held);
-
-        if(down & KEY_A)
-        {
-            switch(haxMenu.getSelected())
-            {
-                case 0:
-                    if(fs::openArchive(data::curData, ARCHIVE_SAVEDATA, true))
-                    {
-                        util::createTitleDir(data::curData, ARCHIVE_SAVEDATA);
-                        prepFolderMenu(data::curData, ARCHIVE_SAVEDATA);
-                        prev = HAX_MENU;
-                        state = FLDR_MENU;
-                    }
-                    break;
-
-                case 1:
-                    if(confirm("Are you 100% sure you want to erase the current save data for this game? This is permanent!") && fs::openArchive(data::curData, ARCHIVE_SAVEDATA, true))
-                    {
-                        FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
-                        fs::commitData(ARCHIVE_SAVEDATA);
-                        fs::closeSaveArch();
-                    }
-                    break;
-
-                case 2:
-                    if(fs::openArchive(data::curData, ARCHIVE_EXTDATA, true))
-                    {
-                        util::createTitleDir(data::curData, ARCHIVE_EXTDATA);
-                        prepFolderMenu(data::curData, ARCHIVE_EXTDATA);
-                        prev = HAX_MENU;
-                        state = FLDR_MENU;
-                    }
-                    break;
-
-                case 3:
-                    {
-                        std::string confStr = "Are you 100% sure you want to delete the currently saved Extra Data for '" + util::toUtf8(data::curData.getTitle()) + "'?";
-                        if(confirm(confStr))
-                        {
-                            FS_ExtSaveDataInfo del = { MEDIATYPE_SD, 0, 0, data::curData.getExtData(), 0 };
-
-                            Result res = FSUSER_DeleteExtSaveData(del);
-                            if(R_SUCCEEDED(res))
-                                showMessage("Extdata deleted!");
-                        }
-                    }
-                    break;
-
-                case 4:
-                    util::setPC();
-                    break;
-
-                case 5:
-                    sys::run = false;
-                    break;
-            }
-        }
-
-        gfx::frameBegin();
-        gfx::frameStartTop();
-        drawTopBar("JKSM - *hax Mode - " + util::toUtf8(data::curData.getTitle()));
-        haxMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
-        gfx::frameStartBot();
-        data::curData.drawInfo(8, 8);
+        gfx::drawText("\ue000 = Select\n\ue003 = Restore\n\ue002 = Delete\nSel. = File Mode\n\ue001 = Back", 16, 16, 0xFFFFFFFF);
         gfx::frameEnd();
     }
 
@@ -607,10 +530,6 @@ namespace ui
                 stateFolderMenu(down, held);
                 break;
 
-            case HAX_MENU:
-                stateHaxMenu(down, held);
-                break;
-
             case ADV_MENU:
                 stateAdvMode(down, held);
                 break;
@@ -619,7 +538,7 @@ namespace ui
 
     void showMessage(const std::string& mess)
     {
-        ui:: button ok("OK (A)", 96, 192, 128, 32);
+        ui:: button ok("OK \ue000", 96, 192, 128, 32);
         while(1)
         {
             hidScanInput();
@@ -665,8 +584,8 @@ namespace ui
 
     bool confirm(const std::string& mess)
     {
-        button yes("Yes (A)", 16, 192, 128, 32);
-        button no("No (B)", 176, 192, 128, 32);
+        button yes("Yes \ue000", 16, 192, 128, 32);
+        button no("No \ue001", 176, 192, 128, 32);
 
         while(true)
         {

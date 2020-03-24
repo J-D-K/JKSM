@@ -16,7 +16,6 @@ enum states
     SYS_MENU,
     SYS_BAKMENU,
     FLDR_MENU,
-    HAX_MENU,
     ADV_MENU
 };
 

@@ -9,6 +9,7 @@ namespace sys
     void exit();
 
     extern bool run;
+    extern uint8_t lang;
 }
 
 #endif // SYS_H

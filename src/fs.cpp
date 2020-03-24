@@ -15,7 +15,6 @@
 
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
-static Handle fsHandle;
 
 namespace fs
 {
@@ -40,18 +39,6 @@ namespace fs
     {
         FSUSER_CloseArchive(sdmcArch);
         FSUSER_CloseArchive(saveArch);
-    }
-
-    void fsStartSession()
-    {
-        srvGetServiceHandleDirect(&fsHandle, "fs:USER");
-        FSUSER_Initialize(fsHandle);
-        fsUseSession(fsHandle);
-    }
-
-    void fsEndSession()
-    {
-        fsEndUseSession();
     }
 
     FS_Archive getSDMCArch()
@@ -152,11 +139,6 @@ namespace fs
 
     void deleteSv(const uint32_t& mode)
     {
-        if(data::haxMode)
-        {
-            fs::fsEndSession();
-        }
-
         if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA)
         {
             u64 in = ((u64)SECUREVALUE_SLOT_SD << 32) | (data::curData.getUnique() << 8);
@@ -166,11 +148,6 @@ namespace fs
             {
                 ui::showMessage("Failed to delete secure value.");
             }
-        }
-
-        if(data::haxMode)
-        {
-            fs::fsStartSession();
         }
     }
 

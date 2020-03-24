@@ -79,7 +79,7 @@ namespace data
     std::vector<titleData> nand;
     std::vector<uint32_t> filterIds;
 
-    bool haxMode = false;
+    uint8_t lang;
 
     titleData curData;
 
@@ -459,21 +459,5 @@ namespace data
         cache.close();
 
         return true;
-    }
-
-    void haxDataInit()
-    {
-        uint64_t id;
-        APT_GetProgramID(&id);
-
-        fs::fsStartSession();
-        FS_MediaType getMedia;
-        FSUSER_GetMediaType(&getMedia);
-        fs::fsEndSession();
-
-        titleData haxData;
-        haxData.init(id, getMedia);
-
-        curData = haxData;
     }
 }
