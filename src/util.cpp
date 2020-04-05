@@ -260,10 +260,10 @@ namespace util
 
     bool fexists(const std::string& path)
     {
-        std::fstream test(path, std::ios::in);
-        if(test.is_open())
+        FILE *test = fopen(path.c_str(), "r");
+        if(test != NULL)
         {
-            test.close();
+            fclose(test);
 
             return true;
         }

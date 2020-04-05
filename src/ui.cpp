@@ -27,7 +27,12 @@ namespace ui
         titleMenu.reset();
         titleMenu.multiSet(true);
         for(unsigned i = 0; i < data::titles.size(); i++)
-            titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()), 320);
+        {
+            if(data::titles[i].getFav())
+                titleMenu.addOpt("♥ " + util::toUtf8(data::titles[i].getTitle()), 320);
+            else
+                titleMenu.addOpt(util::toUtf8(data::titles[i].getTitle()), 320);
+        }
 
         titleMenu.adjust();
     }
@@ -113,7 +118,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 03.24.2020");
+        drawTopBar("JKSM - 04.04.2020");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -137,7 +142,9 @@ namespace ui
         //Blacklist button
         static ui::button bl("Add to Blacklist \ue002", 0, 140, 320, 32);
         //Selected Dump
-        static ui:: button ds("Dump Selected \ue003", 0, 106, 320, 32);
+        static ui::button ds("Dump Selected \ue003", 0, 106, 320, 32);
+        //Favorite
+        static ui::button fav("Favorite \ue005", 0, 72, 320, 32);
 
         titleMenu.handleInput(down, held);
 
@@ -148,6 +155,7 @@ namespace ui
         dumpAll.update(p);
         bl.update(p);
         ds.update(p);
+        fav.update(p);
 
         if(down & KEY_A)
         {
@@ -193,6 +201,13 @@ namespace ui
                 }
             }
         }
+        else if(down & KEY_R || fav.getEvent() == BUTTON_RELEASED)
+        {
+            if(data::titles[titleMenu.getSelected()].getFav())
+                data::favRem(data::titles[titleMenu.getSelected()]);
+            else
+                data::favAdd(data::titles[titleMenu.getSelected()]);
+        }
         else if(jumpTo.getEvent() == BUTTON_RELEASED)
         {
             char16_t getChar = util::toUtf16(util::getString("Enter a letter to jump to", false))[0];
@@ -229,6 +244,7 @@ namespace ui
         dumpAll.draw();
         bl.draw();
         ds.draw();
+        fav.draw();
         gfx::frameEnd();
     }
 

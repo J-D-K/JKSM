@@ -31,6 +31,7 @@ int main(int argc, const char *argv[])
         ui::runApp(down, held);
     }
 
+    data::saveFav();
     sys::exit();
     gfx::exit();
     fs::exit();

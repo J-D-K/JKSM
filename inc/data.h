@@ -22,6 +22,8 @@ namespace data
             uint32_t getUnique() { return unique; }
             uint32_t getExtData() { return extdata; }
             uint8_t getMedia() { return m; }
+            bool getFav() { return fav; }
+            void setFav(bool _set) { fav = _set; }
 
             void setExtdata(const uint32_t& ex) { extdata = ex; }
 
@@ -37,6 +39,7 @@ namespace data
             std::string prodCode;
             std::u16string title, titleSafe;
             FS_MediaType m;
+            bool fav = false;
     };
 
     void cartCheck();
@@ -51,6 +54,11 @@ namespace data
 
     void loadBlacklist();
     void blacklistAdd(titleData& t);
+
+    void loadFav();
+    void saveFav();
+    void favAdd(titleData& t);
+    void favRem(titleData& t);
 
     //Writes title data cache to path
     bool readCache(std::vector<titleData>& t, const std::string& path, bool nand);

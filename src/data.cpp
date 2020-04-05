@@ -1,5 +1,5 @@
 #include <3ds.h>
-#include <fstream>
+#include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -61,12 +61,23 @@ static uint32_t extdataRedirect(const uint32_t& low)
 }
 
 std::vector<uint64_t> blacklist;
+std::vector<uint64_t> favorites;
 
 bool isBlacklisted(const uint64_t& id)
 {
     for(unsigned i = 0; i < blacklist.size(); i++)
     {
         if(id == blacklist[i])
+            return true;
+    }
+
+    return false;
+}
+bool isFavorite(const uint64_t& id)
+{
+    for(unsigned i = 0; i < favorites.size(); i++)
+    {
+        if(id == favorites[i])
             return true;
     }
 
@@ -92,6 +103,8 @@ namespace data
         high = (uint32_t)(id >> 32);
         unique = (low >> 8);
         extdata = extdataRedirect(low);
+        if(isFavorite(id))
+            fav = true;
 
         smdh_s *smdh = loadSMDH(low, high, m);
         if(smdh == NULL)
@@ -117,7 +130,8 @@ namespace data
         unique = (low >> 8);
         extdata = extdataRedirect(low);
         m = (FS_MediaType)mt;
-
+        if(isFavorite(id))
+            fav = true;
 
         title.assign(_title);
         titleSafe.assign(util::safeString(title));
@@ -228,6 +242,9 @@ namespace data
     {
         bool operator()(titleData& a, titleData& b)
         {
+            if(a.getFav() != b.getFav())
+                return a.getFav() == true;
+
             for(unsigned i = 0; i < a.getTitle().length(); i++)
             {
                 int aChar = tolower(a.getTitle()[i]), bChar = tolower(b.getTitle()[i]);
@@ -250,6 +267,7 @@ namespace data
     {
         titles.clear();
         loadBlacklist();
+        loadFav();
 
         if(!readCache(titles, "/JKSV/titles", false))
         {
@@ -285,6 +303,8 @@ namespace data
 
             createCache(titles, "/JKSV/titles");
         }
+        else
+            std::sort(titles.begin(), titles.end(), sortTitles);
     }
 
     void loadNand()
@@ -304,9 +324,8 @@ namespace data
             {
                 titleData newNandTitle;
                 if(newNandTitle.init(ids[i], MEDIATYPE_NAND) && newNandTitle.isOpenable() && !newNandTitle.getTitle().empty())
-                {
                     nand.push_back(newNandTitle);
-                }
+
                 prog.update(i);
 
                 gfx::frameBegin();
@@ -330,17 +349,17 @@ namespace data
         blacklist.clear();
         if(util::fexists("/JKSV/blacklist.txt"))
         {
-            std::fstream bl("/JKSV/blacklist.txt", std::ios::in);
+            FILE *bl = fopen("/JKSV/blacklist.txt", "r");
 
-            std::string line;
-            while(std::getline(bl, line))
+            char line[64];
+            while(fgets(line, 64, bl))
             {
                 if(line[0] == '#' || line[0] == '\n')
                     continue;
 
-                blacklist.push_back(strtoull(line.c_str(), NULL, 16));
+                blacklist.push_back(strtoull(line, NULL, 16));
             }
-            bl.close();
+            fclose(bl);
         }
     }
 
@@ -349,15 +368,12 @@ namespace data
         if(t.getMedia() == MEDIATYPE_GAME_CARD)
             return;
 
-        std::fstream bl("/JKSV/blacklist.txt", std::ios::app);
+        FILE *bl = fopen("/JKSV/blacklist.txt", "a");
 
         std::string titleLine = "#" + util::toUtf8(t.getTitle()) + "\n";
-        char idLine[32];
-        sprintf(idLine, "0x%016llX\n", t.getID());
-
-        bl.write(titleLine.c_str(), titleLine.length());
-        bl.write(idLine, std::strlen(idLine));
-        bl.close();
+        fputs(titleLine.c_str(), bl);
+        fprintf(bl, "0x016%llX", t.getID());
+        fclose(bl);
 
         //Remove it
         for(unsigned i = 0; i < titles.size(); i++)
@@ -380,37 +396,96 @@ namespace data
         ui::loadTitleMenu();
     }
 
+    void loadFav()
+    {
+        if(util::fexists("/JKSV/favorites.txt"))
+        {
+            char line[64];
+            FILE *fav = fopen("/JKSV/favorites.txt", "r");
+
+            while(fgets(line, 64, fav))
+            {
+                if(line[0] == '#' || line[0] == '\n')
+                    continue;
+
+                favorites.push_back(strtoull(line, NULL, 16));
+            }
+            fclose(fav);
+        }
+    }
+
+    void saveFav()
+    {
+        if(favorites.size() > 0)
+        {
+            FILE *fav = fopen("/JKSV/favorites.txt", "w");
+            for(unsigned i = 0; i < favorites.size(); i++)
+                fprintf(fav, "0x%016llX\n", favorites[i]);
+
+            fclose(fav);
+        }
+    }
+
+    void favAdd(titleData& t)
+    {
+        t.setFav(true);
+
+        favorites.push_back(t.getID());
+
+        //resort with new fav
+        std::sort(data::titles.begin(), data::titles.end(), sortTitles);
+        //reload title menu
+        ui::loadTitleMenu();
+    }
+
+    void favRem(titleData& t)
+    {
+        t.setFav(false);
+
+        unsigned i;
+        for(i = 0; i < favorites.size(); i++)
+        {
+            if(favorites[i] == t.getID())
+            {
+                favorites.erase(favorites.begin() + i);
+                break;
+            }
+        }
+
+        std::sort(data::titles.begin(), data::titles.end(), sortTitles);
+        ui::loadTitleMenu();
+    }
+
     void createCache(std::vector<titleData>& t, const std::string& path)
     {
         //JIC
-        std::remove(path.c_str());
+        remove(path.c_str());
 
-        std::fstream cache(path, std::ios::out | std::ios::binary);
+        FILE *cache = fopen(path.c_str(), "wb");
 
         uint16_t countOut = t.size();
-        cache.write((char *)&countOut, sizeof(uint16_t));
-        cache.put(0x02);
+        fwrite(&countOut, sizeof(uint16_t), 1, cache);
+        fputc(0x02, cache);
 
         for(unsigned i = 0; i < t.size(); i++)
         {
             char16_t titleOut[0x40];
-            std::memset(titleOut, 0, 0x40 * 2);
-            std::memcpy((void *)titleOut, (void *)t[i].getTitle().data(), t[i].getTitle().length() * 2);
-            cache.write((char *)titleOut, 0x40 * 2);
-            cache.put(0x00);
+            memset(titleOut, 0, 0x40 * 2);
+            memcpy(titleOut, t[i].getTitle().data(), t[i].getTitle().length() * 2);
+            fwrite(titleOut, sizeof(char16_t), 0x40, cache);
+            fputc(0, cache);
 
             char prodOut[16];
-            std::memset(prodOut, 0, 16);
-            std::memcpy(prodOut, t[i].getProdCode().data(), 16);
-            cache.write(prodOut, 16);
-            cache.put(0x00);
+            memset(prodOut, 0, 16);
+            memcpy(prodOut, t[i].getProdCode().data(), 16);
+            fwrite(prodOut, 1, 16, cache);
+            fputc(0, cache);
 
             uint64_t idOut = t[i].getID();
-            cache.write((char *)&idOut, sizeof(uint64_t));
-            cache.put(0x00);
+            fwrite(&idOut, sizeof(uint64_t), 1, cache);
+            fputc(0, cache);
         }
-
-        cache.close();
+        fclose(cache);
     }
 
     bool readCache(std::vector<titleData>& t, const std::string& path, bool nand)
@@ -418,45 +493,44 @@ namespace data
         if(!util::fexists(path))
             return false;
 
-        std::fstream cache(path, std::ios::in | std::ios::binary);
+        FILE *cache = fopen(path.c_str(), "rb");
         //Check revision
         uint8_t rev = 0;
-        cache.seekg(2, cache.beg);
-        rev = cache.get();
-        cache.seekg(0, cache.beg);
+        fseek(cache, 2, SEEK_SET);
+        rev = fgetc(cache);
+        fseek(cache, 0, SEEK_SET);
 
         if(rev != 2)
         {
-            cache.close();
+            fclose(cache);
             return false;
         }
 
         uint16_t count = 0;
-        cache.read((char *)&count, sizeof(uint16_t));
-
-        cache.seekg(1, cache.cur);
+        fread(&count, sizeof(uint16_t), 1, cache);
+        fgetc(cache);
 
         for(unsigned i = 0; i < count; i++)
         {
             titleData newData;
 
             char16_t title[0x40];
-            cache.read((char *)title, sizeof(char16_t) * 0x40);
-            cache.seekg(1, cache.cur);
+            fread(title, sizeof(uint16_t), 0x40, cache);
+            fgetc(cache);
 
             char prodCode[16];
-            cache.read(prodCode, 16);
-            cache.seekg(1, cache.cur);
+            fread(prodCode, 1, 16, cache);
+            fgetc(cache);
 
             uint64_t newID = 0;
-            cache.read((char *)&newID, sizeof(uint64_t));
-            cache.seekg(1, cache.cur);
+            fread(&newID, sizeof(uint64_t), 1, cache);
+            fgetc(cache);
 
             newData.initFromCache(newID, title, prodCode, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
             t.push_back(newData);
         }
 
-        cache.close();
+        fclose(cache);
 
         return true;
     }
