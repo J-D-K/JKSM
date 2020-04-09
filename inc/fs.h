@@ -47,11 +47,23 @@ namespace fs
 
             void seek(const int& pos, const uint8_t& seekfrom);
 
-            uint32_t getError() { return error; }
-            uint64_t getOffset() { return offset; }
-            uint64_t getSize() { return fSize; }
+            uint32_t getError()
+            {
+                return error;
+            }
+            uint64_t getOffset()
+            {
+                return offset;
+            }
+            uint64_t getSize()
+            {
+                return fSize;
+            }
 
-            bool isOpen() { return open; }
+            bool isOpen()
+            {
+                return open;
+            }
 
         private:
             Handle fHandle;
@@ -68,10 +80,19 @@ namespace fs
 
             void rescan();
             void reassign(const FS_Archive& arch, const std::u16string& p);
-            const uint32_t getCount() { return entry.size(); }
+            const uint32_t getCount()
+            {
+                return entry.size();
+            }
 
-            bool isDir(unsigned i) { return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY; }
-            const std::u16string getItem(unsigned i) { return std::u16string((char16_t *)entry[i].name); }
+            bool isDir(unsigned i)
+            {
+                return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY;
+            }
+            const std::u16string getItem(unsigned i)
+            {
+                return std::u16string((char16_t *)entry[i].name);
+            }
 
         private:
             Handle d;

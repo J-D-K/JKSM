@@ -63,7 +63,28 @@ static uint32_t extdataRedirect(const uint32_t& low)
 std::vector<uint64_t> blacklist;
 std::vector<uint64_t> favorites;
 
-bool isBlacklisted(const uint64_t& id)
+struct
+{
+    bool operator()(data::titleData& a, data::titleData& b)
+    {
+        if(a.getMedia() != b.getMedia())\
+            return a.getMedia() == MEDIATYPE_GAME_CARD;
+
+        if(a.getFav() != b.getFav())
+            return a.getFav() == true;
+
+        for(unsigned i = 0; i < a.getTitle().length(); i++)
+        {
+            int aChar = tolower(a.getTitle()[i]), bChar = tolower(b.getTitle()[i]);
+            if(aChar != bChar)
+                return aChar < bChar;
+        }
+
+        return false;
+    }
+} sortTitles;
+
+static bool isBlacklisted(const uint64_t& id)
 {
     for(unsigned i = 0; i < blacklist.size(); i++)
     {
@@ -73,7 +94,7 @@ bool isBlacklisted(const uint64_t& id)
 
     return false;
 }
-bool isFavorite(const uint64_t& id)
+static bool isFavorite(const uint64_t& id)
 {
     for(unsigned i = 0; i < favorites.size(); i++)
     {
@@ -103,7 +124,7 @@ namespace data
         high = (uint32_t)(id >> 32);
         unique = (low >> 8);
         extdata = extdataRedirect(low);
-        if(isFavorite(id))
+        if(mt != MEDIATYPE_GAME_CARD && isFavorite(id))
             fav = true;
 
         smdh_s *smdh = loadSMDH(low, high, m);
@@ -237,24 +258,6 @@ namespace data
 
         return NULL;
     }
-
-    struct
-    {
-        bool operator()(titleData& a, titleData& b)
-        {
-            if(a.getFav() != b.getFav())
-                return a.getFav() == true;
-
-            for(unsigned i = 0; i < a.getTitle().length(); i++)
-            {
-                int aChar = tolower(a.getTitle()[i]), bChar = tolower(b.getTitle()[i]);
-                if(aChar != bChar)
-                    return aChar < bChar;
-            }
-
-            return false;
-        }
-    } sortTitles;
 
     bool checkHigh(const uint64_t& id)
     {

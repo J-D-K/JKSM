@@ -71,7 +71,10 @@ namespace fs
             case ARCHIVE_USER_SAVEDATA:
                 {
                     uint32_t path[3] = {dat.getMedia(), dat.getLow(), dat.getHigh()};
-                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
+                    FS_Path binData = (FS_Path)
+                    {
+                        PATH_BINARY, 12, path
+                    };
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_USER_SAVEDATA, binData);
                 }
                 break;
@@ -85,7 +88,10 @@ namespace fs
             case ARCHIVE_EXTDATA:
                 {
                     uint32_t path[] = {MEDIATYPE_SD, dat.getExtData(), 0};
-                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
+                    FS_Path binData = (FS_Path)
+                    {
+                        PATH_BINARY, 12, path
+                    };
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_EXTDATA, binData);
                 }
                 break;

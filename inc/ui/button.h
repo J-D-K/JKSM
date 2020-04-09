@@ -21,14 +21,29 @@ namespace ui
             void update(const touchPosition& p);
             bool isOver();
             bool wasOver();
-            int getEvent() { return retEvent; }
+            int getEvent()
+            {
+                return retEvent;
+            }
 
             void draw();
 
-            unsigned getX() { return x; }
-            unsigned getY() { return y; }
-            unsigned getTx() { return tx; }
-            unsigned getTy() { return ty; }
+            unsigned getX()
+            {
+                return x;
+            }
+            unsigned getY()
+            {
+                return y;
+            }
+            unsigned getTx()
+            {
+                return tx;
+            }
+            unsigned getTy()
+            {
+                return ty;
+            }
 
         protected:
             bool pressed = false, first = false;

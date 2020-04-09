@@ -16,20 +16,56 @@ namespace data
             bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const uint8_t& mt);
             bool isOpenable();
 
-            uint64_t getID() { return id; }
-            uint32_t getLow() { return low; }
-            uint32_t getHigh() { return high; }
-            uint32_t getUnique() { return unique; }
-            uint32_t getExtData() { return extdata; }
-            uint8_t getMedia() { return m; }
-            bool getFav() { return fav; }
-            void setFav(bool _set) { fav = _set; }
+            uint64_t getID()
+            {
+                return id;
+            }
+            uint32_t getLow()
+            {
+                return low;
+            }
+            uint32_t getHigh()
+            {
+                return high;
+            }
+            uint32_t getUnique()
+            {
+                return unique;
+            }
+            uint32_t getExtData()
+            {
+                return extdata;
+            }
+            uint8_t getMedia()
+            {
+                return m;
+            }
+            bool getFav()
+            {
+                return fav;
+            }
+            void setFav(bool _set)
+            {
+                fav = _set;
+            }
 
-            void setExtdata(const uint32_t& ex) { extdata = ex; }
+            void setExtdata(const uint32_t& ex)
+            {
+                extdata = ex;
+            }
 
-            std::string getProdCode() { return prodCode; }
-            std::u16string getTitle() { return title; }
-            std::u16string getTitleSafe() { return titleSafe; }
+            std::string getProdCode()
+            {
+                return prodCode;
+            }
+            std::u16string getTitle()
+            {
+                return title;
+            }
+            std::u16string getTitleSafe()
+            {
+                return titleSafe;
+            }
 
             void drawInfo(unsigned x, unsigned y);
 

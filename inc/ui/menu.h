@@ -10,9 +10,15 @@ namespace ui
     {
         public:
             void addOpt(const std::string& add, int maxWidth);
-            void editOpt(int ind, const std::string& ch) { opt[ind] = ch; }
+            void editOpt(int ind, const std::string& ch)
+            {
+                opt[ind] = ch;
+            }
             void multiSet(const bool& s);
-            bool multiIsSet(int ind) { return multiSel[ind]; }
+            bool multiIsSet(int ind)
+            {
+                return multiSel[ind];
+            }
             void reset();
             void adjust();
             void setSelected(const int& newSel);
@@ -20,9 +26,18 @@ namespace ui
             void handleInput(const uint32_t& down, const uint32_t& held);
             void draw(const int& x, const int&y, const uint32_t& baseClr, const uint32_t& rectWidth, bool lightBack);
 
-            int getSelected() { return selected; }
-            unsigned getCount() { return opt.size(); }
-            std::string getOpt(const int& g) { return opt[g]; }
+            int getSelected()
+            {
+                return selected;
+            }
+            unsigned getCount()
+            {
+                return opt.size();
+            }
+            std::string getOpt(const int& g)
+            {
+                return opt[g];
+            }
 
         private:
             uint8_t clrSh = 0x88;
