@@ -1,0 +1,16 @@
+build/
+test/
+release/
+.codelite/
+*.o
+*.elf
+*.wav
+*.cbp
+*.layout
+*.smdh
+*.exe
+*.log
+*.7z
+*.project
+*.cia
+*.3dsx

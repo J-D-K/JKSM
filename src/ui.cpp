@@ -1,5 +1,7 @@
 #include <3ds.h>
 #include <citro2d.h>
+#include <cstdio>
+#include <cstdarg>
 #include <string>
 #include <cstring>
 #include <fstream>
@@ -118,7 +120,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 04.09.2020");
+        drawTopBar("JKSM - 05.08.2020");
         mainMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
@@ -552,8 +554,13 @@ namespace ui
         }
     }
 
-    void showMessage(const std::string& mess)
+    void showMessage(const char *fmt, ...)
     {
+        char tmp[512];
+        va_list args;
+        va_start(args, fmt);
+        vsprintf(tmp, fmt, args);
+
         ui:: button ok("OK \ue000", 96, 192, 128, 32);
         while(1)
         {
@@ -572,7 +579,7 @@ namespace ui
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
             ok.draw();
-            gfx::drawTextWrap(mess, 16, 16, 224, 0xFF000000);
+            gfx::drawTextWrap(tmp, 16, 16, 224, 0xFF000000);
             gfx::frameEnd();
         }
     }

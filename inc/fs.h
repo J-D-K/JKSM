@@ -38,8 +38,8 @@ namespace fs
             fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
             ~fsfile();
 
-            void read(uint8_t *buf, uint32_t& readOut, const uint32_t& max);
-            void write(const uint8_t *buf, uint32_t& written, const uint32_t& size);
+            void read(uint8_t *buf, uint32_t *readOut, const uint32_t& max);
+            void write(const uint8_t *buf, uint32_t *written, const uint32_t& size);
             void writeString(const std::string& str);
             uint8_t getByte();
             void putByte(const uint8_t& put);
@@ -47,27 +47,14 @@ namespace fs
 
             void seek(const int& pos, const uint8_t& seekfrom);
 
-            uint32_t getError()
-            {
-                return error;
-            }
-            uint64_t getOffset()
-            {
-                return offset;
-            }
-            uint64_t getSize()
-            {
-                return fSize;
-            }
-
-            bool isOpen()
-            {
-                return open;
-            }
+            Result getError(){ return error; }
+            uint64_t getOffset(){ return offset; }
+            uint64_t getSize(){ return fSize; }
+            bool isOpen(){ return open; }
 
         private:
             Handle fHandle;
-            uint32_t error;
+            Result error;
             uint64_t fSize, offset = 0;
             bool open = false;
     };
@@ -80,19 +67,9 @@ namespace fs
 
             void rescan();
             void reassign(const FS_Archive& arch, const std::u16string& p);
-            const uint32_t getCount()
-            {
-                return entry.size();
-            }
-
-            bool isDir(unsigned i)
-            {
-                return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY;
-            }
-            const std::u16string getItem(unsigned i)
-            {
-                return std::u16string((char16_t *)entry[i].name);
-            }
+            const uint32_t getCount(){ return entry.size(); }
+            bool isDir(unsigned i){ return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY; }
+            const std::u16string getItem(unsigned i){ return std::u16string((char16_t *)entry[i].name); }
 
         private:
             Handle d;

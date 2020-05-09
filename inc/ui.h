@@ -23,7 +23,7 @@ namespace ui
 {
     void prepMenus();
     void loadTitleMenu();
-    void showMessage(const std::string& mess);
+    void showMessage(const char *fmt, ...);
     void drawTopBar(const std::string& info);
     void runApp(const uint32_t& down, const uint32_t& held);
 

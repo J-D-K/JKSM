@@ -67,7 +67,7 @@ struct
 {
     bool operator()(data::titleData& a, data::titleData& b)
     {
-        if(a.getMedia() != b.getMedia())\
+        if(a.getMedia() != b.getMedia())
             return a.getMedia() == MEDIATYPE_GAME_CARD;
 
         if(a.getFav() != b.getFav())

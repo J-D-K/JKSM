@@ -11,7 +11,7 @@
 #include "gfx.h"
 #include "data.h"
 
-#define buff_size 100 * 1024
+#define buff_size 128 * 1024
 
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
@@ -63,7 +63,7 @@ namespace fs
 
     bool openArchive(data::titleData& dat, const uint32_t& arch, bool error)
     {
-        Result res;
+        Result res = 0;
         saveMode = (FS_ArchiveID)arch;
 
         switch(arch)
@@ -71,27 +71,19 @@ namespace fs
             case ARCHIVE_USER_SAVEDATA:
                 {
                     uint32_t path[3] = {dat.getMedia(), dat.getLow(), dat.getHigh()};
-                    FS_Path binData = (FS_Path)
-                    {
-                        PATH_BINARY, 12, path
-                    };
+                    FS_Path binData = (FS_Path){PATH_BINARY, 12, path};
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_USER_SAVEDATA, binData);
                 }
                 break;
 
             case ARCHIVE_SAVEDATA:
-                {
-                    res = FSUSER_OpenArchive(&saveArch, ARCHIVE_SAVEDATA, fsMakePath(PATH_EMPTY, ""));
-                }
+                res = FSUSER_OpenArchive(&saveArch, ARCHIVE_SAVEDATA, fsMakePath(PATH_EMPTY, ""));
                 break;
 
             case ARCHIVE_EXTDATA:
                 {
                     uint32_t path[] = {MEDIATYPE_SD, dat.getExtData(), 0};
-                    FS_Path binData = (FS_Path)
-                    {
-                        PATH_BINARY, 12, path
-                    };
+                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_EXTDATA, binData);
                 }
                 break;
@@ -121,12 +113,9 @@ namespace fs
                 break;
         }
 
-        if(R_FAILED(res))
+        if(R_FAILED(res) && error)
         {
-            if(error)
-            {
-                ui::showMessage("The archive cannot be opened!");
-            }
+            ui::showMessage("The archive could not be opened.\nError: 0x%08X", (unsigned)res);
             return false;
         }
 
@@ -139,7 +128,7 @@ namespace fs
         {
             Result res = FSUSER_ControlArchive(saveArch, ARCHIVE_ACTION_COMMIT_SAVE_DATA, NULL, 0, NULL, 0);
             if(res)
-                ui::showMessage("Failed to commit save data!");
+                ui::showMessage("Failed to commit save data!\nError: 0x%08X", (unsigned)res);
         }
     }
 
@@ -147,73 +136,56 @@ namespace fs
     {
         if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA)
         {
+            Result res = 0;
             u64 in = ((u64)SECUREVALUE_SLOT_SD << 32) | (data::curData.getUnique() << 8);
             u8 out;
 
-            if(R_FAILED(FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &in, 8, &out, 1)))
-            {
-                ui::showMessage("Failed to delete secure value.");
-            }
+            res = FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &in, 8, &out, 1);
+            if(R_FAILED(res))
+                ui::showMessage("Failed to delete secure value.\nError: 0x%08X", (unsigned)res);
         }
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags)
     {
-        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0)))
+        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.c_str()), openFlags, 0);
+        if(R_SUCCEEDED(error))
         {
             FSFILE_GetSize(fHandle, &fSize);
             open = true;
         }
-        else
-            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags, const uint64_t& crSize)
     {
-        if(R_SUCCEEDED(FSUSER_CreateFile(_arch, fsMakePath(PATH_ASCII, _path.data()), 0, crSize)))
+        FSUSER_CreateFile(_arch, fsMakePath(PATH_ASCII, _path.c_str()), 0, crSize);
+        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.c_str()), openFlags, 0);
+        if(R_SUCCEEDED(error))
         {
-            if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.data()), openFlags, 0)))
-            {
-                FSFILE_GetSize(fHandle, &fSize);
-                open = true;
-            }
-            else
-                open = false;
+            FSFILE_GetSize(fHandle, &fSize);
+            open = true;
         }
-        else
-            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags)
     {
-        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
+        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.c_str()), openFlags, 0);
+        if(R_SUCCEEDED(error))
         {
             FSFILE_GetSize(fHandle, &fSize);
             open = true;
         }
-        else
-            open = false;
     }
 
     fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize)
     {
-        if(R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
+        FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.c_str()), 0, crSize);
+        error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.c_str()), openFlags, 0);
+        if(R_SUCCEEDED(error))
         {
             FSFILE_GetSize(fHandle, &fSize);
             open = true;
         }
-        else
-        {
-            if(R_SUCCEEDED(FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.data()), 0, crSize)) && \
-                    R_SUCCEEDED(FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.data()), openFlags, 0)))
-            {
-                FSFILE_GetSize(fHandle, &fSize);
-                open = true;
-            }
-            else
-                open = false;
-        }
-
     }
 
     fsfile::~fsfile()
@@ -221,24 +193,24 @@ namespace fs
         FSFILE_Close(fHandle);
     }
 
-    void fsfile::read(uint8_t *buf, uint32_t& readOut, const uint32_t& max)
+    void fsfile::read(uint8_t *buf, uint32_t *readOut, const uint32_t& max)
     {
-        if(R_FAILED(FSFILE_Read(fHandle, &readOut, offset, buf, max)))
+        if(R_FAILED(FSFILE_Read(fHandle, readOut, offset, buf, max)))
         {
-            if(readOut > max)
-                readOut = max;
+            if(*readOut > max)
+                *readOut = max;
 
             std::memset(buf, 0x00, max);
         }
 
-        offset += readOut;
+        offset += *readOut;
     }
 
-    void fsfile::write(const uint8_t* buf, uint32_t& written, const uint32_t& size)
+    void fsfile::write(const uint8_t* buf, uint32_t *written, const uint32_t& size)
     {
-        FSFILE_Write(fHandle, &written, offset, buf, size, FS_WRITE_FLUSH);
+        FSFILE_Write(fHandle, written, offset, buf, size, FS_WRITE_FLUSH);
 
-        offset += written;
+        offset += *written;
     }
 
     void fsfile::writeString(const std::string& str)
@@ -290,6 +262,9 @@ namespace fs
     {
         bool operator()(const FS_DirectoryEntry& a, const FS_DirectoryEntry& b)
         {
+            if(a.attributes != b.attributes)
+                return a.attributes == FS_ATTRIBUTE_DIRECTORY;
+
             for(unsigned i = 0; i < 0x106; i++)
             {
                 int charA = std::tolower(a.name[i]), charB = std::tolower(b.name[i]);
@@ -380,16 +355,8 @@ namespace fs
         fsfile in(arch, from, FS_OPEN_READ);
         fsfile out(getSDMCArch(), to, FS_OPEN_WRITE | FS_OPEN_CREATE);
 
-        if(!in.isOpen())
-        {
-            ui::showMessage("There was an error opening the file for reading.");
-            return;
-        }
-        else if(!out.isOpen())
-        {
-            ui::showMessage("There was an error opening the file for writing.");
-            return;
-        }
+        if(!in.isOpen() || !out.isOpen())
+            ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
@@ -397,14 +364,8 @@ namespace fs
         do
         {
             uint32_t read, written;
-            in.read(buff, read, buff_size);
-            out.write(buff, written, read);
-
-            if(written != read)
-            {
-                ui::showMessage("Size mismatch.");
-                break;
-            }
+            in.read(buff, &read, buff_size);
+            out.write(buff, &written, read);
 
             prog.update((uint32_t)in.getOffset());
 
@@ -456,21 +417,8 @@ namespace fs
         fsfile in(getSDMCArch(), from, FS_OPEN_READ);
         fsfile out(arch, to, FS_OPEN_WRITE, in.getSize());
 
-        if(!in.isOpen())
-        {
-            ui::showMessage("There was an error opening the file for reading.");
-            return;
-        }
-        else if(!out.isOpen())
-        {
-            ui::showMessage("There was an error opening the file for writing.");
-
-            char tmp[16];
-            std::sprintf(tmp, "0x%08X", (unsigned)out.getError());
-            ui::showMessage(tmp);
-
-            return;
-        }
+        if(!in.isOpen() || !out.isOpen())
+            ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
@@ -478,14 +426,8 @@ namespace fs
         do
         {
             uint32_t read, written;
-            in.read(buff, read, buff_size);
-            out.write(buff, written, read);
-
-            if(written != read)
-            {
-                ui::showMessage("Size mismatch.");
-                break;
-            }
+            in.read(buff, &read, buff_size);
+            out.write(buff, &written, read);
 
             prog.update((uint64_t)in.getOffset());
 
