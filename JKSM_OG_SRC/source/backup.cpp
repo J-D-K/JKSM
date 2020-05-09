@@ -99,7 +99,7 @@ bool backupData(const titleData dat, FS_Archive arch, int mode, bool autoName)
     if(slot.empty())
         return false;
 
-    //get path returns path to /3ds/data/JKSM/[DIR]
+    //get path returns path to /JKSV/[DIR]
     pathOut = getPath(mode) + dat.nameSafe + (char16_t)'/' + slot;
     std::u16string recreate = pathOut;//need this later after directory is deleted.
     pathOut += (char16_t)'/';
