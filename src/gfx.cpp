@@ -76,6 +76,7 @@ namespace gfx
             if(str[i] == '\n')
             {
                 ++i;
+                tmpX = x;
                 y += 12;
             }
             size_t nextBreak = str.find_first_of(" /_.", i);

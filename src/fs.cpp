@@ -359,8 +359,6 @@ namespace fs
         if(!in.isOpen() || !out.isOpen())
         {
             ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
-            in.close();
-            out.close();
             return;
         }
 
@@ -426,8 +424,6 @@ namespace fs
         if(!in.isOpen() || !out.isOpen())
         {
             ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
-            in.close();
-            out.close();
             return;
         }
 

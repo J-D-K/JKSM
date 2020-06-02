@@ -758,7 +758,7 @@ namespace ui
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
             ok.draw();
-            gfx::drawTextWrap(tmp, 16, 16, 224, 0xFF000000);
+            gfx::drawTextWrap(tmp, 16, 16, 300, 0xFF000000);
             gfx::frameEnd();
         }
     }
@@ -809,7 +809,7 @@ namespace ui
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFF4F4F4);
-            gfx::drawTextWrap(mess, 16, 16, 240, 0xFF000000);
+            gfx::drawTextWrap(mess, 16, 16, 300, 0xFF000000);
             yes.draw();
             no.draw();
             gfx::frameEnd();
