@@ -73,6 +73,11 @@ namespace gfx
         int tmpX = x;
         for(int i = 0; i < (int)str.length(); )
         {
+            if(str[i] == '\n')
+            {
+                ++i;
+                y += 12;
+            }
             size_t nextBreak = str.find_first_of(" /_.", i);
             if(nextBreak == str.npos)
             {

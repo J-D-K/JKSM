@@ -71,7 +71,7 @@ namespace fs
             case ARCHIVE_USER_SAVEDATA:
                 {
                     uint32_t path[3] = {dat.getMedia(), dat.getLow(), dat.getHigh()};
-                    FS_Path binData = (FS_Path){PATH_BINARY, 12, path};
+                    FS_Path binData = (FS_Path) {PATH_BINARY, 12, path};
                     res = FSUSER_OpenArchive(&saveArch, ARCHIVE_USER_SAVEDATA, binData);
                 }
                 break;
@@ -116,7 +116,7 @@ namespace fs
         if(R_FAILED(res))
         {
             if(error)
-                ui::showMessage("The archive could not be opened.\nError: 0x%08X", (unsigned)res);
+                ui::showMessage("The archive could not be opened. The save data type may not exist for this title.\nError: 0x%08X", (unsigned)res);
             return false;
         }
 
@@ -357,7 +357,12 @@ namespace fs
         fsfile out(getSDMCArch(), to, FS_OPEN_WRITE | FS_OPEN_CREATE);
 
         if(!in.isOpen() || !out.isOpen())
+        {
             ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
+            in.close();
+            out.close();
+            return;
+        }
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
@@ -419,7 +424,12 @@ namespace fs
         fsfile out(arch, to, FS_OPEN_WRITE, in.getSize());
 
         if(!in.isOpen() || !out.isOpen())
+        {
             ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
+            in.close();
+            out.close();
+            return;
+        }
 
         uint8_t *buff = new uint8_t[buff_size];
         std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
