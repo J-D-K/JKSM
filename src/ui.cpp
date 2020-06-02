@@ -18,9 +18,22 @@
 
 #include "smdh.h"
 
-static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu;
+static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu, sharedMenu;
 
 int state = MAIN_MENU, prev = MAIN_MENU;
+
+//Stolen 3Dbrew descriptions
+static const std::string sharedDesc[] =
+{
+    "Home Menu attempts to open this archive during boot, if FS:OpenArchive doesn't return an error Home Menu seems to then launch the System Transfer application. Home Menu doesn't actually use this archive at all except for checking whether it exists.",
+    "NAND JPEG/MPO files and phtcache.bin from the camera application are stored here. This also contains UploadData.dat.",
+    "NAND M4A files from the sound application are stored here.",
+    "Used for SpotPass content storage for notifications.",
+    "Contains idb.dat, idbt.dat, gamecoin.dat, ubll.lst, CFL_DB.dat, and CFL_OldDB.dat. These files contain cleartext Miis and some data relating (including cached ICN data) to Play/Usage Records.",
+    "Contains bashotorya.dat and bashotorya2.dat.",
+    "Home Menu SpotPass content data storage.",
+    "Contains versionlist.dat, used by Home Menu for the software update notification added with 7.0.0-13."
+};
 
 namespace ui
 {
@@ -50,6 +63,7 @@ namespace ui
     {
         mainMenu.addOpt("Titles", 0);
         mainMenu.addOpt("System Titles", 0);
+        mainMenu.addOpt("Shared ExtData", 0);
         mainMenu.addOpt("Reload Titles", 0);
         mainMenu.addOpt("Play Coins", 0);
         mainMenu.addOpt("Exit", 0);
@@ -68,6 +82,15 @@ namespace ui
         nandBackupMenu.addOpt("Extra Data", 0);
         nandBackupMenu.addOpt("BOSS Extra Data", 0);
         nandBackupMenu.addOpt("Back", 0);
+
+        sharedMenu.addOpt("E0000000", 0);
+        sharedMenu.addOpt("F0000001", 0);
+        sharedMenu.addOpt("F0000002", 0);
+        sharedMenu.addOpt("F0000009", 0);
+        sharedMenu.addOpt("F000000B", 0);
+        sharedMenu.addOpt("F000000C", 0);
+        sharedMenu.addOpt("F000000D", 0);
+        sharedMenu.addOpt("F000000E", 0);
     }
 
     void drawTopBar(const std::string& info)
@@ -99,6 +122,10 @@ namespace ui
                     break;
 
                 case 2:
+                    state = SHRD_MENU;
+                    break;
+
+                case 3:
                     remove("/JKSV/titles");
                     remove("/JKSV/nand");
                     data::loadTitles();
@@ -106,11 +133,11 @@ namespace ui
                     loadTitleMenu();
                     break;
 
-                case 3:
+                case 4:
                     util::setPC();
                     break;
 
-                case 4:
+                case 5:
                     sys::run = false;
                     break;
             }
@@ -120,8 +147,8 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 05.08.2020");
-        mainMenu.draw(40, 82, 0xFFFFFFFF, 320, false);
+        drawTopBar("JKSM - 06.02.2020");
+        mainMenu.draw(40, 78, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();
     }
@@ -284,7 +311,7 @@ namespace ui
                     break;
 
                 case 1:
-                    if(confirm(std::string("Are you 100% sure you want to delete the current save data for this game? This is permanent!")) && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA, true))
+                    if(confirm(std::string("Are you 100% sure you want to delete the save data for this game? This is permanent!")) && fs::openArchive(data::curData, ARCHIVE_USER_SAVEDATA, true))
                     {
                         FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), fsMakePath(PATH_ASCII, "/"));
                         fs::commitData(ARCHIVE_USER_SAVEDATA);
@@ -520,6 +547,154 @@ namespace ui
         gfx::frameEnd();
     }
 
+    void stateSharedSelect(const uint32_t& down, const uint32_t& held)
+    {
+        sharedMenu.handleInput(down, held);
+        if(down & KEY_A)
+        {
+            switch(sharedMenu.getSelected())
+            {
+                case 0:
+                    {
+                        data::titleData e0;
+                        e0.setExtdata(0xE0000000);
+                        e0.setTitle((char16_t *)"E0000000");
+                        if(fs::openArchive(e0, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = e0;
+                            util::createTitleDir(e0, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(e0, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 1:
+                    {
+                        data::titleData f1;
+                        f1.setExtdata(0xF0000001);
+                        f1.setTitle((char16_t *)"F0000001");
+                        if(fs::openArchive(f1, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = f1;
+                            util::createTitleDir(f1, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(f1, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        data::titleData f2;
+                        f2.setExtdata(0xF0000002);
+                        f2.setTitle((char16_t *)"F0000002");
+                        if(fs::openArchive(f2, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = f2;
+                            util::createTitleDir(f2, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(f2, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        data::titleData f9;
+                        f9.setExtdata(0xF0000009);
+                        f9.setTitle((char16_t *)"F0000009");
+                        if(fs::openArchive(f9, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = f9;
+                            util::createTitleDir(f9, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(f9, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 4:
+                    {
+                        data::titleData fb;
+                        fb.setExtdata(0xF000000B);
+                        fb.setTitle((char16_t *)"F000000B");
+                        if(fs::openArchive(fb, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = fb;
+                            util::createTitleDir(fb, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(fb, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 5:
+                    {
+                        data::titleData fc;
+                        fc.setExtdata(0xF000000C);
+                        fc.setTitle((char16_t *)"F000000C");
+                        if(fs::openArchive(fc, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = fc;
+                            util::createTitleDir(fc, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(fc, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 6:
+                    {
+                        data::titleData fd;
+                        fd.setExtdata(0xF000000D);
+                        fd.setTitle((char16_t *)"F000000D");
+                        if(fs::openArchive(fd, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = fd;
+                            util::createTitleDir(fd, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(fd, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+
+                case 7:
+                    {
+                        data::titleData fe;
+                        fe.setExtdata(0xF000000E);
+                        fe.setTitle((char16_t *)"F000000E");
+                        if(fs::openArchive(fe, ARCHIVE_SHARED_EXTDATA, true))
+                        {
+                            data::curData = fe;
+                            util::createTitleDir(fe, ARCHIVE_SHARED_EXTDATA);
+                            ui::prepFolderMenu(fe, ARCHIVE_SHARED_EXTDATA);
+                            prev = SHRD_MENU;
+                            state = FLDR_MENU;
+                        }
+                    }
+                    break;
+            }
+        }
+        else if(down & KEY_B)
+            state = MAIN_MENU;
+
+        gfx::frameBegin();
+        gfx::frameStartTop();
+        drawTopBar("Shared ExtData");
+        sharedMenu.draw(40, 60, 0xFFFFFFFF, 320, false);
+        gfx::frameStartBot();
+        gfx::drawTextWrap(sharedDesc[sharedMenu.getSelected()], 0, 0, 240, 0xFFFFFFFF);
+        gfx::frameEnd();
+    }
+
     void runApp(const uint32_t& down, const uint32_t& held)
     {
         switch(state)
@@ -550,6 +725,10 @@ namespace ui
 
             case ADV_MENU:
                 stateAdvMode(down, held);
+                break;
+
+            case SHRD_MENU:
+                stateSharedSelect(down, held);
                 break;
         }
     }
@@ -630,7 +809,7 @@ namespace ui
             gfx::frameBegin();
             gfx::frameStartBot();
             C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFF4F4F4);
-            gfx::drawTextWrap(mess, 16, 16, 224, 0xFF000000);
+            gfx::drawTextWrap(mess, 16, 16, 240, 0xFF000000);
             yes.draw();
             no.draw();
             gfx::frameEnd();

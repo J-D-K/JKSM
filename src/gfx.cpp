@@ -73,7 +73,7 @@ namespace gfx
         int tmpX = x;
         for(int i = 0; i < (int)str.length(); )
         {
-            size_t nextBreak = str.find_first_of(" /", i, 2);
+            size_t nextBreak = str.find_first_of(" /_.", i);
             if(nextBreak == str.npos)
             {
                 C2D_TextParse(&tmpTxt, tmpBuf, str.substr(i, str.length() - i).c_str());

@@ -181,12 +181,17 @@ namespace data
 
             if(!ret)
                 ret = fs::openArchive(*this, ARCHIVE_BOSS_EXTDATA, false);
-
         }
 
         fs::closeSaveArch();
 
         return ret;
+    }
+
+    void titleData::setTitle(const std::u16string& _t)
+    {
+        title = _t;
+        titleSafe = util::safeString(_t);
     }
 
     void titleData::drawInfo(unsigned x, unsigned y)

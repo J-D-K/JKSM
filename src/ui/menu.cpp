@@ -128,6 +128,9 @@ namespace ui
 
     void menu::draw(const int& x, const int& y, const uint32_t& baseClr, const uint32_t& rectWidth, bool lightBack)
     {
+        if(opt.empty())
+            return;
+
         if(clrAdd)
         {
             clrSh += 6;

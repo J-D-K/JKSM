@@ -16,7 +16,8 @@ enum states
     SYS_MENU,
     SYS_BAKMENU,
     FLDR_MENU,
-    ADV_MENU
+    ADV_MENU,
+    SHRD_MENU
 };
 
 namespace ui

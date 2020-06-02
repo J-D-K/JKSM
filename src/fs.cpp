@@ -113,9 +113,10 @@ namespace fs
                 break;
         }
 
-        if(R_FAILED(res) && error)
+        if(R_FAILED(res))
         {
-            ui::showMessage("The archive could not be opened.\nError: 0x%08X", (unsigned)res);
+            if(error)
+                ui::showMessage("The archive could not be opened.\nError: 0x%08X", (unsigned)res);
             return false;
         }
 
@@ -124,7 +125,7 @@ namespace fs
 
     void commitData(const uint32_t& mode)
     {
-        if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA)
+        if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA && mode != ARCHIVE_SHARED_EXTDATA)
         {
             Result res = FSUSER_ControlArchive(saveArch, ARCHIVE_ACTION_COMMIT_SAVE_DATA, NULL, 0, NULL, 0);
             if(res)
@@ -134,7 +135,7 @@ namespace fs
 
     void deleteSv(const uint32_t& mode)
     {
-        if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA)
+        if(mode != ARCHIVE_EXTDATA && mode != ARCHIVE_BOSS_EXTDATA && mode != ARCHIVE_SHARED_EXTDATA)
         {
             Result res = 0;
             u64 in = ((u64)SECUREVALUE_SLOT_SD << 32) | (data::curData.getUnique() << 8);
