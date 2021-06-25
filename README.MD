@@ -11,4 +11,4 @@ This is a rewrite that is based on the original's code. I hope to support *hax a
 **See [releases](https://github.com/J-D-K/JKSM/releases) for the latest version and QR code**
 
 ## Requires:
-[libctru](https://github.com/smealum/ctrulib), [citro3d](https://github.com/fincs/citro3d), and [citro2d](https://github.com/devkitPro/citro2d)
+[libctru](https://github.com/smealum/ctrulib), [citro3d](https://github.com/fincs/citro3d), [citro2d](https://github.com/devkitPro/citro2d), and 3ds-zlib

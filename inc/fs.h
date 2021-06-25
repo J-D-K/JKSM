@@ -29,6 +29,9 @@ namespace fs
     void commitData(const uint32_t& mode);
     void deleteSv(const uint32_t& mode);
 
+    inline void fcreate(const std::string& path){ FSUSER_CreateFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()), 0, 0); }
+    inline void fdelete(const std::string& path){ FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str())); }
+
     class fsfile
     {
         public:
@@ -38,9 +41,11 @@ namespace fs
             fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
             ~fsfile();
 
-            void read(uint8_t *buf, uint32_t *readOut, const uint32_t& max);
-            void write(const uint8_t *buf, uint32_t *written, const uint32_t& size);
-            void writeString(const std::string& str);
+            void read(void *buf, uint32_t *readOut, const uint32_t& max);
+            bool getLine(char *out, size_t max);
+            void write(const void *buf, uint32_t *written, const uint32_t& size);
+            void writef(const char *fmt, ...);
+
             uint8_t getByte();
             void putByte(const uint8_t& put);
             bool eof();

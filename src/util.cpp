@@ -260,14 +260,14 @@ namespace util
 
     bool fexists(const std::string& path)
     {
-        FILE *test = fopen(path.c_str(), "r");
-        if(test != NULL)
-        {
-            fclose(test);
+        bool ret = false;
+        Handle tmp;
+        Result res = FSUSER_OpenFile(&tmp, fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()), FS_OPEN_READ, 0);
 
-            return true;
-        }
+        if(R_SUCCEEDED(res))
+            ret = true;
 
-        return false;
+        FSFILE_Close(tmp);
+        return ret;
     }
 }

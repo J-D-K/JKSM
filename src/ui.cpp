@@ -147,7 +147,7 @@ namespace ui
 
         gfx::frameBegin();
         gfx::frameStartTop();
-        drawTopBar("JKSM - 06.02.2020");
+        drawTopBar("JKSM - 06.24.2021");
         mainMenu.draw(40, 78, 0xFFFFFFFF, 320, false);
         gfx::frameStartBot();
         gfx::frameEnd();

@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include <3ds.h>
+#include <citro2d.h>
 #include <vector>
 #include <string>
 
@@ -9,6 +10,8 @@
 
 namespace data
 {
+    void exit();
+
     class titleData
     {
         public:
@@ -33,6 +36,10 @@ namespace data
             std::u16string getTitleSafe() { return titleSafe; }
 
             void drawInfo(unsigned x, unsigned y);
+            uint8_t *getIconData(){ return (uint8_t *)icon.tex->data; }
+
+            void assignIcon(C3D_Tex *_icon);
+            void freeIcon(){ if(icon.tex){ C3D_TexDelete(icon.tex); } }
 
         private:
             uint64_t id;
@@ -41,6 +48,7 @@ namespace data
             std::u16string title, titleSafe;
             FS_MediaType m;
             bool fav = false;
+            C2D_Image icon = {NULL, NULL};
     };
 
     void cartCheck();
@@ -54,6 +62,7 @@ namespace data
     void loadNand();
 
     void loadBlacklist();
+    void saveBlacklist();
     void blacklistAdd(titleData& t);
 
     void loadFav();
@@ -61,9 +70,12 @@ namespace data
     void favAdd(titleData& t);
     void favRem(titleData& t);
 
+    //Reads icon to C2D_image
+    C2D_Image readIconFromSMDH(smdh_s *smdh);
+
     //Writes title data cache to path
-    bool readCache(std::vector<titleData>& t, const std::string& path, bool nand);
-    void createCache(std::vector<titleData>& t, const std::string& path);
+    bool readCache(std::vector<titleData>& vect, const std::string& path, bool nand);
+    void createCache(std::vector<titleData>& vect, const std::string& path);
 
     extern uint8_t lang;
 }

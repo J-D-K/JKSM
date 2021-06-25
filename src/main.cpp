@@ -32,7 +32,9 @@ int main(int argc, const char *argv[])
     }
 
     data::saveFav();
+    data::saveBlacklist();
     sys::exit();
     gfx::exit();
     fs::exit();
+    data::exit();
 }

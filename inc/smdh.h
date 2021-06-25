@@ -1,6 +1,8 @@
 #ifndef SMDH_H
 #define SMDH_H
 
+#include <stdint.h>
+
 //Stolen from 3DS HB menu
 typedef struct
 {
