@@ -9,12 +9,12 @@
 #include "ui.h"
 #include "gfx.h"
 #include "data.h"
+#include "type.h"
 
 #define buff_size 128 * 1024
 
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
-
 
 void createDir(const std::string& path)
 {
@@ -214,17 +214,19 @@ fs::fsfile::~fsfile()
     FSFILE_Close(fHandle);
 }
 
-void fs::fsfile::read(void *buf, uint32_t *readOut, const uint32_t& max)
+size_t fs::fsfile::read(void *buf, const uint32_t& max)
 {
-    if(R_FAILED(FSFILE_Read(fHandle, readOut, offset, buf, max)))
+    uint32_t readOut = 0;
+
+    if(R_FAILED(FSFILE_Read(fHandle, &readOut, offset, buf, max)))
     {
-        if(*readOut > max)
-            *readOut = max;
+        if(readOut > max)
+            readOut = max;
 
         std::memset(buf, 0x00, max);
     }
-
-    offset += *readOut;
+    offset += readOut;
+    return (size_t)readOut;
 }
 
 bool fs::fsfile::getLine(char *out, size_t max)
@@ -241,11 +243,12 @@ bool fs::fsfile::getLine(char *out, size_t max)
     return true;
 }
 
-void fs::fsfile::write(const void* buf, uint32_t *written, const uint32_t& size)
+size_t fs::fsfile::write(const void* buf, const uint32_t& size)
 {
-    FSFILE_Write(fHandle, written, offset, buf, size, FS_WRITE_FLUSH);
-
-    offset += *written;
+    uint32_t writeOut = 0;
+    FSFILE_Write(fHandle, &writeOut, offset, buf, size, FS_WRITE_FLUSH);
+    offset += writeOut;
+    return (size_t)writeOut;
 }
 
 void fs::fsfile::writef(const char *fmt, ...)
@@ -255,9 +258,7 @@ void fs::fsfile::writef(const char *fmt, ...)
     va_start(args, fmt);
     vsprintf(tmp, fmt, args);
     va_end(args);
-
-    uint32_t written = 0;
-    write(tmp, &written, strlen(tmp));
+    write(tmp, strlen(tmp));
 }
 
 uint8_t fs::fsfile::getByte()
@@ -389,38 +390,72 @@ void fs::dirList::reassign(const FS_Archive& arch, const std::u16string& p)
     std::sort(entry.begin(), entry.end(), sortDirs);
 }
 
-void fs::copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+fs::backupArgs *fs::backupArgsCreate(const FS_Archive& _arch, const std::u16string& _from, const std::u16string& _to)
 {
-    fsfile in(arch, from, FS_OPEN_READ);
-    fsfile out(getSDMCArch(), to, FS_OPEN_WRITE | FS_OPEN_CREATE);
+    fs::backupArgs *ret = new fs::backupArgs;
+    ret->arch = _arch;
+    ret->from = _from;
+    ret->to = _to;
+    ret->bar = new ui::progressBar;
+    return ret;
+}
+
+static std::u16string getItemFromPath(const std::u16string& path)
+{
+    size_t ls = path.find_last_of('/');
+    if(ls != path.npos)
+        return path.substr(ls + 1, path.npos);
+
+    return (char16_t *)"";
+}
+
+void _fileDrawFunc(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
+    if(t->running)
+    {
+        std::string item = util::toUtf8(getItemFromPath(b->from));
+        int itemX = 160 - (gfx::getTextWidth(item) / 2);
+        gfx::drawText(item, itemX, 114, 1.0f, 0.5f, 0xFFFFFFFF);
+        b->bar->draw();
+    }
+}
+
+void copyFileToSD_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
+
+    fs::fsfile in(b->arch, b->from, FS_OPEN_READ);
+    fs::fsfile out(fs::getSDMCArch(), b->to, FS_OPEN_WRITE | FS_OPEN_CREATE);
 
     if(!in.isOpen() || !out.isOpen())
     {
-        ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
+        t->finished = true;
         return;
     }
 
     uint8_t *buff = new uint8_t[buff_size];
-    std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
     ui::progressBar prog((uint32_t)in.getSize());
-    do
+    std::string copyString = "Copying '" + util::toUtf8(b->from) + "'...";
+    t->status->setStatus(copyString);
+    b->bar->setMax(in.getSize());
+    size_t read = 0;
+    while((read = in.read(buff, buff_size)) > 0)
     {
-        uint32_t read, written;
-        in.read(buff, &read, buff_size);
-        out.write(buff, &written, read);
-
-        prog.update((uint32_t)in.getOffset());
-
-        gfx::frameBegin();
-        gfx::frameStartTop();
-        ui::drawTopBar("Dumping...");
-        gfx::frameStartBot();
-        prog.draw(copyString);
-        gfx::frameEnd();
+        out.write(buff, read);
+        b->bar->update(in.getOffset());
     }
-    while(!in.eof());
-
     delete[] buff;
+    delete b;
+    t->finished = true;
+}
+
+void fs::copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+{
+    fs::backupArgs *send = fs::backupArgsCreate(arch, from, to);
+    ui::newThread(copyFileToSD_t, send, _fileDrawFunc);
 }
 
 void fs::copyDirToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
@@ -454,38 +489,39 @@ void fs::backupArchive(const std::u16string& outpath)
     copyDirToSD(saveArch, pathIn, outpath);
 }
 
-void fs::copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+void copyFileToArch_t(void *a)
 {
-    fsfile in(getSDMCArch(), from, FS_OPEN_READ);
-    fsfile out(arch, to, FS_OPEN_WRITE, in.getSize());
+    threadInfo *t = (threadInfo *)a;
+    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
+
+    fs::fsfile in(fs::getSDMCArch(), b->from, FS_OPEN_READ);
+    fs::fsfile out(b->arch, b->to, FS_OPEN_WRITE, in.getSize());
 
     if(!in.isOpen() || !out.isOpen())
     {
-        ui::showMessage("There was an error opening one of the files.\nIn: 0x%08X\nOut: 0x%08X", in.getError(), out.getError());
+        t->finished = true;
         return;
     }
 
     uint8_t *buff = new uint8_t[buff_size];
-    std::string copyString = "Copying '" + util::toUtf8(from) + "'...";
-    ui::progressBar prog(in.getSize());
-    do
+    std::string copyString = "Copying '" + util::toUtf8(b->from) + "'...";
+    t->status->setStatus(copyString);
+    b->bar->setMax(in.getSize());
+    size_t read = 0;
+    while((read = in.read(buff, buff_size)) > 0)
     {
-        uint32_t read, written;
-        in.read(buff, &read, buff_size);
-        out.write(buff, &written, read);
-
-        prog.update((uint64_t)in.getOffset());
-
-        gfx::frameBegin();
-        gfx::frameStartTop();
-        ui::drawTopBar("Restoring...");
-        gfx::frameStartBot();
-        prog.draw(copyString);
-        gfx::frameEnd();
+        out.write(buff, read);
+        b->bar->update(in.getOffset());
     }
-    while(!in.eof());
-
     delete[] buff;
+    delete b;
+    t->finished = true;
+}
+
+void fs::copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+{
+    fs::backupArgs *send = fs::backupArgsCreate(arch, from, to);
+    ui::newThread(copyFileToArch_t, send, _fileDrawFunc);
 }
 
 void fs::copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
@@ -525,23 +561,23 @@ void fs::restoreToArchive(const std::u16string& inpath)
 
 void fs::backupAll()
 {
-    ui::progressBar prog(data::titles.size());
-    for(unsigned i = 0; i < data::titles.size(); i++)
+    ui::progressBar prog(data::usrSaveTitles.size());
+    for(unsigned i = 0; i < data::usrSaveTitles.size(); i++)
     {
-        std::string copyStr = "Working on '" + util::toUtf8(data::titles[i].getTitle()) + "'...";
+        std::string copyStr = "Working on '" + util::toUtf8(data::usrSaveTitles[i].getTitle()) + "'...";
         prog.update(i);
 
         //Sue me
         gfx::frameBegin();
         gfx::frameStartBot();
-        prog.draw(copyStr);
+        prog.draw();
         gfx::frameEnd();
 
-        if(fs::openArchive(data::titles[i], ARCHIVE_USER_SAVEDATA, false))
+        if(fs::openArchive(data::usrSaveTitles[i], ARCHIVE_USER_SAVEDATA, false))
         {
-            util::createTitleDir(data::titles[i], ARCHIVE_USER_SAVEDATA);
+            util::createTitleDir(data::usrSaveTitles[i], ARCHIVE_USER_SAVEDATA);
 
-            std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
+            std::u16string outpath = util::createPath(data::usrSaveTitles[i], ARCHIVE_USER_SAVEDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
             FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
             outpath += util::toUtf16("/");
 
@@ -550,11 +586,11 @@ void fs::backupAll()
             closeSaveArch();
         }
 
-        if(fs::openArchive(data::titles[i], ARCHIVE_EXTDATA, false))
+        if(fs::openArchive(data::usrSaveTitles[i], ARCHIVE_EXTDATA, false))
         {
-            util::createTitleDir(data::titles[i], ARCHIVE_EXTDATA);
+            util::createTitleDir(data::usrSaveTitles[i], ARCHIVE_EXTDATA);
 
-            std::u16string outpath = util::createPath(data::titles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
+            std::u16string outpath = util::createPath(data::usrSaveTitles[i], ARCHIVE_EXTDATA) + util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
             FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_UTF16, outpath.data()), 0);
             outpath += util::toUtf16("/");
 

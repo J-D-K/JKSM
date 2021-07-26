@@ -30,6 +30,8 @@ namespace util
 
     void copyDirlistToMenu(fs::dirList& d, ui::menu& m);
 
+    C2D_Image createIconGeneric(const std::string& txt, Tex3DS_SubTexture *sub);
+
     void setPC();
 
     bool touchPressed(const touchPosition& p);

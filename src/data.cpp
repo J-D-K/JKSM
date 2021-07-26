@@ -12,16 +12,15 @@
 #include "fs.h"
 #include "ui.h"
 #include "gfx.h"
+#include "type.h"
 
 #define ICON_BUFF_SIZE 0x2000
 
-//Needed for icon sub tex. Top UV needs to be higher than bottom so it's rotated.
-const Tex3DS_SubTexture subTex = {48, 48, 0.0f, 0.75f, 0.75f, 0.0f};
+static bool titleLock = false;
 
 const char *blPath    = "/JKSV/blacklist.txt";
 const char *favPath   = "/JKSV/favorites.txt";
-const char *titlePath = "/JKSV/titles";
-const char *nandPath  = "/JKSV/nand";
+const char *titlePath = "/JKSV/cache.bin";
 
 static uint32_t extdataRedirect(const uint32_t& low)
 {
@@ -74,6 +73,15 @@ static uint32_t extdataRedirect(const uint32_t& low)
 std::vector<uint64_t> blacklist;
 std::vector<uint64_t> favorites;
 
+std::vector<data::titleData> data::usrSaveTitles;
+std::vector<data::titleData> data::extDataTitles;
+std::vector<data::titleData> data::sysDataTitles;
+std::vector<data::titleData> data::bossDataTitles;
+
+//This is a master list now
+static std::vector<data::titleData> titles;
+std::vector<uint32_t> filterIds;
+
 struct
 {
     bool operator()(data::titleData& a, data::titleData& b)
@@ -119,8 +127,9 @@ static bool isFavorite(const uint64_t& id)
 static C3D_Tex *loadIcon(smdh_s *smdh)
 {
     C3D_Tex *ret = new C3D_Tex;
+    C3D_TexSetFilter(ret, GPU_LINEAR, GPU_LINEAR);
     uint16_t *icon = smdh->bigIconData;
-    if(C3D_TexInit(ret, 64, 64, GPU_RGB565))
+    if(C3D_TexInit(ret, 64, 64, GPU_RGB565))//GPU can't use below 64x64
     {
         uint16_t *tex  = (uint16_t *)ret->data + (16 * 64);
         for(unsigned y = 0; y < 48; y += 8, icon += 48 *8, tex += 64 * 8)
@@ -129,17 +138,13 @@ static C3D_Tex *loadIcon(smdh_s *smdh)
     return ret;
 }
 
-std::vector<data::titleData> data::titles;
-std::vector<data::titleData> data::nand;
-std::vector<uint32_t> filterIds;
-
 uint8_t lang;
 
 data::titleData data::curData;
 
 void data::exit()
 {
-    for(auto t : data::titles)
+    for(auto t : titles)
         t.freeIcon();
 }
 
@@ -152,27 +157,42 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     high = (uint32_t)(id >> 32);
     unique = (low >> 8);
     extdata = extdataRedirect(low);
-    if(mt != MEDIATYPE_GAME_CARD && isFavorite(id))
-        fav = true;
 
-    smdh_s *smdh = loadSMDH(low, high, m);
-    if(smdh == NULL)
-        return false;
-
-    title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
-    titleSafe.assign(util::safeString(title));
-    icon = readIconFromSMDH(smdh);
+    char tid[32];
+    sprintf(tid, "%016llX", _id);
+    idStr.assign(tid);
 
     char tmp[16];
     AM_GetTitleProductCode(m, id, tmp);
     prodCode = tmp;
 
-    delete smdh;
+    if(mt != MEDIATYPE_GAME_CARD && isFavorite(id))
+        fav = true;
+
+    testMounts();
+
+    smdh_s *smdh = loadSMDH(low, high, m);
+    if(smdh != NULL && hasSaveData())
+    {
+        title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
+        titleSafe.assign(util::safeString(title));
+        icon = readIconFromSMDH(smdh);
+        delete smdh;
+    }
+    else if(hasSaveData())
+    {
+        title.assign(util::toUtf16(idStr));
+        titleSafe.assign(util::toUtf16(idStr));
+        unsigned lowerFour = low & 0x0000FFFF;
+        char tmp[16];
+        sprintf(tmp, "%04X", lowerFour);
+        icon = util::createIconGeneric(tmp, &gfx::iconSubTex);
+    }
 
     return true;
 }
 
-bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const uint8_t& mt)
+bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const data::titleSaveTypes& _st, const uint8_t& mt)
 {
     id = _id;
     low = (uint32_t)id;
@@ -186,35 +206,58 @@ bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _
     title.assign(_title);
     titleSafe.assign(util::safeString(title));
     prodCode.assign(code);
+    types = _st;
+
+    char tid[32];
+    sprintf(tid, "%016llX", _id);
+    idStr.assign(tid);
 
     return true;
 }
 
-bool data::titleData::isOpenable()
+void data::titleData::testMounts()
 {
-    bool ret = false;
-
     if(getMedia() == MEDIATYPE_GAME_CARD || getMedia() == MEDIATYPE_SD)
     {
-        ret = fs::openArchive(*this, ARCHIVE_USER_SAVEDATA, false);
-        if(!ret)
-            ret = fs::openArchive(*this, ARCHIVE_EXTDATA, false);
+        if(fs::openArchive(*this, ARCHIVE_USER_SAVEDATA, false))
+        {
+               types.hasUser = true;
+               fs::closeSaveArch();
+        }
+
+        if(fs::openArchive(*this, ARCHIVE_EXTDATA, false))
+        {
+            types.hasExt = true;
+            fs::closeSaveArch();
+
+        }
     }
 
     if(getMedia() == MEDIATYPE_NAND)
     {
-        ret = fs::openArchive(*this, ARCHIVE_SYSTEM_SAVEDATA, false);
+        if(fs::openArchive(*this, ARCHIVE_SYSTEM_SAVEDATA, false))
+        {
+            types.hasSys = true;
+            fs::closeSaveArch();
+        }
 
-        if(!ret)
-            ret = fs::openArchive(*this, ARCHIVE_EXTDATA, false);
+        if(fs::openArchive(*this, ARCHIVE_EXTDATA, false))
+        {
+            types.hasExt = true;
+            fs::closeSaveArch();
+        }
 
-        if(!ret)
-            ret = fs::openArchive(*this, ARCHIVE_BOSS_EXTDATA, false);
+        if(fs::openArchive(*this, ARCHIVE_BOSS_EXTDATA, false))
+        {
+            types.hasBoss = true;
+            fs::closeSaveArch();
+        }
     }
+}
 
-    fs::closeSaveArch();
-
-    return ret;
+bool data::titleData::hasSaveData()
+{
+    return types.hasUser || types.hasExt || types.hasSys || types.hasBoss;
 }
 
 void data::titleData::setTitle(const std::u16string& _t)
@@ -243,14 +286,48 @@ void data::titleData::drawInfo(unsigned x, unsigned y)
 
     char tmp[64];
     sprintf(tmp, "Media: %s\nHigh: 0x%08X\nLow: 0x%08X", media.c_str(), (unsigned)getHigh(), (unsigned)getLow());
-    gfx::drawText(tmp, x, y, 0xFFFFFFFF);
+    gfx::drawText(tmp, x, y, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
     if(icon.tex)
         C2D_DrawImageAt(icon, 160, 8, 0.5f);
 }
 
+void data::titleData::drawIconAt(float x, float y, uint16_t w, uint16_t h, float depth)
+{
+    C2D_DrawImageAt(icon, x, y, depth);
+}
+
 void data::titleData::assignIcon(C3D_Tex *_icon)
 {
-    icon = {_icon, &subTex};
+    icon = {_icon, &gfx::iconSubTex};
+}
+
+void loadcart_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    t->status->setStatus("Loading cart info...");
+    uint64_t cartID = 0;
+    AM_GetTitleList(NULL, MEDIATYPE_GAME_CARD, 1, &cartID);
+    data::titleData cartData;
+    if(cartData.init(cartID, MEDIATYPE_GAME_CARD))
+    {
+        data::titleSaveTypes tmp = cartData.getSaveTypes();
+        boolLock(titleLock);
+        if(tmp.hasUser)
+            data::usrSaveTitles.insert(data::usrSaveTitles.begin(), cartData);
+
+        if(tmp.hasExt)
+            data::extDataTitles.insert(data::extDataTitles.begin(), cartData);
+
+        ui::ttlRefresh();
+        ui::extRefresh();
+        boolUnlock(titleLock);
+    }
+    t->finished = true;
+}
+
+static bool checkForCart()
+{
+    return data::usrSaveTitles[0].getMedia() == MEDIATYPE_GAME_CARD || data::extDataTitles[0].getMedia() == MEDIATYPE_GAME_CARD;
 }
 
 void data::cartCheck()
@@ -258,23 +335,23 @@ void data::cartCheck()
     bool ins = false;
     FSUSER_CardSlotIsInserted(&ins);
 
-    if((titles.empty() || titles[0].getMedia() != MEDIATYPE_GAME_CARD) && ins)
+    if(ins && !checkForCart())
+        ui::newThread(loadcart_t, NULL, NULL);
+    else if(!ins)
     {
-        uint64_t cartID = 0;
-        AM_GetTitleList(NULL, MEDIATYPE_GAME_CARD, 1, &cartID);
-
-        titleData cartData;
-        if(cartData.init(cartID, MEDIATYPE_GAME_CARD))
+        if(data::usrSaveTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
         {
-            titles.insert(titles.begin(), cartData);
-            ui::loadTitleMenu();
+            data::usrSaveTitles[0].freeIcon();
+            data::usrSaveTitles.erase(data::usrSaveTitles.begin());
+            ui::ttlRefresh();
         }
-    }
-    else if(titles[0].getMedia() == MEDIATYPE_GAME_CARD && !ins)
-    {
-        titles[0].freeIcon();
-        titles.erase(titles.begin(), titles.begin() + 1);
-        ui::loadTitleMenu();
+
+        if(data::extDataTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
+        {
+            data::extDataTitles[0].freeIcon();
+            data::extDataTitles.erase(data::extDataTitles.begin());
+            ui::extRefresh();
+        }
     }
 }
 
@@ -297,19 +374,19 @@ smdh_s *data::loadSMDH(const uint32_t& low, const uint32_t& high, const uint8_t&
 
         return ret;
     }
-
     return NULL;
 }
 
 static inline bool checkHigh(const uint64_t& id)
 {
     uint32_t high = (uint32_t)(id >> 32);
-
     return (high == 0x00040000 || high == 0x00040002);
 }
 
-void data::loadTitles()
+void data::loadTitles(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
+
     titles.clear();
     loadBlacklist();
     loadFav();
@@ -322,71 +399,65 @@ void data::loadTitles()
         uint64_t *ids = new uint64_t[count];
         AM_GetTitleList(NULL, MEDIATYPE_SD, count, ids);
 
-        ui::progressBar prog(count);
-
         for(unsigned i = 0; i < count; i++)
         {
             if(checkHigh(ids[i]) && !isBlacklisted(ids[i]))
             {
                 titleData newTitle;
-                if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.isOpenable())
+                if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.hasSaveData())
+                {
+                    t->status->setStatus(util::toUtf8(newTitle.getTitle()));
                     titles.push_back(newTitle);
+                }
             }
-
-            prog.update(i);
-
-            gfx::frameBegin();
-            gfx::frameStartTop();
-            ui::drawTopBar("Loading...");
-            gfx::frameStartBot();
-            prog.draw("Loading installed SD Titles...");
-            gfx::frameEnd();
         }
         delete[] ids;
 
-        std::sort(titles.begin(), titles.end(), sortTitles);
-
-        createCache(titles, titlePath);
-    }
-    else
-        std::sort(titles.begin(), titles.end(), sortTitles);
-}
-
-void data::loadNand()
-{
-    nand.clear();
-
-    if(!readCache(nand,nandPath, true))
-    {
-        uint32_t count;
+        //Load NAND too now
         AM_GetTitleCount(MEDIATYPE_NAND, &count);
 
-        uint64_t *ids = new uint64_t[count];
+        ids = new uint64_t[count];
         AM_GetTitleList(NULL, MEDIATYPE_NAND, count, ids);
-
-        ui::progressBar prog(count);
         for(unsigned i = 0; i < count; i++)
         {
             titleData newNandTitle;
-            if(newNandTitle.init(ids[i], MEDIATYPE_NAND) && newNandTitle.isOpenable() && !newNandTitle.getTitle().empty())
-                nand.push_back(newNandTitle);
-
-            prog.update(i);
-
-            gfx::frameBegin();
-            gfx::frameStartTop();
-            ui::drawTopBar("Loading...");
-            gfx::frameStartBot();
-            prog.draw("Loading NAND Titles...");
-            gfx::frameEnd();
-
+            if(newNandTitle.init(ids[i], MEDIATYPE_NAND) && newNandTitle.hasSaveData() && !newNandTitle.getTitle().empty())
+            {
+                t->status->setStatus(util::toUtf8(newNandTitle.getTitle()));
+                titles.push_back(newNandTitle);
+            }
         }
         delete[] ids;
 
-        std::sort(nand.begin(), nand.end(), sortTitles);
-
-        createCache(nand, nandPath);
+        t->status->setStatus("Writing master cache...");
+        createCache(titles, titlePath);
     }
+
+    //Sort sort of like Switch
+    //I don't like making copies but eh
+    for(unsigned i = 0; i < titles.size(); i++)
+    {
+        data::titleSaveTypes tmp = titles[i].getSaveTypes();
+
+        if(tmp.hasUser)
+            usrSaveTitles.push_back(titles[i]);
+
+        if(tmp.hasExt)
+            extDataTitles.push_back(titles[i]);
+
+        if(tmp.hasSys)
+            sysDataTitles.push_back(titles[i]);
+
+        if(tmp.hasBoss)
+            bossDataTitles.push_back(titles[i]);
+    }
+
+    std::sort(usrSaveTitles.begin(), usrSaveTitles.end(), sortTitles);
+    std::sort(extDataTitles.begin(), extDataTitles.end(), sortTitles);
+    std::sort(sysDataTitles.begin(), sysDataTitles.end(), sortTitles);
+    std::sort(bossDataTitles.begin(), bossDataTitles.end(), sortTitles);
+
+    t->finished = true;
 }
 
 void data::loadBlacklist()
@@ -438,9 +509,6 @@ void data::blacklistAdd(titleData& t)
 
     //Recreate cache with title missing now
     createCache(titles, titlePath);
-
-    //Reinit title menu
-    ui::loadTitleMenu();
 }
 
 void data::loadFav()
@@ -477,9 +545,7 @@ void data::favAdd(titleData& t)
     favorites.push_back(t.getID());
 
     //resort with new fav
-    std::sort(data::titles.begin(), data::titles.end(), sortTitles);
-    //reload title menu
-    ui::loadTitleMenu();
+    std::sort(data::usrSaveTitles.begin(), data::usrSaveTitles.end(), sortTitles);
 }
 
 void data::favRem(titleData& t)
@@ -496,21 +562,18 @@ void data::favRem(titleData& t)
         }
     }
 
-    std::sort(data::titles.begin(), data::titles.end(), sortTitles);
-    ui::loadTitleMenu();
+    std::sort(data::usrSaveTitles.begin(), data::usrSaveTitles.end(), sortTitles);
 }
 
 C2D_Image data::readIconFromSMDH(smdh_s *smdh)
 {
-    return (C2D_Image){loadIcon(smdh), &subTex};
+    return (C2D_Image){loadIcon(smdh), &gfx::iconSubTex};
 }
 
 void data::createCache(std::vector<titleData>& vect, const std::string& path)
 {
     //JIC
     fs::fdelete(path);
-
-    uint32_t writeOut = 0;
     fs::fsfile cache(fs::getSDMCArch(), path, FS_OPEN_CREATE | FS_OPEN_WRITE);
 
     //Buffer to compress icons
@@ -518,32 +581,29 @@ void data::createCache(std::vector<titleData>& vect, const std::string& path)
     uint8_t *iconOut = new uint8_t[ICON_BUFF_SIZE];
 
     uint16_t countOut = vect.size();
-    cache.write(&countOut, &writeOut, sizeof(uint16_t));
-    cache.putByte(0x03);
+    cache.write(&countOut, sizeof(uint16_t));
+    cache.putByte(0x04);
 
     for(auto t : vect)
     {
-        char16_t titleOut[0x40];
-        memset(titleOut, 0, 0x40 * 2);
-        memcpy(titleOut, t.getTitle().data(), t.getTitle().length() * 2);
-        cache.write(titleOut, &writeOut, 0x40 * 2);
-        cache.putByte(0x00);
+        uint16_t titleLength = t.getTitle().size();
+        cache.write(&titleLength, sizeof(uint16_t));
+        cache.write(t.getTitle().data(), titleLength * sizeof(char16_t));
 
-        char prodOut[16];
-        memset(prodOut, 0, 16);
-        memcpy(prodOut, t.getProdCode().data(), 16);
-        cache.write(prodOut, &writeOut, 16);
-        cache.putByte(0x00);
+        uint8_t prodLength = t.getProdCode().size();
+        cache.write(&prodLength, sizeof(uint8_t));
+        cache.write(t.getProdCode().c_str(), prodLength);
 
         uint64_t idOut = t.getID();
-        cache.write(&idOut, &writeOut, sizeof(uint64_t));
-        cache.putByte(0x00);
+        cache.write(&idOut, sizeof(uint64_t));
+
+        data::titleSaveTypes tmp = t.getSaveTypes();
+        cache.write(&tmp, sizeof(data::titleSaveTypes));
 
         iconCmpSize = ICON_BUFF_SIZE;
         compress(iconOut, (uLongf *)&iconCmpSize, t.getIconData(), ICON_BUFF_SIZE);
-        cache.write(&iconCmpSize, &writeOut, sizeof(size_t));
-        cache.write(iconOut, &writeOut, iconCmpSize);
-        cache.putByte(0x00);
+        cache.write(&iconCmpSize, sizeof(size_t));
+        cache.write(iconOut, iconCmpSize);
     }
     delete[] iconOut;
 }
@@ -560,12 +620,11 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
     rev = cache.getByte();
     cache.seek(0, fs::seek_beg);
 
-    if(rev != 3)
+    if(rev != 4)
         return false;
 
-    uint32_t readOut = 0;
     uint16_t count = 0;
-    cache.read(&count,&readOut, sizeof(uint16_t));
+    cache.read(&count, sizeof(uint16_t));
     cache.getByte();
 
     uint8_t *readBuff = new uint8_t[ICON_BUFF_SIZE];
@@ -574,22 +633,29 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
     {
         titleData newData;
 
+        uint16_t titleLength = 0;
         char16_t title[0x40];
-        cache.read(title, &readOut, 0x40 * sizeof(char16_t));
-        cache.getByte();
+        memset(title, 0x00, 0x40 * sizeof(char16_t));
+        cache.read(&titleLength, sizeof(uint16_t));
+        cache.read(title, titleLength * sizeof(uint16_t));
 
+        uint8_t prodLength = 0;
         char prodCode[16];
-        cache.read(prodCode, &readOut, 16);
-        cache.getByte();
+        memset(prodCode, 0x00, 16);
+        cache.read(&prodLength, sizeof(uint8_t));
+        cache.read(prodCode, prodLength);
 
         uint64_t newID = 0;
-        cache.read(&newID, &readOut, sizeof(uint64_t));
-        cache.getByte();
+        cache.read(&newID, sizeof(uint64_t));
+
+        data::titleSaveTypes tmp;
+        cache.read(&tmp, sizeof(data::titleSaveTypes));
+
 
         size_t iconSize = 0;
-        cache.read(&iconSize, &readOut, sizeof(size_t));
-        cache.read(readBuff, &readOut, iconSize);
-        cache.getByte();
+        memset(readBuff, 0x00, ICON_BUFF_SIZE);
+        cache.read(&iconSize, sizeof(size_t));
+        cache.read(readBuff, iconSize);
 
         C3D_Tex *icon = new C3D_Tex;
         if(C3D_TexInit(icon, 64, 64, GPU_RGB565))
@@ -598,11 +664,21 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
             uncompress((uint8_t *)icon->data, &sz, readBuff, iconSize);
             newData.assignIcon(icon);
         }
-        newData.initFromCache(newID, title, prodCode, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
+        newData.initFromCache(newID, title, prodCode, tmp, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
         vect.push_back(newData);
     }
 
     delete[] readBuff;
 
     return true;
+}
+
+void data::datDrawTop()
+{
+    ui::drawUIBar("Loading...", ui::SCREEN_TOP, true);
+}
+
+void data::datDrawBot()
+{
+    ui::drawUIBar("", ui::SCREEN_BOT, false);
 }

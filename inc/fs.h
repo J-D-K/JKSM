@@ -4,6 +4,7 @@
 #include <3ds.h>
 #include <string>
 #include "data.h"
+#include "ui.h"
 
 namespace fs
 {
@@ -41,9 +42,9 @@ namespace fs
             fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
             ~fsfile();
 
-            void read(void *buf, uint32_t *readOut, const uint32_t& max);
+            size_t read(void *buf, const uint32_t& max);
             bool getLine(char *out, size_t max);
-            void write(const void *buf, uint32_t *written, const uint32_t& size);
+            size_t write(const void *buf, const uint32_t& size);
             void writef(const char *fmt, ...);
 
             uint8_t getByte();
@@ -85,6 +86,15 @@ namespace fs
 
     void backupArchive(const std::u16string& outpath);
     void restoreToArchive(const std::u16string& inpath);
+
+    typedef struct
+    {
+        FS_Archive arch;
+        std::u16string from, to;
+        ui::progressBar *bar;
+    } backupArgs;
+
+    backupArgs *backupArgsCreate(const FS_Archive& _arch, const std::u16string& _from, const std::u16string& _to);
 
     void copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
     void copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);

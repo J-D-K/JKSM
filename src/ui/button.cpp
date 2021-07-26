@@ -64,6 +64,6 @@ namespace ui
         else
             C2D_DrawRectSolid(x, y, 0.5f, w, h, 0xFFDBDBDB);
 
-        gfx::drawText(text, tx, ty, 0xFF000000);
+        gfx::drawText(text, tx, ty, GFX_DEPTH_DEFAULT, 0.5f, 0xFF000000);
     }
 }

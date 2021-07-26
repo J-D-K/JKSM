@@ -156,16 +156,16 @@ namespace ui
         {
             if(i == selected)
             {
-                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, 18, rectClr, lightBack);
+                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, GFX_DEPTH_DEFAULT, 18, rectClr, lightBack);
                 C2D_DrawRectSolid(x + 4, y + 1 + ((i - start) * 18), 0.5f, 2, 12, 0xFFC5FF00);
             }
             else if(multi && multiSel[i])
             {
-                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, 18, 0xFFC58800, lightBack);
+                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, GFX_DEPTH_DEFAULT, 18, 0xFFC58800, lightBack);
                 C2D_DrawRectSolid(x + 4, y + 1 + ((i - start) * 18), 0.5f, 2, 12, 0xFFC5FF00);
             }
 
-            gfx::drawText(opt[i], x + 8, (y - 1) + ((i - start) * 18), baseClr);
+            gfx::drawText(opt[i], x + 8, (y - 1) + ((i - start) * 18), GFX_DEPTH_DEFAULT, 0.5f, baseClr);
         }
     }
 }

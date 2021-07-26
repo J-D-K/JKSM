@@ -14,22 +14,17 @@ int main(int argc, const char *argv[])
     sys::init();
     gfx::init();
     fs::init();
-    data::loadTitles();
-    data::loadNand();
-    ui::prepMenus();
+    ui::init();
 
-    while(aptMainLoop() && sys::run)
-    {
-        hidScanInput();
+    //Push these before main. Thread manager executes in order received
+    ui::newThread(data::loadTitles, NULL, NULL);
+    ui::newThread(ui::ttlInit, NULL, NULL);
+    ui::newThread(ui::extInit, NULL, NULL);
+    ui::newThread(ui::sysInit, NULL, NULL);
+    ui::newThread(ui::bossViewInit, NULL, NULL);
+    ui::newThread(ui::shrdInit, NULL, NULL);
 
-        uint32_t down = hidKeysDown();
-        uint32_t held = hidKeysHeld();
-
-        if(down & KEY_START)
-            break;
-
-        ui::runApp(down, held);
-    }
+    while(aptMainLoop() && ui::runApp()){ }
 
     data::saveFav();
     data::saveBlacklist();
@@ -37,4 +32,5 @@ int main(int argc, const char *argv[])
     gfx::exit();
     fs::exit();
     data::exit();
+    ui::exit();
 }
