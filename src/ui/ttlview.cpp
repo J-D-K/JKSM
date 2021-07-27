@@ -101,9 +101,9 @@ void ui::titleview::draw()
         float add = ((float)tY - (float)selRectY) / 3.0f;
         y += ceil(add);
     }
-    else if(selRectY < 32)
+    else if(selRectY < 21)
     {
-        float add = (32.0f - (float)selRectY) / 3.0f;
+        float add = (21.0f - (float)selRectY) / 3.0f;
         y += ceil(add);
     }
 

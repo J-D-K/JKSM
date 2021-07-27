@@ -7,6 +7,7 @@
 #include "util.h"
 
 static ui::titleview *ttlView;
+static bool fldOpen = false;
 
 static int findTitleNewIndex(const uint64_t& tid)
 {
@@ -18,19 +19,32 @@ static int findTitleNewIndex(const uint64_t& tid)
     return 0;
 }
 
-void ttlViewCallback(void *a)
+static void fldCallback(void *)
+{
+    switch(ui::padKeysDown())
+    {
+        case KEY_B:
+            fs::closeSaveArch();
+            fldOpen = false;
+            break;
+    }
+}
+
+static void ttlViewCallback(void *a)
 {
     switch(ui::padKeysDown())
     {
         case KEY_A:
             {
                 data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];
+                //For now for compatibility with old code
+                data::curData = *t;
                 if(fs::openArchive(*t, ARCHIVE_USER_SAVEDATA, false))
                 {
                     util::createTitleDir(*t, ARCHIVE_USER_SAVEDATA);
-                    std::u16string from = util::toUtf16("/");
-                    std::u16string to = util::createPath(*t, ARCHIVE_USER_SAVEDATA);
-                    fs::copyDirToSD(fs::getSaveArch(), from, to);
+                    std::u16string targetPath = util::createPath(*t, ARCHIVE_USER_SAVEDATA);
+                    ui::fldInit(targetPath, fldCallback, NULL);
+                    fldOpen = true;
                 }
             }
             break;
@@ -73,14 +87,25 @@ void ui::ttlExit()
     delete ttlView;
 }
 
-void ui::ttlRefresh()
+void ui::ttlRefresh(void *a)
 {
+    threadInfo *t = NULL;
+    if(a)
+    {
+        t = (threadInfo *)a;
+        t->status->setStatus("Preparing User Save View...");
+    }
     ttlView->refesh(data::usrSaveTitles);
+    if(t)
+        t->finished = true;
 }
 
 void ui::ttlUpdate()
 {
-    ttlView->update();
+    if(!fldOpen)
+        ttlView->update();
+    else
+        fldUpdate();
 }
 
 void ui::ttlDrawTop()
@@ -91,5 +116,8 @@ void ui::ttlDrawTop()
 
 void ui::ttlDrawBot()
 {
+    if(fldOpen)
+        ui::fldDraw();
+
     ui::drawUIBar("Select a title", ui::SCREEN_BOT, true);
 }

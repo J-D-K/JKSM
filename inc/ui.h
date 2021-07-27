@@ -15,6 +15,7 @@
 #include "ui/sysview.h"
 #include "ui/boss.h"
 #include "ui/shrd.h"
+#include "ui/fld.h"
 
 enum states
 {

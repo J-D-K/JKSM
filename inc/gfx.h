@@ -16,11 +16,11 @@ namespace gfx
     extern Tex3DS_SubTexture iconSubTex;
 
     //This is needed when generating icons
-    extern bool renderLock;
+    extern Handle renderLock;
 
     inline void frameBegin()
     {
-        boolLock(renderLock);
+        svcWaitSynchronization(gfx::renderLock, U64_MAX);
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top, 0xFF2D2D2D);
         C2D_TargetClear(bot, 0xFF2D2D2D);
@@ -29,7 +29,7 @@ namespace gfx
     inline void frameEnd()
     {
         C3D_FrameEnd(0);
-        boolUnlock(renderLock);
+        svcReleaseMutex(gfx::renderLock);
     }
 
     inline void frameStartTop()

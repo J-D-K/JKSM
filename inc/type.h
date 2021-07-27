@@ -5,36 +5,30 @@
 
 typedef void (*funcPtr)(void *);
 
-inline void boolLock(bool& lock)
+class threadStatus
 {
-    while(lock != false){ }
-    lock = true;
-}
-
-inline void boolUnlock(bool& lock)
-{
-    lock = false;
-}
-
-typedef struct
-{
-    bool statusLock = false;
-    std::string status;
+    public:
+        threadStatus(){ svcCreateMutex(&statusLock, false); }
+        ~threadStatus(){ svcCloseHandle(statusLock); }
 
     void setStatus(const std::string& newStatus)
     {
-        boolLock(statusLock);
+        svcWaitSynchronization(statusLock, U64_MAX);
         status = newStatus;
-        boolUnlock(statusLock);
+        svcReleaseMutex(statusLock);
     }
 
     void getStatus(std::string& out)
     {
-        boolLock(statusLock);
+        svcWaitSynchronization(statusLock, U64_MAX);
         out = status;
-        boolUnlock(statusLock);
+        svcReleaseMutex(statusLock);
     }
-} threadStatus;
+
+    private:
+        Handle statusLock;
+        std::string status;
+};
 
 typedef struct
 {

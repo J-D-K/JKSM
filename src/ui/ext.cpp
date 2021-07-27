@@ -6,6 +6,18 @@
 #include "util.h"
 
 static ui::titleview *extView;
+static bool fldOpen = false;
+
+static void fldCallback(void *)
+{
+    switch(ui::padKeysDown())
+    {
+        case KEY_B:
+            fs::closeSaveArch();
+            fldOpen = false;
+            break;
+    }
+}
 
 static void extViewCallback(void *a)
 {
@@ -16,10 +28,10 @@ static void extViewCallback(void *a)
                 data::titleData *t = &data::extDataTitles[extView->getSelected()];
                 if(fs::openArchive(*t, ARCHIVE_EXTDATA, false))
                 {
-                    std::u16string root = util::toUtf16("/");
-                    std::u16string out  = util::createPath(*t, ARCHIVE_EXTDATA);
                     util::createTitleDir(*t, ARCHIVE_EXTDATA);
-                    fs::copyDirToSD(fs::getSaveArch(), root, out);
+                    std::u16string targetPath = util::createPath(*t, ARCHIVE_EXTDATA);
+                    ui::fldInit(targetPath, fldCallback, NULL);
+                    fldOpen = true;
                 }
             }
             break;
@@ -49,12 +61,23 @@ void ui::extExit()
 
 void ui::extUpdate()
 {
-    extView->update();
+    if(fldOpen)
+        ui::fldUpdate();
+    else
+        extView->update();
 }
 
-void ui::extRefresh()
+void ui::extRefresh(void *a)
 {
+    threadInfo *t = NULL;
+    if(a)
+    {
+        t = (threadInfo *)a;
+        t->status->setStatus("Updating ExtData View...");
+    }
     extView->refesh(data::extDataTitles);
+    if(t)
+        t->finished = true;
 }
 
 void ui::extDrawTop()
@@ -65,5 +88,8 @@ void ui::extDrawTop()
 
 void ui::extDrawBot()
 {
+    if(fldOpen)
+        ui::fldDraw();
+
     ui::drawUIBar("", ui::SCREEN_BOT, false);
 }

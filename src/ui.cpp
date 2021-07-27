@@ -34,20 +34,7 @@ static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folde
 
 int ui::state = DAT, ui::prev = DAT;
 
-const std::string TITLE_TEXT = "JK's Save Manager - 7.26.2021 ";
-
-//Stolen 3Dbrew descriptions
-static const std::string sharedDesc[] =
-{
-    "Home Menu attempts to open this archive during boot, if FS:OpenArchive doesn't return an error Home Menu seems to then launch the System Transfer application. Home Menu doesn't actually use this archive at all except for checking whether it exists.",
-    "NAND JPEG/MPO files and phtcache.bin from the camera application are stored here. This also contains UploadData.dat.",
-    "NAND M4A files from the sound application are stored here.",
-    "Used for SpotPass content storage for notifications.",
-    "Contains idb.dat, idbt.dat, gamecoin.dat, ubll.lst, CFL_DB.dat, and CFL_OldDB.dat. These files contain cleartext Miis and some data relating (including cached ICN data) to Play/Usage Records.",
-    "Contains bashotorya.dat and bashotorya2.dat.",
-    "Home Menu SpotPass content data storage.",
-    "Contains versionlist.dat, used by Home Menu for the software update notification added with 7.0.0-13."
-};
+const std::string TITLE_TEXT = "JK's Save Manager - 7.27.2021 ";
 
 uint32_t ui::down = 0, ui::held = 0;
 

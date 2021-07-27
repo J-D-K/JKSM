@@ -235,7 +235,7 @@ namespace util
         if(C3D_TexInit(ret, 64, 64, GPU_RGB565))
         {
             //Todo: Doesn't seem thread safe. Produces garbled icons.
-            boolLock(gfx::renderLock);
+            svcWaitSynchronization(gfx::renderLock, U64_MAX);
             C3D_RenderTarget *icnTarget = C3D_RenderTargetCreateFromTex(ret, GPU_TEXFACE_2D, 0, GPU_RB_DEPTH16);
             C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
             C2D_SceneBegin(icnTarget);
@@ -246,7 +246,7 @@ namespace util
             gfx::drawText(txt, txtX, 14 + 18, 0.5f, 0.5f, 0xFFFFFFFF);
             C3D_FrameEnd(0);
             C3D_RenderTargetDelete(icnTarget);
-            boolUnlock(gfx::renderLock);
+            svcReleaseMutex(gfx::renderLock);
         }
         else
         {

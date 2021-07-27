@@ -6,6 +6,18 @@
 #include "util.h"
 
 static ui::titleview *sysView;
+static bool fldOpen = false;
+
+static void fldCallback(void *)
+{
+    switch(ui::padKeysDown())
+    {
+        case KEY_B:
+            fs::closeSaveArch();
+            fldOpen = false;
+            break;
+    }
+}
 
 static void sysViewCallback(void *a)
 {
@@ -17,9 +29,9 @@ static void sysViewCallback(void *a)
                 if(fs::openArchive(*t, ARCHIVE_SYSTEM_SAVEDATA, false))
                 {
                     util::createTitleDir(*t, ARCHIVE_SYSTEM_SAVEDATA);
-                    std::u16string root = util::toUtf16("/");
-                    std::u16string out  = util::createPath(*t, ARCHIVE_SYSTEM_SAVEDATA);
-                    fs::copyDirToSD(fs::getSaveArch(), root, out);
+                    std::u16string targetDir = util::createPath(*t, ARCHIVE_SYSTEM_SAVEDATA);
+                    ui::fldInit(targetDir, fldCallback, NULL);
+                    fldOpen = true;
                 }
             }
             break;
@@ -49,7 +61,10 @@ void ui::sysExit()
 
 void ui::sysUpdate()
 {
-    sysView->update();
+    if(fldOpen)
+        ui::fldUpdate();
+    else
+        sysView->update();
 }
 
 void ui::sysDrawTop()
@@ -60,5 +75,8 @@ void ui::sysDrawTop()
 
 void ui::sysDrawBot()
 {
+    if(fldOpen)
+        ui::fldDraw();
+
     ui::drawUIBar("", ui::SCREEN_BOT, false);
 }

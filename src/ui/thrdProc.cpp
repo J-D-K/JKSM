@@ -9,8 +9,14 @@
 
 /*Adapted the best I can from switch*/
 
+ui::threadProcMngr::threadProcMngr()
+{
+    svcCreateMutex(&threadLock, false);
+}
+
 ui::threadProcMngr::~threadProcMngr()
 {
+    svcCloseHandle(threadLock);
     for(threadInfo *t : threads)
     {
         threadJoin(t->thrd, U64_MAX);
@@ -30,9 +36,9 @@ threadInfo *ui::threadProcMngr::newThread(ThreadFunc func, void *args, funcPtr _
     t->drawFunc = _drawFunc;
     t->argPtr = args;
 
-    boolLock(threadLock);
+    svcWaitSynchronization(threadLock, U64_MAX);
     threads.push_back(t);
-    boolUnlock(threadLock);
+    svcReleaseMutex(threadLock);
 
     return threads[threads.size() - 1];
 }
@@ -53,9 +59,9 @@ void ui::threadProcMngr::update()
             threadFree(t->thrd);
             delete t->status;;
             delete t;
-            boolLock(threadLock);
+            svcWaitSynchronization(threadLock, U64_MAX);
             threads.erase(threads.begin());
-            boolUnlock(threadLock);
+            svcReleaseMutex(threadLock);
         }
     }
 }
@@ -80,15 +86,19 @@ void ui::threadProcMngr::drawBot()
     uint32_t glyphCol = 0xFF << 24 | (uint8_t)(0xC5 + (clrShft / 2)) << 16 | (uint8_t)(0x88 + clrShft) << 8 | 0x00;
     gfx::drawText(ui::loadGlyphArray[lgFrame], 4, 222, 0.8f, 0.65f, glyphCol);
 
-
-    if(threads[0]->drawFunc)
-        (*(threads[0]->drawFunc))(threads[0]);
-    else
+    svcWaitSynchronization(threadLock, U64_MAX);
+    if(!threads[0]->finished)
     {
-        std::string thrdstatus;
-        threads[0]->status->getStatus(thrdstatus);
-        int txtX = 160 - (gfx::getTextWidth(thrdstatus) / 2);
+        if(threads[0]->drawFunc)
+            (*(threads[0]->drawFunc))(threads[0]);
+        else
+        {
+            std::string thrdstatus;
+            threads[0]->status->getStatus(thrdstatus);
+            int txtX = 160 - (gfx::getTextWidth(thrdstatus) / 2);
 
-        gfx::drawText(thrdstatus, txtX, 114, 0.8f, 0.5f, 0xFFFFFFFF);
+            gfx::drawText(thrdstatus, txtX, 114, 0.8f, 0.5f, 0xFFFFFFFF);
+        }
     }
+    svcReleaseMutex(threadLock);
 }

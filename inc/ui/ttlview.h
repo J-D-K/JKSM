@@ -37,7 +37,7 @@ namespace ui
             int getSelected() { return selected; }
 
         private:
-            int selected = 0, x = 14, y = 32;
+            int selected = 0, x = 14, y = 24;
             int selRectX = 0, selRectY = 0;
             bool clrAdd = true;
             uint8_t clrShft = 0;

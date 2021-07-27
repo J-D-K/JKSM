@@ -2,13 +2,40 @@
 
 #include "ui.h"
 #include "data.h"
+#include "fs.h"
+#include "util.h"
 
 static ui::titleview *bossView;
+static bool fldOpen = false;
+
+static void fldCallback(void *)
+{
+    switch(ui::padKeysDown())
+    {
+        case KEY_B:
+            fs::closeSaveArch();
+            fldOpen = false;
+            break;
+    }
+}
 
 static void bossViewCallback(void *a)
 {
     switch(ui::padKeysDown())
     {
+        case KEY_A:
+            {
+                data::titleData *t = &data::bossDataTitles[bossView->getSelected()];
+                if(fs::openArchive(*t, ARCHIVE_BOSS_EXTDATA, false))
+                {
+                    util::createTitleDir(*t, ARCHIVE_BOSS_EXTDATA);
+                    std::u16string targetDir = util::createPath(*t, ARCHIVE_BOSS_EXTDATA);
+                    ui::fldInit(targetDir, fldCallback, NULL);
+                    fldOpen = true;
+                }
+            }
+            break;
+
         case KEY_CPAD_LEFT:
             ui::state = SYS;
             break;
@@ -34,7 +61,10 @@ void ui::bossViewExit()
 
 void ui::bossViewUpdate()
 {
-    bossView->update();
+    if(fldOpen)
+        ui::fldUpdate();
+    else
+        bossView->update();
 }
 
 void ui::bossViewDrawTop()
@@ -45,5 +75,8 @@ void ui::bossViewDrawTop()
 
 void ui::bossViewDrawBot()
 {
+    if(fldOpen)
+        ui::fldDraw();
+
     ui::drawUIBar("", ui::SCREEN_BOT, false);
 }

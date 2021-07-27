@@ -9,6 +9,7 @@ namespace ui
     class threadProcMngr
     {
         public:
+            threadProcMngr();
             ~threadProcMngr();
 
             threadInfo *newThread(ThreadFunc func, void *args, funcPtr _drawFunc);
@@ -22,6 +23,6 @@ namespace ui
             bool clrAdd = true;
             uint8_t clrShft = 0;
             unsigned frameCount = 0, lgFrame = 0;
-            bool threadLock = false;
+            Handle threadLock;
     };
 }

@@ -16,7 +16,7 @@
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
 
-void createDir(const std::string& path)
+void fs::createDir(const std::string& path)
 {
     FSUSER_CreateDirectory(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()), 0);
 }
@@ -145,6 +145,44 @@ void fs::deleteSv(const uint32_t& mode)
     }
 }
 
+void delDirRec_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
+
+    t->status->setStatus("Deleting folder...");
+    FS_Path delPath = fsMakePath(PATH_UTF16, b->from.c_str());
+    FSUSER_DeleteDirectoryRecursively(b->arch, delPath);
+
+    delete b;
+    t->finished = true;
+}
+
+void fs::delDirRec(const FS_Archive& _arch, const std::u16string& path)
+{
+    fs::backupArgs *send = fs::backupArgsCreate(_arch, path, (char16_t *)"");
+    ui::newThread(delDirRec_t, send, NULL);
+}
+
+void createDir_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
+
+    t->status->setStatus("Creating Folder...");
+    FS_Path createPath = fsMakePath(PATH_UTF16, b->from.c_str());
+    FSUSER_CreateDirectory(b->arch, createPath, 0);
+
+    delete b;
+    t->finished = true;
+}
+
+void fs::createDir(const FS_Archive& _arch, const std::u16string& _path)
+{
+    fs::backupArgs *send = backupArgsCreate(_arch, _path, (char16_t *)"");
+    ui::newThread(createDir_t, send, NULL);
+}
+
 static inline void nukeFile(const std::string& path)
 {
     FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()));
@@ -211,7 +249,20 @@ fs::fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const u
 
 fs::fsfile::~fsfile()
 {
-    FSFILE_Close(fHandle);
+    if(open)
+    {
+        FSFILE_Close(fHandle);
+        open = false;
+    }
+}
+
+void fs::fsfile::close()
+{
+    if(open)
+    {
+        FSFILE_Close(fHandle);
+        open = false;
+    }
 }
 
 size_t fs::fsfile::read(void *buf, const uint32_t& max)
@@ -412,9 +463,9 @@ static std::u16string getItemFromPath(const std::u16string& path)
 void _fileDrawFunc(void *a)
 {
     threadInfo *t = (threadInfo *)a;
-    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
     if(t->running)
     {
+        fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
         std::string item = util::toUtf8(getItemFromPath(b->from));
         int itemX = 160 - (gfx::getTextWidth(item) / 2);
         gfx::drawText(item, itemX, 114, 1.0f, 0.5f, 0xFFFFFFFF);
@@ -437,9 +488,6 @@ void copyFileToSD_t(void *a)
     }
 
     uint8_t *buff = new uint8_t[buff_size];
-    ui::progressBar prog((uint32_t)in.getSize());
-    std::string copyString = "Copying '" + util::toUtf8(b->from) + "'...";
-    t->status->setStatus(copyString);
     b->bar->setMax(in.getSize());
     size_t read = 0;
     while((read = in.read(buff, buff_size)) > 0)
@@ -447,9 +495,9 @@ void copyFileToSD_t(void *a)
         out.write(buff, read);
         b->bar->update(in.getOffset());
     }
+    t->finished = true;
     delete[] buff;
     delete b;
-    t->finished = true;
 }
 
 void fs::copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
@@ -481,6 +529,7 @@ void fs::copyDirToSD(const FS_Archive& arch, const std::u16string& from, const s
             copyFileToSD(arch, fullFrom, fullTo);
         }
     }
+    ui::fldRefresh(NULL);
 }
 
 void fs::backupArchive(const std::u16string& outpath)
@@ -504,8 +553,6 @@ void copyFileToArch_t(void *a)
     }
 
     uint8_t *buff = new uint8_t[buff_size];
-    std::string copyString = "Copying '" + util::toUtf8(b->from) + "'...";
-    t->status->setStatus(copyString);
     b->bar->setMax(in.getSize());
     size_t read = 0;
     while((read = in.read(buff, buff_size)) > 0)
@@ -513,9 +560,12 @@ void copyFileToArch_t(void *a)
         out.write(buff, read);
         b->bar->update(in.getOffset());
     }
+    in.close();
+    out.close();
+    fs::commitData(fs::getSaveMode());
+    t->finished = true;
     delete[] buff;
     delete b;
-    t->finished = true;
 }
 
 void fs::copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)

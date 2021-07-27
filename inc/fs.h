@@ -33,6 +33,12 @@ namespace fs
     inline void fcreate(const std::string& path){ FSUSER_CreateFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()), 0, 0); }
     inline void fdelete(const std::string& path){ FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str())); }
 
+    //Causes a hang for large saves, so threaded
+    void delDirRec(const FS_Archive& _arch, const std::u16string& _path);
+    //Threaded create dir so I can be sure it's run after ^ is finished
+    void createDir(const std::string& path);
+    void createDir(const FS_Archive& _arch, const std::u16string& _path);
+
     class fsfile
     {
         public:
@@ -41,6 +47,7 @@ namespace fs
             fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags);
             fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize);
             ~fsfile();
+            void close();
 
             size_t read(void *buf, const uint32_t& max);
             bool getLine(char *out, size_t max);
@@ -68,6 +75,7 @@ namespace fs
     class dirList
     {
         public:
+            dirList() = default;
             dirList(const FS_Archive& arch, const std::u16string& path);
             ~dirList();
 

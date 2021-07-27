@@ -16,8 +16,6 @@
 
 #define ICON_BUFF_SIZE 0x2000
 
-static bool titleLock = false;
-
 const char *blPath    = "/JKSV/blacklist.txt";
 const char *favPath   = "/JKSV/favorites.txt";
 const char *titlePath = "/JKSV/cache.bin";
@@ -311,16 +309,14 @@ void loadcart_t(void *a)
     if(cartData.init(cartID, MEDIATYPE_GAME_CARD))
     {
         data::titleSaveTypes tmp = cartData.getSaveTypes();
-        boolLock(titleLock);
         if(tmp.hasUser)
             data::usrSaveTitles.insert(data::usrSaveTitles.begin(), cartData);
 
         if(tmp.hasExt)
             data::extDataTitles.insert(data::extDataTitles.begin(), cartData);
 
-        ui::ttlRefresh();
-        ui::extRefresh();
-        boolUnlock(titleLock);
+        ui::newThread(ui::ttlRefresh, NULL, NULL);
+        ui::newThread(ui::extRefresh, NULL, NULL);
     }
     t->finished = true;
 }
@@ -343,14 +339,14 @@ void data::cartCheck()
         {
             data::usrSaveTitles[0].freeIcon();
             data::usrSaveTitles.erase(data::usrSaveTitles.begin());
-            ui::ttlRefresh();
+            ui::ttlRefresh(NULL);
         }
 
         if(data::extDataTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
         {
             data::extDataTitles[0].freeIcon();
             data::extDataTitles.erase(data::extDataTitles.begin());
-            ui::extRefresh();
+            ui::extRefresh(NULL);
         }
     }
 }

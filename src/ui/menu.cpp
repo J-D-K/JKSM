@@ -1,14 +1,15 @@
 #include <string>
 
-#include "ui/menu.h"
+#include "ui.h"
 #include "gfx.h"
 
 namespace ui
 {
-    void menu::addOpt(const std::string& add, int maxWidth)
+    int menu::addOpt(const std::string& add, int maxWidth)
     {
+        menuOpt newOpt;
         if((int)gfx::getTextWidth(add) < maxWidth - 32 || maxWidth == 0)
-            opt.push_back(add);
+            newOpt.txt = add;
         else
         {
             std::string tmp;
@@ -18,26 +19,26 @@ namespace ui
                 if((int)gfx::getTextWidth(tmp) >= maxWidth)
                 {
                     tmp.replace(i - 2, 3, "...");
-                    opt.push_back(tmp);
+                    newOpt.txt = add;
                     break;
                 }
             }
         }
 
-        if(multi)
-            multiSel.push_back(false);
+        opt.push_back(newOpt);
+        return opt.size() - 1;
     }
 
-    void menu::multiSet(const bool& s)
+    void ui::menu::addOptEvent(unsigned ind, uint32_t _key, funcPtr _func, void *_args)
     {
-        multi = s;
+        menuOptEvent newEvent = {_func, _args, _key};
+        opt[ind].events.push_back(newEvent);
     }
 
     void menu::reset()
     {
         opt.clear();
-        multiSel.clear();
-        multi = false;
+        selected = 0;
     }
 
     void menu::adjust()
@@ -67,8 +68,11 @@ namespace ui
             selected = newSel;
     }
 
-    void menu::handleInput(const uint32_t& down, const uint32_t& held)
+    void menu::update()
     {
+        uint32_t down = ui::padKeysDown();
+        uint32_t held = ui::padKeysHeld();
+
         if( (held & KEY_UP) || (held & KEY_DOWN))
             fc++;
         else
@@ -117,13 +121,18 @@ namespace ui
             if(selected < start)
                 start = selected;
         }
-        else if(down & KEY_L && multi)
+
+        if(down && !opt[selected].events.empty())
         {
-            if(multiSel[selected])
-                multiSel[selected] = false;
-            else
-                multiSel[selected] = true;
+            for(ui::menuOptEvent& m : opt[selected].events)
+            {
+                if(m.func && down & m.button)
+                    (*(m.func))(m.args);
+            }
         }
+
+        if(cb)
+            (*(cb))(args);
     }
 
     void menu::draw(const int& x, const int& y, const uint32_t& baseClr, const uint32_t& rectWidth, bool lightBack)
@@ -156,16 +165,11 @@ namespace ui
         {
             if(i == selected)
             {
-                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, GFX_DEPTH_DEFAULT, 18, rectClr, lightBack);
-                C2D_DrawRectSolid(x + 4, y + 1 + ((i - start) * 18), 0.5f, 2, 12, 0xFFC5FF00);
-            }
-            else if(multi && multiSel[i])
-            {
-                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, GFX_DEPTH_DEFAULT, 18, 0xFFC58800, lightBack);
+                gfx::drawBoundingBox(x, (y - 2) + ((i - start) * 18), rectWidth, 18, 0.5f, rectClr, lightBack);
                 C2D_DrawRectSolid(x + 4, y + 1 + ((i - start) * 18), 0.5f, 2, 12, 0xFFC5FF00);
             }
 
-            gfx::drawText(opt[i], x + 8, (y - 1) + ((i - start) * 18), GFX_DEPTH_DEFAULT, 0.5f, baseClr);
+            gfx::drawText(opt[i].txt, x + 8, (y - 1) + ((i - start) * 18), 0.5f, 0.5f, baseClr);
         }
     }
 }
