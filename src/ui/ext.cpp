@@ -8,7 +8,7 @@
 static ui::titleview *extView;
 static bool fldOpen = false;
 
-static void fldCallback(void *)
+static void fldCallback(void *a)
 {
     switch(ui::padKeysDown())
     {
@@ -46,12 +46,9 @@ static void extViewCallback(void *a)
     }
 }
 
-void ui::extInit(void *a)
+void ui::extInit()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Preparing ExtData View...");
     extView = new ui::titleview(data::extDataTitles, extViewCallback, NULL);
-    t->finished = true;
 }
 
 void ui::extExit()
@@ -67,17 +64,9 @@ void ui::extUpdate()
         extView->update();
 }
 
-void ui::extRefresh(void *a)
+void ui::extRefresh()
 {
-    threadInfo *t = NULL;
-    if(a)
-    {
-        t = (threadInfo *)a;
-        t->status->setStatus("Updating ExtData View...");
-    }
     extView->refesh(data::extDataTitles);
-    if(t)
-        t->finished = true;
 }
 
 void ui::extDrawTop()

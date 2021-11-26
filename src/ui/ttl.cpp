@@ -64,7 +64,7 @@ static void ttlViewCallback(void *a)
             break;
 
         case KEY_CPAD_LEFT:
-            ui::state = SHR;
+            ui::state = SET;
             break;
 
         case KEY_CPAD_RIGHT:
@@ -73,13 +73,10 @@ static void ttlViewCallback(void *a)
     }
 }
 
-void ui::ttlInit(void *a)
+void ui::ttlInit()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Preparing User Save View...");
     ttlView = new titleview(data::usrSaveTitles, ttlViewCallback, NULL);
     ui::state = USR;
-    t->finished = true;
 }
 
 void ui::ttlExit()
@@ -87,17 +84,9 @@ void ui::ttlExit()
     delete ttlView;
 }
 
-void ui::ttlRefresh(void *a)
+void ui::ttlRefresh()
 {
-    threadInfo *t = NULL;
-    if(a)
-    {
-        t = (threadInfo *)a;
-        t->status->setStatus("Preparing User Save View...");
-    }
     ttlView->refesh(data::usrSaveTitles);
-    if(t)
-        t->finished = true;
 }
 
 void ui::ttlUpdate()

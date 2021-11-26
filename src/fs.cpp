@@ -145,42 +145,26 @@ void fs::deleteSv(const uint32_t& mode)
     }
 }
 
-void delDirRec_t(void *a)
-{
-    threadInfo *t = (threadInfo *)a;
-    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
-
-    t->status->setStatus("Deleting folder...");
-    FS_Path delPath = fsMakePath(PATH_UTF16, b->from.c_str());
-    FSUSER_DeleteDirectoryRecursively(b->arch, delPath);
-
-    delete b;
-    t->finished = true;
-}
-
 void fs::delDirRec(const FS_Archive& _arch, const std::u16string& path)
 {
-    fs::backupArgs *send = fs::backupArgsCreate(_arch, path, (char16_t *)"");
-    ui::newThread(delDirRec_t, send, NULL);
-}
-
-void createDir_t(void *a)
-{
-    threadInfo *t = (threadInfo *)a;
-    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
-
-    t->status->setStatus("Creating Folder...");
-    FS_Path createPath = fsMakePath(PATH_UTF16, b->from.c_str());
-    FSUSER_CreateDirectory(b->arch, createPath, 0);
-
-    delete b;
-    t->finished = true;
+    FS_Path delPath = fsMakePath(PATH_UTF16, path.c_str());
+    FSUSER_DeleteDirectoryRecursively(_arch, delPath);
 }
 
 void fs::createDir(const FS_Archive& _arch, const std::u16string& _path)
 {
-    fs::backupArgs *send = backupArgsCreate(_arch, _path, (char16_t *)"");
-    ui::newThread(createDir_t, send, NULL);
+    FS_Path createPath = fsMakePath(PATH_UTF16, _path.c_str());
+    FSUSER_CreateDirectory(_arch, createPath, 0);
+}
+
+void fs::createDirRec(const FS_Archive& _arch, const std::u16string& path)
+{
+    size_t pos = path.find(L'/', 0) + 1;
+    while((pos = path.find(L'/', pos)) != path.npos)
+    {
+        FSUSER_CreateDirectory(_arch, fsMakePath(PATH_UTF16, path.substr(0, pos).c_str()), 0);
+        ++pos;
+    }
 }
 
 static inline void nukeFile(const std::string& path)
@@ -441,16 +425,6 @@ void fs::dirList::reassign(const FS_Archive& arch, const std::u16string& p)
     std::sort(entry.begin(), entry.end(), sortDirs);
 }
 
-fs::backupArgs *fs::backupArgsCreate(const FS_Archive& _arch, const std::u16string& _from, const std::u16string& _to)
-{
-    fs::backupArgs *ret = new fs::backupArgs;
-    ret->arch = _arch;
-    ret->from = _from;
-    ret->to = _to;
-    ret->bar = new ui::progressBar;
-    return ret;
-}
-
 static std::u16string getItemFromPath(const std::u16string& path)
 {
     size_t ls = path.find_last_of('/');
@@ -460,50 +434,29 @@ static std::u16string getItemFromPath(const std::u16string& path)
     return (char16_t *)"";
 }
 
-void _fileDrawFunc(void *a)
-{
-    threadInfo *t = (threadInfo *)a;
-    if(t->running)
-    {
-        fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
-        std::string item = util::toUtf8(getItemFromPath(b->from));
-        int itemX = 160 - (gfx::getTextWidth(item) / 2);
-        gfx::drawText(item, itemX, 114, 1.0f, 0.5f, 0xFFFFFFFF);
-        b->bar->draw();
-    }
-}
-
-void copyFileToSD_t(void *a)
-{
-    threadInfo *t = (threadInfo *)a;
-    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
-
-    fs::fsfile in(b->arch, b->from, FS_OPEN_READ);
-    fs::fsfile out(fs::getSDMCArch(), b->to, FS_OPEN_WRITE | FS_OPEN_CREATE);
-
-    if(!in.isOpen() || !out.isOpen())
-    {
-        t->finished = true;
-        return;
-    }
-
-    uint8_t *buff = new uint8_t[buff_size];
-    b->bar->setMax(in.getSize());
-    size_t read = 0;
-    while((read = in.read(buff, buff_size)) > 0)
-    {
-        out.write(buff, read);
-        b->bar->update(in.getOffset());
-    }
-    t->finished = true;
-    delete[] buff;
-    delete b;
-}
-
 void fs::copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
 {
-    fs::backupArgs *send = fs::backupArgsCreate(arch, from, to);
-    ui::newThread(copyFileToSD_t, send, _fileDrawFunc);
+    fs::fsfile in(arch, from, FS_OPEN_READ);
+    fs::fsfile out(fs::getSDMCArch(), to, FS_OPEN_WRITE | FS_OPEN_CREATE);
+
+    if(!in.isOpen() || !out.isOpen())
+        return;
+
+    uint8_t *buff = new uint8_t[buff_size];
+    ui::progressBar prog(in.getSize());
+    size_t read = 0;
+    std::string progString = util::toUtf8(from);
+    while((read = in.read(buff, buff_size)))
+    {
+        out.write(buff, read);
+        prog.update(in.getOffset());
+
+        gfx::frameBegin();
+        gfx::frameStartBot();
+        prog.draw(progString);
+        gfx::frameEnd();
+    }
+    delete[] buff;
 }
 
 void fs::copyDirToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
@@ -529,7 +482,7 @@ void fs::copyDirToSD(const FS_Archive& arch, const std::u16string& from, const s
             copyFileToSD(arch, fullFrom, fullTo);
         }
     }
-    ui::fldRefresh(NULL);
+    ui::fldRefresh();
 }
 
 void fs::backupArchive(const std::u16string& outpath)
@@ -538,40 +491,30 @@ void fs::backupArchive(const std::u16string& outpath)
     copyDirToSD(saveArch, pathIn, outpath);
 }
 
-void copyFileToArch_t(void *a)
-{
-    threadInfo *t = (threadInfo *)a;
-    fs::backupArgs *b = (fs::backupArgs *)t->argPtr;
-
-    fs::fsfile in(fs::getSDMCArch(), b->from, FS_OPEN_READ);
-    fs::fsfile out(b->arch, b->to, FS_OPEN_WRITE, in.getSize());
-
-    if(!in.isOpen() || !out.isOpen())
-    {
-        t->finished = true;
-        return;
-    }
-
-    uint8_t *buff = new uint8_t[buff_size];
-    b->bar->setMax(in.getSize());
-    size_t read = 0;
-    while((read = in.read(buff, buff_size)) > 0)
-    {
-        out.write(buff, read);
-        b->bar->update(in.getOffset());
-    }
-    in.close();
-    out.close();
-    fs::commitData(fs::getSaveMode());
-    t->finished = true;
-    delete[] buff;
-    delete b;
-}
-
 void fs::copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
 {
-    fs::backupArgs *send = fs::backupArgsCreate(arch, from, to);
-    ui::newThread(copyFileToArch_t, send, _fileDrawFunc);
+    fs::fsfile in(fs::getSDMCArch(), from, FS_OPEN_READ);
+    fs::fsfile out(arch, to, FS_OPEN_WRITE, in.getSize());
+
+    if(!in.isOpen() || !out.isOpen())
+        return;
+
+    uint8_t *buff = new uint8_t[buff_size];
+    ui::progressBar prog(in.getSize());
+    size_t read = 0;
+    std::string progString = util::toUtf8(from);
+    while((read = in.read(buff, buff_size)))
+    {
+        out.write(buff, read);
+        prog.update(in.getOffset());
+
+        gfx::frameBegin();
+        gfx::frameStartBot();
+        prog.draw(progString);
+        gfx::frameEnd();
+    }
+    fs::commitData(fs::getSaveMode());
+    delete[] buff;
 }
 
 void fs::copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
@@ -609,6 +552,86 @@ void fs::restoreToArchive(const std::u16string& inpath)
     deleteSv(saveMode);
 }
 
+void fs::copyArchToZip(const FS_Archive& arch, const std::u16string& from, zipFile zip)
+{
+    fs::dirList *archList = new fs::dirList(arch, from);
+    for(unsigned i = 0; i < archList->getCount(); i++)
+    {
+        if(archList->isDir(i))
+        {
+            std::u16string newFrom = from + archList->getItem(i) + util::toUtf16("/");
+            fs::copyArchToZip(arch, newFrom, zip);
+        }
+        else
+        {
+            time_t raw;
+            time(&raw);
+            tm *locTime = localtime(&raw);
+            zip_fileinfo inf = { (unsigned)locTime->tm_sec, (unsigned)locTime->tm_min, (unsigned)locTime->tm_hour,
+                                 (unsigned)locTime->tm_mday, (unsigned)locTime->tm_mon, (unsigned)(1900 + locTime->tm_year), 0, 0, 0 };
+            
+            std::string filename = util::toUtf8(from + archList->getItem(i));
+            int openZip = zipOpenNewFileInZip64(zip, filename.c_str(), &inf, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0);
+            if(openZip == 0)
+            {
+                fs::fsfile readFile(arch, from + archList->getItem(i), FS_OPEN_READ);
+                ui::progressBar prog(readFile.getSize());
+                size_t readIn = 0;
+                uint8_t *buff = new uint8_t[buff_size];
+                while((readIn = readFile.read(buff, buff_size)))
+                {
+                    zipWriteInFileInZip(zip, buff, readIn);
+
+                    prog.update(readFile.getOffset());
+                    gfx::frameBegin();
+                    gfx::frameStartBot();
+                    prog.draw(filename);
+                    gfx::frameEnd();
+                }
+        
+                delete[] buff;
+                readFile.close();
+            }
+        }
+    }
+}
+
+void fs::copyZipToArch(const FS_Archive& arch, unzFile unz)
+{
+    if(unzGoToFirstFile(unz) == UNZ_OK)
+    {
+        char filename[0x301];
+        unz_file_info64 info;
+        do
+        {
+            memset(filename, 0, 0x301);
+            unzGetCurrentFileInfo64(unz, &info, filename, 0x300, NULL, 0, NULL, 0);
+            if(unzOpenCurrentFile(unz) == UNZ_OK)
+            {
+                std::u16string dstPathUTF16 = util::toUtf16(filename);
+                fs::createDirRec(arch, dstPathUTF16.substr(0, dstPathUTF16.find_last_of(L'/') + 1));
+                fs::fsfile writeFile(arch, dstPathUTF16, FS_OPEN_WRITE | FS_OPEN_CREATE);
+                int readIn = 0;
+                uint8_t *buff = new uint8_t[buff_size];
+
+                ui::progressBar prog(info.uncompressed_size);
+                while((readIn = unzReadCurrentFile(unz, buff, buff_size)) > 0)
+                {
+                    writeFile.write(buff, readIn);
+                    prog.update(writeFile.getOffset());
+                    gfx::frameBegin();
+                    gfx::frameStartBot();
+                    prog.draw(filename);
+                    gfx::frameEnd();
+                }
+                
+                delete[] buff;
+            }
+        } while (unzGoToNextFile(unz) != UNZ_END_OF_LIST_OF_FILE);
+        fs::commitData(fs::getSaveMode());
+    }
+}
+
 void fs::backupAll()
 {
     ui::progressBar prog(data::usrSaveTitles.size());
@@ -620,7 +643,7 @@ void fs::backupAll()
         //Sue me
         gfx::frameBegin();
         gfx::frameStartBot();
-        prog.draw();
+        prog.draw(copyStr);
         gfx::frameEnd();
 
         if(fs::openArchive(data::usrSaveTitles[i], ARCHIVE_USER_SAVEDATA, false))

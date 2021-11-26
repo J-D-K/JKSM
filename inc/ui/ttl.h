@@ -2,9 +2,9 @@
 
 namespace ui
 {
-    void ttlInit(void *a);
+    void ttlInit();
     void ttlExit();
-    void ttlRefresh(void *a);
+    void ttlRefresh();
     void ttlUpdate();
     void ttlDrawTop();
     void ttlDrawBot();

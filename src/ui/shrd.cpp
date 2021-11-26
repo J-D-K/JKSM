@@ -57,15 +57,13 @@ static void shrdViewCallback(void *)
             break;
 
         case KEY_CPAD_RIGHT:
-            ui::state = USR;
+            ui::state = SET;
             break;
     }
 }
 
-void ui::shrdInit(void *a)
+void ui::shrdInit()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Setting up Shared ExtData...");
     //Skip E0 since it doesn't open
     data::titleData shrdExt;
     shrdExt.setExtdata(0xF0000001);
@@ -111,7 +109,6 @@ void ui::shrdInit(void *a)
     shared.push_back(shrdExt);
 
     shrdView = new titleview(shared, shrdViewCallback, NULL);
-    t->finished = true;
 }
 
 void ui::shrdExit()

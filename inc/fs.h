@@ -2,6 +2,8 @@
 #define FS_H
 
 #include <3ds.h>
+#include <minizip/zip.h>
+#include <minizip/unzip.h>
 #include <string>
 #include "data.h"
 #include "ui.h"
@@ -10,9 +12,6 @@ namespace fs
 {
     void init();
     void exit();
-
-    void fsStartSession();
-    void fsEndSession();
 
     enum fsSeek
     {
@@ -38,6 +37,7 @@ namespace fs
     //Threaded create dir so I can be sure it's run after ^ is finished
     void createDir(const std::string& path);
     void createDir(const FS_Archive& _arch, const std::u16string& _path);
+    void createDirRec(const FS_Archive& _arch, const std::u16string& path);
 
     class fsfile
     {
@@ -95,19 +95,14 @@ namespace fs
     void backupArchive(const std::u16string& outpath);
     void restoreToArchive(const std::u16string& inpath);
 
-    typedef struct
-    {
-        FS_Archive arch;
-        std::u16string from, to;
-        ui::progressBar *bar;
-    } backupArgs;
-
-    backupArgs *backupArgsCreate(const FS_Archive& _arch, const std::u16string& _from, const std::u16string& _to);
-
     void copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
     void copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
     void copyDirToSD(const FS_Archive& arch, const std::u16string&  from, const std::u16string& to);
     void copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
+
+    void copyArchToZip(const FS_Archive& arch, const std::u16string& from, zipFile zip);
+    void copyZipToArch(const FS_Archive& arch, unzFile unz);
+    void copyDirToZip();
 
     void backupAll();
 }

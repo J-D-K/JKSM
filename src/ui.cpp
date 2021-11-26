@@ -17,7 +17,6 @@
 #include "sys.h"
 #include "smdh.h"
 
-#include "ui/thrdProc.h"
 #include "ui/ttlview.h"
 #include "ui/ttl.h"
 
@@ -28,39 +27,22 @@ const std::string ui::loadGlyphArray[] =
     "\ue024", "\ue025", "\ue026", "\ue027"
 };
 
-static ui::threadProcMngr *thrdProc;
-
-static ui::menu mainMenu, titleMenu, backupMenu, nandMenu, nandBackupMenu, folderMenu, sharedMenu;
+static ui::menu dolderMenu;
 
 int ui::state = DAT, ui::prev = DAT;
 
-const std::string TITLE_TEXT = "JK's Save Manager - 7.27.2021 ";
+const std::string TITLE_TEXT = "JK's Save Manager - 11.25.2021 ";
 
 uint32_t ui::down = 0, ui::held = 0;
 
 void ui::init()
 {
-    thrdProc = new threadProcMngr;
-
-    backupMenu.addOpt("Save Data", 0);
-    backupMenu.addOpt("Delete Save Data", 0);
-    backupMenu.addOpt("Extra Data", 0);
-    backupMenu.addOpt("Delete Extra Data", 0);
-    backupMenu.addOpt("Back", 0);
-
-    nandBackupMenu.addOpt("System Save", 0);
-    nandBackupMenu.addOpt("Extra Data", 0);
-    nandBackupMenu.addOpt("BOSS Extra Data", 0);
-    nandBackupMenu.addOpt("Back", 0);
-
-    sharedMenu.addOpt("E0000000", 0);
-    sharedMenu.addOpt("F0000001", 0);
-    sharedMenu.addOpt("F0000002", 0);
-    sharedMenu.addOpt("F0000009", 0);
-    sharedMenu.addOpt("F000000B", 0);
-    sharedMenu.addOpt("F000000C", 0);
-    sharedMenu.addOpt("F000000D", 0);
-    sharedMenu.addOpt("F000000E", 0);
+    ui::ttlInit();
+    ui::extInit();
+    ui::sysInit();
+    ui::bossViewInit();
+    ui::shrdInit();
+    ui::setInit();
 }
 
 void ui::exit()
@@ -70,7 +52,7 @@ void ui::exit()
     ui::sysExit();
     ui::bossViewExit();
     ui::shrdExit();
-    delete thrdProc;
+    ui::setExit();
 }
 
 void ui::drawUIBar(const std::string& txt, int screen, bool center)
@@ -92,11 +74,6 @@ void ui::drawUIBar(const std::string& txt, int screen, bool center)
             gfx::drawText(txt, botX, 224, 0.8f, 0.5f, 0xFFFFFFFF);
             break;
     }
-}
-
-void ui::newThread(ThreadFunc _thrdFunc, void *_args, funcPtr _drawFunc)
-{
-    thrdProc->newThread(_thrdFunc, _args, _drawFunc);
 }
 
 void drawUI()
@@ -129,11 +106,13 @@ void drawUI()
             ui::shrdDrawTop();
             break;
 
+        case SET:
+            ui::setDrawTop();
+            break;
+
         default:
             break;
     }
-    if(!thrdProc->empty())
-        thrdProc->drawTop();
     gfx::frameStartBot();
     switch(ui::state)
     {
@@ -161,11 +140,13 @@ void drawUI()
             ui::shrdDrawBot();
             break;
 
+        case SET:
+            ui::setDrawBottom();
+            break;
+
         default:
             break;
     }
-    if(!thrdProc->empty())
-        thrdProc->drawBot();
     gfx::frameEnd();
 }
 
@@ -173,38 +154,37 @@ bool ui::runApp()
 {
     ui::updateInput();
 
-    thrdProc->update();
+    data::cartCheck();
 
-    if(thrdProc->empty())
+    if(ui::padKeysDown() & KEY_START)
+        return false;
+
+    switch(state)
     {
-        data::cartCheck();
+        case USR:
+            ui::ttlUpdate();
+            break;
 
-        if(ui::padKeysDown() & KEY_START)
-            return false;
+        case EXT:
+            ui::extUpdate();
+            break;
 
-        switch(state)
-        {
-            case USR:
-                ui::ttlUpdate();
-                break;
+        case SYS:
+            ui::sysUpdate();
+            break;
 
-            case EXT:
-                ui::extUpdate();
-                break;
+        case BOS:
+            ui::bossViewUpdate();
+            break;
 
-            case SYS:
-                ui::sysUpdate();
-                break;
+        case SHR:
+            ui::shrdUpdate();
+            break;
 
-            case BOS:
-                ui::bossViewUpdate();
-                break;
-
-            case SHR:
-                ui::shrdUpdate();
-                break;
+        case SET:
+            ui::setUpdate();
+            break;
         }
-    }
 
     drawUI();
 
@@ -254,8 +234,10 @@ void ui::progressBar::update(const uint32_t& _prog)
     width  = (float)(percent * 288) / 100;
 }
 
-void ui::progressBar::draw()
+void ui::progressBar::draw(const std::string& text)
 {
+    C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFAAAAAA);
+    gfx::drawTextWrap(text, 16, 16, 0.5f, 0.5f, 240, 0xFF000000);
     C2D_DrawRectSolid(16, 200, 1.0f, 288, 16, 0xFF000000);
     C2D_DrawRectSolid(16, 200, 1.0f, width, 16, 0xFF00FF00);
 }

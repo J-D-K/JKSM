@@ -2,10 +2,10 @@
 
 namespace ui
 {
-    void extInit(void *a);
+    void extInit();
     void extExit();
     void extUpdate();
-    void extRefresh(void *a);
+    void extRefresh();
     void extDrawTop();
     void extDrawBot();
 }

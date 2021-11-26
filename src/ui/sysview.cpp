@@ -46,12 +46,9 @@ static void sysViewCallback(void *a)
     }
 }
 
-void ui::sysInit(void *a)
+void ui::sysInit()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Preparing System Save View...");
     sysView = new ui::titleview(data::sysDataTitles, sysViewCallback, NULL);
-    t->finished = true;
 }
 
 void ui::sysExit()

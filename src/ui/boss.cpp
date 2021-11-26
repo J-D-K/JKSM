@@ -46,12 +46,9 @@ static void bossViewCallback(void *a)
     }
 }
 
-void ui::bossViewInit(void *a)
+void ui::bossViewInit()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Preparing BOSS View...");
     bossView = new ui::titleview(data::bossDataTitles, bossViewCallback, NULL);
-    t->finished = true;
 }
 
 void ui::bossViewExit()

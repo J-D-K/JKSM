@@ -299,10 +299,8 @@ void data::titleData::assignIcon(C3D_Tex *_icon)
     icon = {_icon, &gfx::iconSubTex};
 }
 
-void loadcart_t(void *a)
+static void loadcart()
 {
-    threadInfo *t = (threadInfo *)a;
-    t->status->setStatus("Loading cart info...");
     uint64_t cartID = 0;
     AM_GetTitleList(NULL, MEDIATYPE_GAME_CARD, 1, &cartID);
     data::titleData cartData;
@@ -315,10 +313,9 @@ void loadcart_t(void *a)
         if(tmp.hasExt)
             data::extDataTitles.insert(data::extDataTitles.begin(), cartData);
 
-        ui::newThread(ui::ttlRefresh, NULL, NULL);
-        ui::newThread(ui::extRefresh, NULL, NULL);
+        ui::ttlRefresh();
+        ui::extRefresh();
     }
-    t->finished = true;
 }
 
 static bool checkForCart()
@@ -332,21 +329,21 @@ void data::cartCheck()
     FSUSER_CardSlotIsInserted(&ins);
 
     if(ins && !checkForCart())
-        ui::newThread(loadcart_t, NULL, NULL);
+        loadcart();
     else if(!ins)
     {
         if(data::usrSaveTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
         {
             data::usrSaveTitles[0].freeIcon();
             data::usrSaveTitles.erase(data::usrSaveTitles.begin());
-            ui::ttlRefresh(NULL);
+            ui::ttlRefresh();
         }
 
         if(data::extDataTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
         {
             data::extDataTitles[0].freeIcon();
             data::extDataTitles.erase(data::extDataTitles.begin());
-            ui::extRefresh(NULL);
+            ui::extRefresh();
         }
     }
 }
@@ -379,10 +376,8 @@ static inline bool checkHigh(const uint64_t& id)
     return (high == 0x00040000 || high == 0x00040002);
 }
 
-void data::loadTitles(void *a)
+void data::loadTitles()
 {
-    threadInfo *t = (threadInfo *)a;
-
     titles.clear();
     loadBlacklist();
     loadFav();
@@ -401,10 +396,7 @@ void data::loadTitles(void *a)
             {
                 titleData newTitle;
                 if(newTitle.init(ids[i], MEDIATYPE_SD) && newTitle.hasSaveData())
-                {
-                    t->status->setStatus(util::toUtf8(newTitle.getTitle()));
                     titles.push_back(newTitle);
-                }
             }
         }
         delete[] ids;
@@ -418,14 +410,10 @@ void data::loadTitles(void *a)
         {
             titleData newNandTitle;
             if(newNandTitle.init(ids[i], MEDIATYPE_NAND) && newNandTitle.hasSaveData() && !newNandTitle.getTitle().empty())
-            {
-                t->status->setStatus(util::toUtf8(newNandTitle.getTitle()));
                 titles.push_back(newNandTitle);
-            }
         }
         delete[] ids;
 
-        t->status->setStatus("Writing master cache...");
         createCache(titles, titlePath);
     }
 
@@ -452,8 +440,6 @@ void data::loadTitles(void *a)
     std::sort(extDataTitles.begin(), extDataTitles.end(), sortTitles);
     std::sort(sysDataTitles.begin(), sysDataTitles.end(), sortTitles);
     std::sort(bossDataTitles.begin(), bossDataTitles.end(), sortTitles);
-
-    t->finished = true;
 }
 
 void data::loadBlacklist()
@@ -557,7 +543,6 @@ void data::favRem(titleData& t)
             break;
         }
     }
-
     std::sort(data::usrSaveTitles.begin(), data::usrSaveTitles.end(), sortTitles);
 }
 

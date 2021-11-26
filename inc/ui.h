@@ -16,6 +16,7 @@
 #include "ui/boss.h"
 #include "ui/shrd.h"
 #include "ui/fld.h"
+#include "ui/set.h"
 
 enum states
 {
@@ -24,7 +25,8 @@ enum states
     EXT,
     SYS,
     BOS,
-    SHR
+    SHR,
+    SET
 };
 
 extern const std::string TITLE_TEXT;
@@ -68,7 +70,7 @@ namespace ui
             progressBar(const uint32_t& _max);
             void setMax(const uint32_t& _max) { max = _max; }
             void update(const uint32_t& _prog);
-            void draw();
+            void draw(const std::string& text);
 
         private:
             float max, prog, width;

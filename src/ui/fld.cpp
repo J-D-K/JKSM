@@ -5,6 +5,7 @@
 #include "fs.h"
 #include "util.h"
 #include "type.h"
+#include "cfg.h"
 
 static ui::menu fldMenu;
 static fs::dirList fldList;
@@ -21,8 +22,16 @@ void fldMenuNew(void *a)
         newFolder = util::toUtf16(util::getDateString(util::DATE_FMT_YMD));
     else
         newFolder = util::safeString(util::toUtf16(util::getString("Enter a new folder name", true)));
-
-    if(!newFolder.empty())
+    
+    if(!newFolder.empty() && cfg::config["zip"])
+    {
+        zipFile zip = zipOpen64("/tmp.zip", 0);
+        std::u16string fullOut = targetDir + newFolder + util::toUtf16(".zip");
+        fs::copyArchToZip(fs::getSaveArch(), util::toUtf16("/"), zip);
+        zipClose(zip, NULL);
+        FSUSER_RenameFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, "/tmp.zip"), fs::getSDMCArch(), fsMakePath(PATH_UTF16, fullOut.c_str()));  
+    }
+    else if(!newFolder.empty())
     {
         std::u16string fullOut = targetDir + newFolder;
         std::u16string svRoot  = util::toUtf16("/");
@@ -33,37 +42,67 @@ void fldMenuNew(void *a)
 
         fs::copyDirToSD(fs::getSaveArch(), svRoot, fullOut);
     }
+    ui::fldRefresh();
 }
 
-//To do: this + restore using threaded funcs
 void fldMenuOverwrite(void *a)
 {
-    //Skip new
-    std::u16string overwrite = targetDir + fldList.getItem(fldMenu.getSelected() - 1);
-    std::u16string svRoot    = util::toUtf16("/");
-    FS_Path delPath = fsMakePath(PATH_UTF16, overwrite.c_str());
-    FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), delPath);
-    FSUSER_CreateDirectory(fs::getSDMCArch(), delPath, 0);
-    overwrite += util::toUtf16("/");
-    fs::copyDirToSD(fs::getSaveArch(), svRoot, overwrite);
+    int sel = fldMenu.getSelected() - 1;
+    if(fldList.isDir(sel))
+    {
+        std::u16string overwrite = targetDir + fldList.getItem(sel);
+        FS_Path delPath = fsMakePath(PATH_UTF16, overwrite.c_str());
+        FSUSER_DeleteDirectoryRecursively(fs::getSDMCArch(), delPath);
+        FSUSER_CreateDirectory(fs::getSDMCArch(), delPath, 0);
+        overwrite += util::toUtf16("/");
+        fs::copyDirToSD(fs::getSaveArch(), util::toUtf16("/"), overwrite);
+    }
+    else
+    {
+        std::u16string overwrite = targetDir + fldList.getItem(sel);
+        FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, overwrite.c_str()));
+        zipFile zip = zipOpen64("/tmp.zip", 0);
+        fs::copyArchToZip(fs::getSaveArch(), util::toUtf16("/"), zip);
+        zipClose(zip, NULL);
+        FSUSER_RenameFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, "/tmp.zip"), fs::getSDMCArch(), fsMakePath(PATH_UTF16, overwrite.c_str()));
+    }
+    
 }
 
 void fldMenuDelete(void *a)
 {
-    std::u16string del = targetDir + fldList.getItem(fldMenu.getSelected() - 1);
-    fs::delDirRec(fs::getSDMCArch(), del);
-    ui::newThread(ui::fldRefresh, NULL, NULL);
+    int sel = fldMenu.getSelected() - 1;
+    std::u16string del = targetDir + fldList.getItem(sel);
+    if(fldList.isDir(sel))
+        fs::delDirRec(fs::getSDMCArch(), del);
+    else
+        FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, del.c_str()));
+
+    ui::fldRefresh();
 }
 
 void fldMenuRestore(void *a)
 {
     fs::deleteSv(fs::getSaveMode());
-    std::u16string rest = targetDir + fldList.getItem(fldMenu.getSelected() - 1) + util::toUtf16("/");
-    std::u16string svRoot = util::toUtf16("/");
-    FS_Path delRoot = fsMakePath(PATH_UTF16, svRoot.c_str());
-    FSUSER_DeleteDirectoryRecursively(fs::getSaveArch(), delRoot);
-    fs::commitData(fs::getSaveMode());
-    fs::copyDirToArch(fs::getSaveArch(), rest, svRoot);
+    int sel = fldMenu.getSelected() - 1;
+    if(fldList.isDir(sel))
+    {
+        std::u16string rest = targetDir + fldList.getItem(sel) + util::toUtf16("/");
+        fs::delDirRec(fs::getSaveArch(), util::toUtf16("/"));
+        fs::commitData(fs::getSaveMode());
+        fs::copyDirToArch(fs::getSaveArch(), rest, util::toUtf16("/"));
+    }
+    else
+    {
+        std::u16string zipTarget = targetDir + fldList.getItem(sel);
+        FSUSER_RenameFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, zipTarget.c_str()), fs::getSDMCArch(), fsMakePath(PATH_ASCII, "/tmp.zip"));
+        fs::delDirRec(fs::getSaveArch(), util::toUtf16("/"));
+        fs::commitData(fs::getSaveArch());
+        unzFile unz = unzOpen64("/tmp.zip");
+        fs::copyZipToArch(fs::getSaveArch(), unz);
+        unzClose(unz);
+        FSUSER_RenameFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, "/tmp.zip"), fs::getSDMCArch(), fsMakePath(PATH_UTF16, zipTarget.c_str()));
+    }
 }
 
 void ui::fldInit(const std::u16string& _path, funcPtr _func, void *_args)
@@ -85,12 +124,8 @@ void ui::fldInit(const std::u16string& _path, funcPtr _func, void *_args)
     }
 }
 
-void ui::fldRefresh(void *a)
+void ui::fldRefresh()
 {
-    threadInfo *t = NULL;
-    if(a)
-        t = (threadInfo *)a;
-
     fldMenu.reset();
     fldList.reassign(fs::getSDMCArch(), targetDir);
 
@@ -104,8 +139,6 @@ void ui::fldRefresh(void *a)
         fldMenu.addOptEvent(i + 1, KEY_X, fldMenuDelete, NULL);
         fldMenu.addOptEvent(i + 1, KEY_Y, fldMenuRestore, NULL);
     }
-    if(t)
-        t->finished = true;
 }
 
 void ui::fldUpdate()
