@@ -35,10 +35,6 @@ static void ttlViewCallback(void *a)
 {
     switch(ui::padKeysDown())
     {
-        case KEY_SELECT:
-            ui::confirm("Confirm?", NULL, NULL, NULL);
-            break;
-
         case KEY_A:
             {
                 data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];

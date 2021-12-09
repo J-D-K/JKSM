@@ -186,7 +186,7 @@ AccessControlInfo:
 SystemControlInfo:
   SaveDataSize: 0KB # Change if the app uses savedata
   RemasterVersion: 2
-  StackSize: 0x40000
+  StackSize: 0x100000
 
   # Modules that run services listed above should be included below
   # Maximum 48 dependencies
