@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void shrdInit();
+    void shrdInit(void *a);
     void shrdExit();
     void shrdUpdate();
     void shrdDrawTop();

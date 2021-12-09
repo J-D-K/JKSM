@@ -46,9 +46,11 @@ static void bossViewCallback(void *a)
     }
 }
 
-void ui::bossViewInit()
+void ui::bossViewInit(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
     bossView = new ui::titleview(data::bossDataTitles, bossViewCallback, NULL);
+    t->finished = true;
 }
 
 void ui::bossViewExit()
@@ -66,14 +68,20 @@ void ui::bossViewUpdate()
 
 void ui::bossViewDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- BOSS Extra Data", ui::SCREEN_TOP, true);
     bossView->draw();
+    ui::drawUIBar(TITLE_TEXT + "- BOSS Extra Data", ui::SCREEN_TOP, true);
 }
 
 void ui::bossViewDrawBot()
 {
     if(fldOpen)
+    {
         ui::fldDraw();
-
-    ui::drawUIBar("", ui::SCREEN_BOT, false);
+        ui::drawUIBar(FLD_GUIDE_TEXT, ui::SCREEN_BOT, true);
+    }
+    else
+    {
+        data::bossDataTitles[bossView->getSelected()].drawInfo(0, 0);
+        ui::drawUIBar("\ue000 Open \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, false);
+    }
 }

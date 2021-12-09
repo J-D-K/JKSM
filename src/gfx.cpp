@@ -15,8 +15,6 @@ C3D_RenderTarget *gfx::top, *gfx::bot;
 //Needed for icon sub tex. Top UV needs to be higher than bottom so it's rotated.
 Tex3DS_SubTexture gfx::iconSubTex = {48, 48, 0.0f, 0.75f, 0.75f, 0.0f};
 
-Handle gfx::renderLock;
-
 void gfx::init()
 {
     gfxInitDefault();
@@ -24,15 +22,12 @@ void gfx::init()
     C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
     C2D_Prepare();
 
-    svcCreateMutex(&gfx::renderLock, false);
-
     top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     bot = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 }
 
 void gfx::exit()
 {
-    svcCloseHandle(gfx::renderLock);
     C2D_Fini();
     C3D_Fini();
     gfxExit();
@@ -61,7 +56,7 @@ void gfx::drawTextWrap(const std::string& str, const int& x, int y, const float&
         {
             ++i;
             tmpX = x;
-            y += 12;
+            y += 16;
         }
         size_t nextBreak = str.find_first_of(" /_.", i);
         if(nextBreak == str.npos)
@@ -78,7 +73,7 @@ void gfx::drawTextWrap(const std::string& str, const int& x, int y, const float&
             if((int)(tmpX + width) >= maxWidth)
             {
                 tmpX = x;
-                y += 12;
+                y += 16;
             }
 
             C2D_TextParse(&tmpTxt, tmpBuf, temp.c_str());

@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void extInit();
+    void extInit(void *a);
     void extExit();
     void extUpdate();
     void extRefresh();

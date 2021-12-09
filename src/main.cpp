@@ -16,12 +16,20 @@ extern int state;
 int main(int argc, const char *argv[])
 {
     sys::init();
+    data::init();
     gfx::init();
     fs::init();
-    data::loadTitles();
-    ui::init();
     cfg::initToDefault();
     cfg::load();
+    ui::init();
+
+    ui::newThread(data::loadTitles, NULL, NULL);
+    ui::newThread(ui::ttlInit, NULL, NULL);
+    ui::newThread(ui::extInit, NULL, NULL);
+    ui::newThread(ui::sysInit, NULL, NULL);
+    ui::newThread(ui::bossViewInit, NULL, NULL);
+    ui::newThread(ui::shrdInit, NULL, NULL);
+    ui::newThread(ui::setInit, NULL, NULL);
 
     while(aptMainLoop() && ui::runApp()){ }
 

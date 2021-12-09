@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void setInit();
+    void setInit(void *a);
     void setExit();
     void setUpdate();
     void setDrawTop();

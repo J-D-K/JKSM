@@ -95,14 +95,15 @@ namespace fs
     void backupArchive(const std::u16string& outpath);
     void restoreToArchive(const std::u16string& inpath);
 
-    void copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
-    void copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
-    void copyDirToSD(const FS_Archive& arch, const std::u16string&  from, const std::u16string& to);
-    void copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to);
+    void copyFile(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit, threadInfo *t);
+    void copyFileThreaded(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit);
+    void copyDirToDir(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit, threadInfo *t);
+    void copyDirToDirThreaded(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit);
 
-    void copyArchToZip(const FS_Archive& arch, const std::u16string& from, zipFile zip);
-    void copyZipToArch(const FS_Archive& arch, unzFile unz);
-    void copyDirToZip();
+    void copyArchToZip(const FS_Archive& _arch, const std::u16string& _src, zipFile _zip, threadInfo *t);
+    void copyArchToZipThreaded(const FS_Archive& _arch, const std::u16string& _src, const std::u16string& _dst);
+    void copyZipToArch(const FS_Archive& _arch, unzFile _unz, threadInfo *t);
+    void copyZipToArchThreaded(const FS_Archive& _arch, const std::u16string& _src);
 
     void backupAll();
 }

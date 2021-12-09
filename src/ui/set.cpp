@@ -22,10 +22,21 @@ static std::string getBoolText(const bool& g)
     return "Off";
 }
 
-void ui::setInit()
+static void setMenuReloadTitles(void *a)
 {
+    remove("/JKSV/cache.bin");
+    ui::newThread(data::loadTitles, NULL, NULL);
+}
+
+void ui::setInit(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    setMenu.addOpt("Reload Titles", 320);
+    setMenu.addOptEvent(0, KEY_A, setMenuReloadTitles, NULL);
+
     setMenu.addOpt("Export To ZIP", 320);
-    setMenu.addOptEvent(0, KEY_A, toggleBool, &cfg::config["zip"]);
+    setMenu.addOptEvent(1, KEY_A, toggleBool, &cfg::config["zip"]);
+    t->finished = true;
 }
 
 void ui::setExit()
@@ -46,18 +57,18 @@ void ui::setUpdate()
             break;
     }
 
-    setMenu.editOpt(0, "Export to ZIP: " + getBoolText(cfg::config["zip"]));
+    setMenu.editOpt(1, "Export to ZIP: " + getBoolText(cfg::config["zip"]));
 
     setMenu.update();
 }
 
 void ui::setDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- Settings", ui::SCREEN_TOP, true);
     setMenu.draw(0, 22, 0xFFFFFFFF, 400, false);
+    ui::drawUIBar(TITLE_TEXT + "- Settings", ui::SCREEN_TOP, true);
 }
 
 void ui::setDrawBottom()
 {
-    ui::drawUIBar("", ui::SCREEN_BOT, false);
+    ui::drawUIBar("\ue000 Select/Toggle \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, false);
 }

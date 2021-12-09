@@ -7,7 +7,8 @@
 #include "util.h"
 
 static ui::titleview *ttlView;
-static bool fldOpen = false;
+static ui::menu *ttlOpts;
+static bool fldOpen = false, ttlOptsOpen = false;
 
 static int findTitleNewIndex(const uint64_t& tid)
 {
@@ -34,6 +35,10 @@ static void ttlViewCallback(void *a)
 {
     switch(ui::padKeysDown())
     {
+        case KEY_SELECT:
+            ui::confirm("Confirm?", NULL, NULL, NULL);
+            break;
+
         case KEY_A:
             {
                 data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];
@@ -46,6 +51,14 @@ static void ttlViewCallback(void *a)
                     ui::fldInit(targetPath, fldCallback, NULL);
                     fldOpen = true;
                 }
+            }
+            break;
+
+        case KEY_X:
+            {
+                data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];
+                data::curData = *t;
+                ttlOptsOpen = true;
             }
             break;
 
@@ -73,15 +86,55 @@ static void ttlViewCallback(void *a)
     }
 }
 
-void ui::ttlInit()
+static void ttlOptCallback(void *a)
 {
+    uint32_t down = ui::padKeysDown();
+    switch (down)
+    {
+        case KEY_B:
+            ttlOptsOpen = false;
+            break;
+    }
+}
+
+static void ttlOptResetSaveData_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    if(fs::openArchive(data::curData, fs::getSaveMode(), false))
+    {
+        t->status->setStatus("Resetting save data...");
+        fs::delDirRec(fs::getSaveArch(), util::toUtf16("/"));
+        fs::commitData(fs::getSaveMode());
+        fs::closeSaveArch();
+    }
+    t->finished = true;
+}
+
+static void ttlOptResetSaveData(void *a)
+{
+    data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];
+    std::string q = "Are you sure would like to reset the save data for " + util::toUtf8(t->getTitle()) + "?";
+    ui::confirm(q, ttlOptResetSaveData_t, NULL, NULL);
+}
+
+void ui::ttlInit(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
     ttlView = new titleview(data::usrSaveTitles, ttlViewCallback, NULL);
     ui::state = USR;
+
+    ttlOpts = new ui::menu;
+    ttlOpts->setCallback(ttlOptCallback, NULL);
+    ttlOpts->addOpt("Reset Save Data", 320);
+    ttlOpts->addOptEvent(0, KEY_A, ttlOptResetSaveData, NULL);
+
+    t->finished = true;
 }
 
 void ui::ttlExit()
 {
     delete ttlView;
+    delete ttlOpts;
 }
 
 void ui::ttlRefresh()
@@ -91,22 +144,35 @@ void ui::ttlRefresh()
 
 void ui::ttlUpdate()
 {
-    if(!fldOpen)
-        ttlView->update();
-    else
+    if(fldOpen)
         fldUpdate();
+    else if(ttlOptsOpen)
+        ttlOpts->update();
+    else
+        ttlView->update();
 }
 
 void ui::ttlDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- User Saves", ui::SCREEN_TOP, true);
     ttlView->draw();
+    ui::drawUIBar(TITLE_TEXT + "- User Saves", ui::SCREEN_TOP, true);
 }
 
 void ui::ttlDrawBot()
 {
     if(fldOpen)
+    {
         ui::fldDraw();
-
-    ui::drawUIBar("Select a title", ui::SCREEN_BOT, true);
+        ui::drawUIBar(FLD_GUIDE_TEXT, ui::SCREEN_BOT, true);
+    }
+    else if(ttlOptsOpen)
+    {
+        ttlOpts->draw(0, 2, 0xFFFFFFFF, 320, false);
+        ui::drawUIBar("\ue000 Select \ue001 Close", ui::SCREEN_BOT, false);
+    }
+    else
+    {
+        data::usrSaveTitles[ttlView->getSelected()].drawInfo(0, 0);
+        ui::drawUIBar("\ue000 Open \ue002 Options \ue003 Favorite \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, true);
+    }
 }

@@ -18,7 +18,7 @@ namespace ui
     {
         public:
             button(const std::string& _txt, unsigned _x, unsigned _y, unsigned _w, unsigned _h);
-            void update(const touchPosition& p);
+            void update();
             bool isOver();
             bool wasOver();
             int getEvent()

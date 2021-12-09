@@ -10,14 +10,14 @@ void ui::titleTile::draw(int x, int y, bool sel, uint8_t clrShft)
     if(sel)
     {
         uint32_t bbClr = 0xFF << 24 | (uint8_t)(0xC5 + (clrShft / 2)) << 16 | (uint8_t)(0x88 + clrShft) << 8 | 0x00;
-        gfx::drawBoundingBox(x - 3, y - 3, 54, 54, 0.6f, bbClr, false);
-        C2D_DrawImageAt(*icon, (float)x, (float)y, 0.6f);
+        gfx::drawBoundingBox(x - 3, y - 3, 54, 54, GFX_DEPTH_DEFAULT, bbClr, false);
+        C2D_DrawImageAt(*icon, (float)x, (float)y, GFX_DEPTH_DEFAULT);
     }
     else
-        C2D_DrawImageAt(*icon, (float)x, (float)y, 0.5f);
+        C2D_DrawImageAt(*icon, (float)x, (float)y, GFX_DEPTH_DEFAULT);
 
     if(fav)
-        gfx::drawText("♥", x + 2, y + 2, 0.7f, 0.4f, 0xFF4444FF);
+        gfx::drawText("♥", x + 2, y + 2, GFX_DEPTH_DEFAULT, 0.4f, 0xFF4444FF);
 }
 
 ui::titleview::titleview(std::vector<data::titleData>& _t, funcPtr _cb, void *args)

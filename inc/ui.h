@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "data.h"
+#include "thrdMgr.h"
 #include "type.h"
 
 #include "ui/button.h"
@@ -31,6 +32,8 @@ enum states
 
 extern const std::string TITLE_TEXT;
 
+#define FLD_GUIDE_TEXT "\ue000 Select \ue002 Delete \ue003 Restore \ue005 Upload \ue001 Close"
+
 namespace ui
 {
     enum
@@ -39,20 +42,30 @@ namespace ui
         SCREEN_BOT
     };
 
+    typedef struct 
+    {
+        std::string q;
+        funcPtr onConfirm = NULL, onCancel = NULL;
+        void *args = NULL;
+    } confArgs;
+    
     extern uint32_t down, held;
+    extern touchPosition p;
     inline void updateInput()
     {
         hidScanInput();
         down = hidKeysDown();
         held = hidKeysHeld();
+        touchRead(&p);
     }
+
     inline uint32_t padKeysDown(){ return down; }
     inline uint32_t padKeysHeld(){ return held; }
+    inline touchPosition touchPosition() { return p; }
 
     void init();
     void exit();
     void showMessage(const char *fmt, ...);
-    void drawTopBar(const std::string& info);
     void newThread(ThreadFunc _thrdFunc, void *_args, funcPtr _drawFunc);
     bool runApp();
 
@@ -76,7 +89,7 @@ namespace ui
             float max, prog, width;
     };
 
-    bool confirm(const std::string& mess);
+    void confirm(const std::string& mess, funcPtr _onConfirm, funcPtr _onCancel, void *args);
     extern const std::string loadGlyphArray[];
     extern int state, prev;
 }

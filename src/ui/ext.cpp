@@ -7,6 +7,7 @@
 
 static ui::titleview *extView;
 static bool fldOpen = false;
+static ui::menu *extOpts;
 
 static void fldCallback(void *a)
 {
@@ -46,13 +47,20 @@ static void extViewCallback(void *a)
     }
 }
 
-void ui::extInit()
+void ui::extInit(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
     extView = new ui::titleview(data::extDataTitles, extViewCallback, NULL);
+    extOpts = new ui::menu;
+
+    extOpts->addOpt("Delete ExtData", 320);
+
+    t->finished = true;
 }
 
 void ui::extExit()
 {
+    delete extOpts;
     delete extView;
 }
 
@@ -71,14 +79,20 @@ void ui::extRefresh()
 
 void ui::extDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- Extra Data", ui::SCREEN_TOP, true);
     extView->draw();
+    ui::drawUIBar(TITLE_TEXT + "- Extra Data", ui::SCREEN_TOP, true);
 }
 
 void ui::extDrawBot()
 {
     if(fldOpen)
+    {
         ui::fldDraw();
-
-    ui::drawUIBar("", ui::SCREEN_BOT, false);
+        ui::drawUIBar(FLD_GUIDE_TEXT, ui::SCREEN_BOT, true);
+    }
+    else
+    {
+        data::extDataTitles[extView->getSelected()].drawInfo(0, 0);
+        ui::drawUIBar("\ue000 Open \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, false);
+    }
 }

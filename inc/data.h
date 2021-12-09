@@ -10,6 +10,7 @@
 
 namespace data
 {
+    void init();
     void exit();
 
     typedef struct
@@ -24,7 +25,7 @@ namespace data
     {
         public:
             bool init(const uint64_t& _id, const FS_MediaType& mt);
-            bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const data::titleSaveTypes& _st, const uint8_t& mt);
+            bool initFromCache(const uint64_t& _id, const std::u16string& _title, const std::u16string& _pub, const std::string& code, const data::titleSaveTypes& _st, const uint8_t& mt);
             void testMounts();
             bool hasSaveData();
 
@@ -76,7 +77,7 @@ namespace data
     extern titleData curData;
 
     smdh_s *loadSMDH(const uint32_t& low, const uint32_t& high, const uint8_t& media);
-    void loadTitles();
+    void loadTitles(void *a);
 
     void loadBlacklist();
     void saveBlacklist();
@@ -97,8 +98,6 @@ namespace data
     //Just functions to draw while data load thread runs
     void datDrawTop();
     void datDrawBot();
-
-    extern uint8_t lang;
 }
 
 #endif // DATA_H

@@ -11,10 +11,20 @@
 #include "data.h"
 #include "type.h"
 
-#define buff_size 128 * 1024
+#define buff_size 0x8000
 
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
+
+typedef struct 
+{
+    FS_Archive srcArch, dstArch;
+    std::u16string src, dst;
+    zipFile zip = NULL;
+    unzFile unz = NULL;
+    uint64_t offset = 0;
+    bool commit = false;  
+} cpyArgs;
 
 void fs::createDir(const std::string& path)
 {
@@ -434,133 +444,104 @@ static std::u16string getItemFromPath(const std::u16string& path)
     return (char16_t *)"";
 }
 
-void fs::copyFileToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+void fs::copyFile(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit, threadInfo *t)
 {
-    fs::fsfile in(arch, from, FS_OPEN_READ);
-    fs::fsfile out(fs::getSDMCArch(), to, FS_OPEN_WRITE | FS_OPEN_CREATE);
-
-    if(!in.isOpen() || !out.isOpen())
+    fs::fsfile src(_srcArch, _src, FS_OPEN_READ);
+    fs::fsfile dst(_dstArch, _dst, FS_OPEN_WRITE, src.getSize());
+    if(!src.isOpen() || !dst.isOpen())
         return;
+    
+    if(t)
+        t->status->setStatus("Copying " + util::toUtf8(_src) +"...");
 
-    uint8_t *buff = new uint8_t[buff_size];
-    ui::progressBar prog(in.getSize());
-    size_t read = 0;
-    std::string progString = util::toUtf8(from);
-    while((read = in.read(buff, buff_size)))
+    size_t readIn = 0;
+    uint8_t *buffer = new uint8_t[buff_size];
+    while((readIn = src.read(buffer, buff_size)))
+        dst.write(buffer, readIn);
+
+    delete[] buffer;
+
+    if(commit)
     {
-        out.write(buff, read);
-        prog.update(in.getOffset());
-
-        gfx::frameBegin();
-        gfx::frameStartBot();
-        prog.draw(progString);
-        gfx::frameEnd();
+        dst.close();
+        fs::commitData(fs::getSaveMode());
     }
-    delete[] buff;
 }
 
-void fs::copyDirToSD(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
+static void copyFile_t(void *a)
 {
-    dirList list(arch, from);
+    threadInfo *t = (threadInfo *)a;
+    cpyArgs *cpy = (cpyArgs *)t->argPtr;
+    fs::copyFile(cpy->srcArch, cpy->src, cpy->dstArch, cpy->dst, cpy->commit, t);
+    delete cpy;
+    t->argPtr = NULL;
+    t->drawFunc = NULL;
+    t->finished = true;
+}
 
-    for(unsigned i = 0; i < list.getCount(); i++)
+void fs::copyFileThreaded(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit)
+{
+    cpyArgs *send = new cpyArgs;
+    send->srcArch = _srcArch;
+    send->src = _src;
+    send->dstArch = _dstArch;
+    send->dst = _dst;
+    send->commit = commit;
+    ui::newThread(copyFile_t, send, NULL);
+}
+
+void fs::copyDirToDir(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit, threadInfo *t)
+{
+    fs::dirList srcList(_srcArch, _src);
+    for(unsigned i = 0; i < srcList.getCount(); i++)
     {
-        if(list.isDir(i))
+        if(srcList.isDir(i))
         {
-            std::u16string newFrom = from + list.getItem(i) + util::toUtf16("/");
-            std::u16string newTo = to + list.getItem(i);
-            FSUSER_CreateDirectory(getSDMCArch(), fsMakePath(PATH_UTF16, newTo.data()), 0);
-            newTo += util::toUtf16("/");
-
-            copyDirToSD(arch, newFrom, newTo);
+            std::u16string newSrc = _src + srcList.getItem(i) + util::toUtf16("/");
+            std::u16string newDst = _dst + srcList.getItem(i) + util::toUtf16("/");
+            fs::createDir(_dstArch, newDst.substr(0, newDst.length() - 1));
+            fs::copyDirToDir(_srcArch, newSrc, _dstArch, newDst, commit, t);
         }
         else
         {
-            std::u16string fullFrom = from + list.getItem(i);
-            std::u16string fullTo   = to   + list.getItem(i);
-
-            copyFileToSD(arch, fullFrom, fullTo);
-        }
-    }
-    ui::fldRefresh();
-}
-
-void fs::backupArchive(const std::u16string& outpath)
-{
-    std::u16string pathIn = util::toUtf16("/");
-    copyDirToSD(saveArch, pathIn, outpath);
-}
-
-void fs::copyFileToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
-{
-    fs::fsfile in(fs::getSDMCArch(), from, FS_OPEN_READ);
-    fs::fsfile out(arch, to, FS_OPEN_WRITE, in.getSize());
-
-    if(!in.isOpen() || !out.isOpen())
-        return;
-
-    uint8_t *buff = new uint8_t[buff_size];
-    ui::progressBar prog(in.getSize());
-    size_t read = 0;
-    std::string progString = util::toUtf8(from);
-    while((read = in.read(buff, buff_size)))
-    {
-        out.write(buff, read);
-        prog.update(in.getOffset());
-
-        gfx::frameBegin();
-        gfx::frameStartBot();
-        prog.draw(progString);
-        gfx::frameEnd();
-    }
-    fs::commitData(fs::getSaveMode());
-    delete[] buff;
-}
-
-void fs::copyDirToArch(const FS_Archive& arch, const std::u16string& from, const std::u16string& to)
-{
-    dirList dir(getSDMCArch(), from);
-
-    for(unsigned i = 0; i < dir.getCount(); i++)
-    {
-        if(dir.isDir(i))
-        {
-            std::u16string newFrom = from + dir.getItem(i) + util::toUtf16("/");
-
-            std::u16string newTo   = to + dir.getItem(i);
-            FSUSER_CreateDirectory(arch, fsMakePath(PATH_UTF16, newTo.data()), 0);
-            newTo += util::toUtf16("/");
-
-            copyDirToArch(arch, newFrom, newTo);
-        }
-        else
-        {
-            std::u16string sdPath = from + dir.getItem(i);
-            std::u16string archPath = to + dir.getItem(i);
-
-            copyFileToArch(arch, sdPath, archPath);
+            std::u16string fullSrc = _src + srcList.getItem(i);
+            std::u16string fullDst = _dst + srcList.getItem(i);
+            fs::copyFile(_srcArch, fullSrc, _dstArch, fullDst, commit, t);
         }
     }
 }
 
-void fs::restoreToArchive(const std::u16string& inpath)
+static void copyDirToDir_t(void *a)
 {
-    std::u16string root = util::toUtf16("/");
-    FSUSER_DeleteDirectoryRecursively(saveArch, fsMakePath(PATH_UTF16, root.data()));
-    copyDirToArch(saveArch, inpath, root);
-    commitData(saveMode);
-    deleteSv(saveMode);
+    threadInfo *t = (threadInfo *)a;
+    cpyArgs *cpy = (cpyArgs *)t->argPtr;
+    fs::copyDirToDir(cpy->srcArch, cpy->src, cpy->dstArch, cpy->dst, cpy->commit, t);
+    delete cpy;
+    t->argPtr = NULL;
+    t->drawFunc = NULL;
+    t->finished = true;
 }
 
-void fs::copyArchToZip(const FS_Archive& arch, const std::u16string& from, zipFile zip)
+void fs::copyDirToDirThreaded(const FS_Archive& _srcArch, const std::u16string& _src, const FS_Archive& _dstArch, const std::u16string& _dst, bool commit)
 {
-    fs::dirList *archList = new fs::dirList(arch, from);
+    cpyArgs *send = new cpyArgs;
+    send->srcArch = _srcArch;
+    send->src = _src;
+    send->dstArch = _dstArch;
+    send->dst = _dst;
+    send->commit = commit;
+    ui::newThread(copyDirToDir_t, send, NULL);
+}
+
+void fs::copyArchToZip(const FS_Archive& _arch, const std::u16string& _src, zipFile _zip, threadInfo *t)
+{
+    fs::dirList *archList = new fs::dirList(_arch, _src);
     for(unsigned i = 0; i < archList->getCount(); i++)
     {
         if(archList->isDir(i))
         {
-            std::u16string newFrom = from + archList->getItem(i) + util::toUtf16("/");
-            fs::copyArchToZip(arch, newFrom, zip);
+            std::u16string newSrc = _src + archList->getItem(i) + util::toUtf16("/");
+            fs::copyArchToZip(_arch, newSrc, _zip, t);
         }
         else
         {
@@ -570,66 +551,110 @@ void fs::copyArchToZip(const FS_Archive& arch, const std::u16string& from, zipFi
             zip_fileinfo inf = { (unsigned)locTime->tm_sec, (unsigned)locTime->tm_min, (unsigned)locTime->tm_hour,
                                  (unsigned)locTime->tm_mday, (unsigned)locTime->tm_mon, (unsigned)(1900 + locTime->tm_year), 0, 0, 0 };
             
-            std::string filename = util::toUtf8(from + archList->getItem(i));
-            int openZip = zipOpenNewFileInZip64(zip, filename.c_str(), &inf, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0);
+            std::string filename = util::toUtf8(_src + archList->getItem(i));
+            int openZip = zipOpenNewFileInZip64(_zip, filename.c_str(), &inf, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0);
             if(openZip == 0)
             {
-                fs::fsfile readFile(arch, from + archList->getItem(i), FS_OPEN_READ);
+                fs::fsfile readFile(_arch, _src + archList->getItem(i), FS_OPEN_READ);
                 ui::progressBar prog(readFile.getSize());
                 size_t readIn = 0;
                 uint8_t *buff = new uint8_t[buff_size];
                 while((readIn = readFile.read(buff, buff_size)))
-                {
-                    zipWriteInFileInZip(zip, buff, readIn);
-
-                    prog.update(readFile.getOffset());
-                    gfx::frameBegin();
-                    gfx::frameStartBot();
-                    prog.draw(filename);
-                    gfx::frameEnd();
-                }
+                    zipWriteInFileInZip(_zip, buff, readIn);
         
                 delete[] buff;
                 readFile.close();
             }
         }
     }
+    delete archList;
 }
 
-void fs::copyZipToArch(const FS_Archive& arch, unzFile unz)
+void copyArchToZip_t(void *a)
 {
-    if(unzGoToFirstFile(unz) == UNZ_OK)
+    threadInfo *t = (threadInfo *)a;
+    cpyArgs *cpy = (cpyArgs *)t->argPtr;
+    t->status->setStatus("Compressing archive to zip...");
+
+    zipFile zip = zipOpen64("/tmp.zip", 0);
+    fs::copyArchToZip(cpy->srcArch, util::toUtf16("/"), zip, t);
+    zipClose(zip, NULL);
+
+    FS_Path srcPath = fsMakePath(PATH_ASCII, "/tmp.zip");
+    FS_Path dstPath = fsMakePath(PATH_UTF16, cpy->dst.c_str());
+    FSUSER_RenameFile(fs::getSDMCArch(), srcPath, fs::getSDMCArch(), dstPath);
+
+    delete cpy;
+
+    ui::fldRefresh();
+
+    t->finished = true;
+}
+
+void fs::copyArchToZipThreaded(const FS_Archive& _arch, const std::u16string& _src, const std::u16string& _dst)
+{
+    cpyArgs *send = new cpyArgs;
+    send->srcArch = _arch;
+    send->src = _src;
+    send->dst = _dst;
+    ui::newThread(copyArchToZip_t, send, NULL);
+}
+
+void fs::copyZipToArch(const FS_Archive& arch, unzFile _unz, threadInfo *t)
+{
+    if(unzGoToFirstFile(_unz) == UNZ_OK)
     {
         char filename[0x301];
         unz_file_info64 info;
         do
         {
             memset(filename, 0, 0x301);
-            unzGetCurrentFileInfo64(unz, &info, filename, 0x300, NULL, 0, NULL, 0);
-            if(unzOpenCurrentFile(unz) == UNZ_OK)
+            unzGetCurrentFileInfo64(_unz, &info, filename, 0x300, NULL, 0, NULL, 0);
+            if(unzOpenCurrentFile(_unz) == UNZ_OK)
             {
                 std::u16string dstPathUTF16 = util::toUtf16(filename);
                 fs::createDirRec(arch, dstPathUTF16.substr(0, dstPathUTF16.find_last_of(L'/') + 1));
                 fs::fsfile writeFile(arch, dstPathUTF16, FS_OPEN_WRITE | FS_OPEN_CREATE);
                 int readIn = 0;
                 uint8_t *buff = new uint8_t[buff_size];
-
-                ui::progressBar prog(info.uncompressed_size);
-                while((readIn = unzReadCurrentFile(unz, buff, buff_size)) > 0)
-                {
+                while((readIn = unzReadCurrentFile(_unz, buff, buff_size)) > 0)
                     writeFile.write(buff, readIn);
-                    prog.update(writeFile.getOffset());
-                    gfx::frameBegin();
-                    gfx::frameStartBot();
-                    prog.draw(filename);
-                    gfx::frameEnd();
-                }
                 
                 delete[] buff;
             }
-        } while (unzGoToNextFile(unz) != UNZ_END_OF_LIST_OF_FILE);
+        } while (unzGoToNextFile(_unz) != UNZ_END_OF_LIST_OF_FILE);
         fs::commitData(fs::getSaveMode());
     }
+}
+
+void copyZipToArch_t(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    cpyArgs *cpy = (cpyArgs *)t->argPtr;
+    t->status->setStatus("Decompressing save to archive...");
+
+    FS_Path srcPath = fsMakePath(PATH_UTF16, cpy->src.c_str());
+    FS_Path dstPath = fsMakePath(PATH_ASCII, "/tmp.zip");
+
+    FSUSER_RenameFile(fs::getSDMCArch(), srcPath, fs::getSDMCArch(), dstPath);
+
+    unzFile unz = unzOpen64("/tmp.zip");
+    fs::copyZipToArch(cpy->dstArch, unz, t);
+    unzClose(unz);
+
+    FSUSER_RenameFile(fs::getSDMCArch(), dstPath, fs::getSDMCArch(), srcPath);
+
+    delete cpy;
+    
+    t->finished = true;
+}
+
+void fs::copyZipToArchThreaded(const FS_Archive& _arch, const std::u16string& _src)
+{
+    cpyArgs *send = new cpyArgs;
+    send->dstArch = _arch;
+    send->src = _src;
+    ui::newThread(copyZipToArch_t, send, NULL);
 }
 
 void fs::backupAll()

@@ -46,9 +46,11 @@ static void sysViewCallback(void *a)
     }
 }
 
-void ui::sysInit()
+void ui::sysInit(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
     sysView = new ui::titleview(data::sysDataTitles, sysViewCallback, NULL);
+    t->finished = true;
 }
 
 void ui::sysExit()
@@ -66,14 +68,20 @@ void ui::sysUpdate()
 
 void ui::sysDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- System Saves", ui::SCREEN_TOP, true);
     sysView->draw();
+    ui::drawUIBar(TITLE_TEXT + "- System Saves", ui::SCREEN_TOP, true);
 }
 
 void ui::sysDrawBot()
 {
     if(fldOpen)
+    {
         ui::fldDraw();
-
-    ui::drawUIBar("", ui::SCREEN_BOT, false);
+        ui::drawUIBar(FLD_GUIDE_TEXT, ui::SCREEN_BOT, true);
+    }
+    else
+    {
+        data::sysDataTitles[sysView->getSelected()].drawInfo(0, 0);
+        ui::drawUIBar("\ue000 Open \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, false);
+    }
 }

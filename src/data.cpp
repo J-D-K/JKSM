@@ -19,6 +19,7 @@
 const char *blPath    = "/JKSV/blacklist.txt";
 const char *favPath   = "/JKSV/favorites.txt";
 const char *titlePath = "/JKSV/cache.bin";
+static uint8_t lang = CFG_LANGUAGE_EN;
 
 static uint32_t extdataRedirect(const uint32_t& low)
 {
@@ -79,6 +80,7 @@ std::vector<data::titleData> data::bossDataTitles;
 //This is a master list now
 static std::vector<data::titleData> titles;
 std::vector<uint32_t> filterIds;
+data::titleData data::curData;
 
 struct
 {
@@ -118,7 +120,6 @@ static bool isFavorite(const uint64_t& id)
         if(id == favorites[i])
             return true;
     }
-
     return false;
 }
 
@@ -136,9 +137,12 @@ static C3D_Tex *loadIcon(smdh_s *smdh)
     return ret;
 }
 
-uint8_t lang;
-
-data::titleData data::curData;
+void data::init()
+{
+    cfguInit();
+    CFGU_GetSystemLanguage(&lang);
+    cfguExit();
+}
 
 void data::exit()
 {
@@ -172,8 +176,16 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     smdh_s *smdh = loadSMDH(low, high, m);
     if(smdh != NULL && hasSaveData())
     {
-        title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
+        title.assign((char16_t *)(smdh->applicationTitles[lang].shortDescription));
+        if(title.empty())
+            title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
+
         titleSafe.assign(util::safeString(title));
+
+        publisher.assign((char16_t *)(smdh->applicationTitles[lang].publisher));
+        if(publisher.empty())
+            publisher.assign((char16_t *)(smdh->applicationTitles[1].publisher));
+
         icon = readIconFromSMDH(smdh);
         delete smdh;
     }
@@ -181,6 +193,7 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     {
         title.assign(util::toUtf16(idStr));
         titleSafe.assign(util::toUtf16(idStr));
+        publisher.assign(util::toUtf16("Someone?"));
         unsigned lowerFour = low & 0x0000FFFF;
         char tmp[16];
         sprintf(tmp, "%04X", lowerFour);
@@ -190,7 +203,7 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     return true;
 }
 
-bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _title, const std::string& code, const data::titleSaveTypes& _st, const uint8_t& mt)
+bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _title, const std::u16string& _pub, const std::string& code, const data::titleSaveTypes& _st, const uint8_t& mt)
 {
     id = _id;
     low = (uint32_t)id;
@@ -203,6 +216,9 @@ bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _
 
     title.assign(_title);
     titleSafe.assign(util::safeString(title));
+    publisher = _pub;
+    if(publisher.empty())
+        publisher = util::toUtf16("Someone?");
     prodCode.assign(code);
     types = _st;
 
@@ -282,11 +298,15 @@ void data::titleData::drawInfo(unsigned x, unsigned y)
             break;
     }
 
-    char tmp[64];
-    sprintf(tmp, "Media: %s\nHigh: 0x%08X\nLow: 0x%08X", media.c_str(), (unsigned)getHigh(), (unsigned)getLow());
-    gfx::drawText(tmp, x, y, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
-    if(icon.tex)
-        C2D_DrawImageAt(icon, 160, 8, 0.5f);
+    C2D_DrawRectSolid(0, 0, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF505050);
+    C2D_DrawRectSolid(0, 16, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF202020);
+    C2D_DrawRectSolid(0, 32, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF505050);
+    C2D_DrawRectSolid(0, 48, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF202020);
+
+    gfx::drawU16Text(title, 8, 0, GFX_DEPTH_DEFAULT, 0xFFFFFFFF);
+    gfx::drawU16Text(publisher, 8, 16, GFX_DEPTH_DEFAULT, 0xFFFFFFFF);
+    gfx::drawText(idStr, 8, 32, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
+    gfx::drawText(media, 8, 48, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
 }
 
 void data::titleData::drawIconAt(float x, float y, uint16_t w, uint16_t h, float depth)
@@ -299,8 +319,10 @@ void data::titleData::assignIcon(C3D_Tex *_icon)
     icon = {_icon, &gfx::iconSubTex};
 }
 
-static void loadcart()
+static void loadcart(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
+    t->status->setStatus("Loading Cart Data...");
     uint64_t cartID = 0;
     AM_GetTitleList(NULL, MEDIATYPE_GAME_CARD, 1, &cartID);
     data::titleData cartData;
@@ -316,6 +338,7 @@ static void loadcart()
         ui::ttlRefresh();
         ui::extRefresh();
     }
+    t->finished = true;
 }
 
 static bool checkForCart()
@@ -329,7 +352,7 @@ void data::cartCheck()
     FSUSER_CardSlotIsInserted(&ins);
 
     if(ins && !checkForCart())
-        loadcart();
+        ui::newThread(loadcart, NULL, NULL);
     else if(!ins)
     {
         if(data::usrSaveTitles[0].getMedia() == MEDIATYPE_GAME_CARD)
@@ -376,9 +399,16 @@ static inline bool checkHigh(const uint64_t& id)
     return (high == 0x00040000 || high == 0x00040002);
 }
 
-void data::loadTitles()
+void data::loadTitles(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
+    t->status->setStatus("Loading Titles...");
+
     titles.clear();
+    usrSaveTitles.clear();
+    extDataTitles.clear();
+    sysDataTitles.clear();
+    bossDataTitles.clear();
     loadBlacklist();
     loadFav();
 
@@ -414,6 +444,7 @@ void data::loadTitles()
         }
         delete[] ids;
 
+        t->status->setStatus("Writing cache...");
         createCache(titles, titlePath);
     }
 
@@ -440,6 +471,8 @@ void data::loadTitles()
     std::sort(extDataTitles.begin(), extDataTitles.end(), sortTitles);
     std::sort(sysDataTitles.begin(), sysDataTitles.end(), sortTitles);
     std::sort(bossDataTitles.begin(), bossDataTitles.end(), sortTitles);
+
+    t->finished = true;
 }
 
 void data::loadBlacklist()
@@ -528,6 +561,9 @@ void data::favAdd(titleData& t)
 
     //resort with new fav
     std::sort(data::usrSaveTitles.begin(), data::usrSaveTitles.end(), sortTitles);
+    std::sort(data::extDataTitles.begin(), data::extDataTitles.end(), sortTitles);
+    std::sort(data::bossDataTitles.begin(), data::bossDataTitles.end(), sortTitles);
+    std::sort(data::sysDataTitles.begin(), data::sysDataTitles.end(), sortTitles);
 }
 
 void data::favRem(titleData& t)
@@ -543,7 +579,11 @@ void data::favRem(titleData& t)
             break;
         }
     }
+
     std::sort(data::usrSaveTitles.begin(), data::usrSaveTitles.end(), sortTitles);
+    std::sort(data::extDataTitles.begin(), data::extDataTitles.end(), sortTitles);
+    std::sort(data::bossDataTitles.begin(), data::bossDataTitles.end(), sortTitles);
+    std::sort(data::sysDataTitles.begin(), data::sysDataTitles.end(), sortTitles);
 }
 
 C2D_Image data::readIconFromSMDH(smdh_s *smdh)
@@ -563,13 +603,17 @@ void data::createCache(std::vector<titleData>& vect, const std::string& path)
 
     uint16_t countOut = vect.size();
     cache.write(&countOut, sizeof(uint16_t));
-    cache.putByte(0x04);
+    cache.putByte(0x05);
 
     for(auto t : vect)
     {
         uint16_t titleLength = t.getTitle().size();
         cache.write(&titleLength, sizeof(uint16_t));
         cache.write(t.getTitle().data(), titleLength * sizeof(char16_t));
+
+        uint16_t publisherLength = t.getPublisher().size();
+        cache.write(&publisherLength, sizeof(uint16_t));
+        cache.write(t.getPublisher().data(), publisherLength * sizeof(char16_t));
 
         uint8_t prodLength = t.getProdCode().size();
         cache.write(&prodLength, sizeof(uint8_t));
@@ -601,7 +645,7 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
     rev = cache.getByte();
     cache.seek(0, fs::seek_beg);
 
-    if(rev != 4)
+    if(rev != 5)
         return false;
 
     uint16_t count = 0;
@@ -617,8 +661,14 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
         uint16_t titleLength = 0;
         char16_t title[0x40];
         memset(title, 0x00, 0x40 * sizeof(char16_t));
-        cache.read(&titleLength, sizeof(uint16_t));
-        cache.read(title, titleLength * sizeof(uint16_t));
+        cache.read(&titleLength, sizeof(char16_t));
+        cache.read(title, titleLength * sizeof(char16_t));
+
+        uint16_t pubLength = 0;
+        char16_t pub[0x40];
+        memset(pub, 0x00, 0x40 * sizeof(char16_t));
+        cache.read(&pubLength, sizeof(uint16_t));
+        cache.read(pub, pubLength * sizeof(char16_t));
 
         uint8_t prodLength = 0;
         char prodCode[16];
@@ -632,7 +682,6 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
         data::titleSaveTypes tmp;
         cache.read(&tmp, sizeof(data::titleSaveTypes));
 
-
         size_t iconSize = 0;
         memset(readBuff, 0x00, ICON_BUFF_SIZE);
         cache.read(&iconSize, sizeof(size_t));
@@ -645,7 +694,7 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
             uncompress((uint8_t *)icon->data, &sz, readBuff, iconSize);
             newData.assignIcon(icon);
         }
-        newData.initFromCache(newID, title, prodCode, tmp, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
+        newData.initFromCache(newID, title, pub, prodCode, tmp, nand ? MEDIATYPE_NAND : MEDIATYPE_SD);
         vect.push_back(newData);
     }
 

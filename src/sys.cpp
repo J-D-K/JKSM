@@ -3,27 +3,20 @@
 
 #include "sys.h"
 
-namespace sys
+bool run = true;
+
+void sys::init()
 {
-    bool run = true;
-    uint8_t lang;
+    hidInit();
+    amInit();
+    aptInit();
+    romfsInit();
+}
 
-    void init()
-    {
-        hidInit();
-        amInit();
-        aptInit();
-        cfguInit();
-        romfsInit();
-        CFGU_GetSystemLanguage(&lang);
-    }
-
-    void exit()
-    {
-        hidExit();
-        amExit();
-        aptExit();
-        cfguExit();
-        romfsExit();
-    }
+void sys::exit()
+{
+    hidExit();
+    amExit();
+    aptExit();
+    romfsExit();
 }

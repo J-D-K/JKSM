@@ -27,22 +27,22 @@ const std::string ui::loadGlyphArray[] =
     "\ue024", "\ue025", "\ue026", "\ue027"
 };
 
-static ui::menu dolderMenu;
-
 int ui::state = DAT, ui::prev = DAT;
 
-const std::string TITLE_TEXT = "JK's Save Manager - 11.25.2021 ";
+static ui::threadProcMngr *thrdMgr;
+static ui::button *ok, *yes, *no;
+
+const std::string TITLE_TEXT = "JK's Save Manager - 12.08.2021 ";
 
 uint32_t ui::down = 0, ui::held = 0;
+touchPosition ui::p;
 
 void ui::init()
 {
-    ui::ttlInit();
-    ui::extInit();
-    ui::sysInit();
-    ui::bossViewInit();
-    ui::shrdInit();
-    ui::setInit();
+    thrdMgr = new ui::threadProcMngr;
+    ok = new ui::button("OK \ue000", 96, 184, 128, 32);
+    yes = new ui::button("Yes \ue000", 32, 184, 120, 32);
+    no  = new ui::button("No \ue001", 168, 184, 120, 32);
 }
 
 void ui::exit()
@@ -53,6 +53,10 @@ void ui::exit()
     ui::bossViewExit();
     ui::shrdExit();
     ui::setExit();
+    delete thrdMgr;
+    delete ok;
+    delete yes;
+    delete no;
 }
 
 void ui::drawUIBar(const std::string& txt, int screen, bool center)
@@ -62,16 +66,16 @@ void ui::drawUIBar(const std::string& txt, int screen, bool center)
     {
         case ui::SCREEN_TOP://top
             topX = 200 - (gfx::getTextWidth(txt) / 2);
-            C2D_DrawRectSolid(0, 0, 0.8f, 400, 16, 0xFF505050);
-            C2D_DrawRectSolid(0, 16, 0.8f, 400, 1, 0x881D1D1D);
-            gfx::drawText(txt, topX, 0, 0.8f, 0.5f, 0xFFFFFFFF);
+            C2D_DrawRectSolid(0, 0, GFX_DEPTH_DEFAULT, 400, 16, 0xFF505050);
+            C2D_DrawRectSolid(0, 16, GFX_DEPTH_DEFAULT, 400, 1, 0x881D1D1D);
+            gfx::drawText(txt, topX, 0, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
             break;
 
         case ui::SCREEN_BOT://bottom
             botX = 160 - (gfx::getTextWidth(txt) / 2);
-            C2D_DrawRectSolid(0, 224, 0.8f, 400, 16, 0xFF505050);
-            C2D_DrawRectSolid(0, 223, 0.8f, 400, 1, 0x881D1D1D);
-            gfx::drawText(txt, botX, 224, 0.8f, 0.5f, 0xFFFFFFFF);
+            C2D_DrawRectSolid(0, 224, GFX_DEPTH_DEFAULT, 400, 16, 0xFF505050);
+            C2D_DrawRectSolid(0, 223, GFX_DEPTH_DEFAULT, 400, 1, 0x881D1D1D);
+            gfx::drawText(txt, botX, 224, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
             break;
     }
 }
@@ -113,6 +117,9 @@ void drawUI()
         default:
             break;
     }
+    if(!thrdMgr->empty())
+        thrdMgr->drawTop();
+
     gfx::frameStartBot();
     switch(ui::state)
     {
@@ -147,6 +154,9 @@ void drawUI()
         default:
             break;
     }
+    if(!thrdMgr->empty())
+        thrdMgr->drawBot();
+
     gfx::frameEnd();
 }
 
@@ -154,37 +164,42 @@ bool ui::runApp()
 {
     ui::updateInput();
 
-    data::cartCheck();
-
-    if(ui::padKeysDown() & KEY_START)
+    thrdMgr->update();
+    if(thrdMgr->empty())
+    {
+        
+        if(ui::padKeysDown() & KEY_START)
         return false;
 
-    switch(state)
-    {
-        case USR:
-            ui::ttlUpdate();
-            break;
+        data::cartCheck();
 
-        case EXT:
-            ui::extUpdate();
-            break;
+        switch(state)
+        {
+            case USR:
+                ui::ttlUpdate();
+                break;
 
-        case SYS:
-            ui::sysUpdate();
-            break;
+            case EXT:
+                ui::extUpdate();
+                break;
 
-        case BOS:
-            ui::bossViewUpdate();
-            break;
+            case SYS:
+                ui::sysUpdate();
+                break;
 
-        case SHR:
-            ui::shrdUpdate();
-            break;
+            case BOS:
+                ui::bossViewUpdate();
+                break;
 
-        case SET:
-            ui::setUpdate();
-            break;
+            case SHR:
+                ui::shrdUpdate();
+                break;
+
+            case SET:
+                ui::setUpdate();
+                break;
         }
+    }
 
     drawUI();
 
@@ -193,32 +208,12 @@ bool ui::runApp()
 
 void ui::showMessage(const char *fmt, ...)
 {
-    char tmp[512];
-    va_list args;
-    va_start(args, fmt);
-    vsprintf(tmp, fmt, args);
 
-    ui:: button ok("OK \ue000", 96, 192, 128, 32);
-    while(1)
-    {
-        hidScanInput();
+}
 
-        uint32_t down = hidKeysDown();
-        touchPosition p;
-        hidTouchRead(&p);
-
-        ok.update(p);
-
-        if(down & KEY_A || ok.getEvent() == BUTTON_RELEASED)
-            break;
-
-        gfx::frameBegin();
-        gfx::frameStartBot();
-        C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFE7E7E7);
-        ok.draw();
-        gfx::drawTextWrap(tmp, 16, 16, 300, GFX_DEPTH_DEFAULT, 0.5f, 0xFF000000);
-        gfx::frameEnd();
-    }
+void ui::newThread(ThreadFunc _thrdFunc, void *_args, funcPtr _drawFunc)
+{
+    thrdMgr->newThread(_thrdFunc, _args, _drawFunc);
 }
 
 ui::progressBar::progressBar(const uint32_t& _max)
@@ -236,41 +231,62 @@ void ui::progressBar::update(const uint32_t& _prog)
 
 void ui::progressBar::draw(const std::string& text)
 {
-    C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFAAAAAA);
-    gfx::drawTextWrap(text, 16, 16, 0.5f, 0.5f, 240, 0xFF000000);
-    C2D_DrawRectSolid(16, 200, 1.0f, 288, 16, 0xFF000000);
-    C2D_DrawRectSolid(16, 200, 1.0f, width, 16, 0xFF00FF00);
+    C2D_DrawRectSolid(8, 8, GFX_DEPTH_DEFAULT, 304, 224, 0xFFF4F4F4);
+    gfx::drawTextWrap(text, 16, 16, GFX_DEPTH_DEFAULT, 0.5f, 240, 0xFF000000);
+    C2D_DrawRectSolid(16, 200, GFX_DEPTH_DEFAULT, 288, 16, 0xFF000000);
+    C2D_DrawRectSolid(16, 200, GFX_DEPTH_DEFAULT, width, 16, 0xFF00FF00);
 }
 
-bool ui::confirm(const std::string& mess)
+void confirm_t(void *a)
 {
-    button yes("Yes \ue000", 16, 192, 128, 32);
-    button no("No \ue001", 176, 192, 128, 32);
-
+    threadInfo *t = (threadInfo *)a;
+    ui::confArgs *in = (ui::confArgs *)t->argPtr;
     while(true)
     {
-        hidScanInput();
+        uint32_t down = ui::padKeysDown();
+        yes->update();
+        no->update();
 
-        uint32_t down = hidKeysDown();
-        touchPosition p;
-        hidTouchRead(&p);
-
-        //Oops
-        yes.update(p);
-        no.update(p);
-
-        if(down & KEY_A || yes.getEvent() == BUTTON_RELEASED)
-            return true;
-        else if(down & KEY_B || no.getEvent() == BUTTON_RELEASED)
-            return false;
-
-        gfx::frameBegin();
-        gfx::frameStartBot();
-        C2D_DrawRectSolid(8, 8, 0.5f, 304, 224, 0xFFF4F4F4);
-        gfx::drawTextWrap(mess, 16, 16, 300, GFX_DEPTH_DEFAULT, 0.5f, 0xFF000000);
-        yes.draw();
-        no.draw();
-        gfx::frameEnd();
+        if((down & KEY_A || yes->getEvent() == BUTTON_RELEASED))
+        {
+            if(in->onConfirm)
+                ui::newThread(in->onConfirm, in->args, NULL);
+            break;
+        }
+        else if((down & KEY_B || no->getEvent() == BUTTON_RELEASED))
+        {
+            if(in->onCancel)
+                (*in->onCancel)(in->args);
+            break;
+        }
+        svcSleepThread(1e+9 / 60);
     }
-    return false;
+    t->lock();
+    delete in;
+    t->argPtr = NULL;
+    t->unlock();
+    t->finished = true;
+}
+
+static void confirmDrawFunc(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    if(t->argPtr && t->running)
+    {
+        ui::confArgs *in = (ui::confArgs *)t->argPtr;
+        C2D_DrawRectSolid(24, 24, GFX_DEPTH_DEFAULT, 272, 200, 0xFFE7E7E7);
+        gfx::drawTextWrap(in->q, 32, 32, GFX_DEPTH_DEFAULT, 0.5f, 264, 0xFF000000);
+        yes->draw();
+        no->draw();
+    }
+}
+
+void ui::confirm(const std::string& mess, funcPtr _onConfirm, funcPtr _onCancel, void *args)
+{
+    confArgs *send = new confArgs;
+    send->q = mess;
+    send->onConfirm = _onConfirm;
+    send->onCancel = _onCancel;
+    send->args = args;
+    ui::newThread(confirm_t, send, confirmDrawFunc);
 }

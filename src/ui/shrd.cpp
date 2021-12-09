@@ -62,8 +62,10 @@ static void shrdViewCallback(void *)
     }
 }
 
-void ui::shrdInit()
+void ui::shrdInit(void *a)
 {
+    threadInfo *t = (threadInfo *)a;
+
     //Skip E0 since it doesn't open
     data::titleData shrdExt;
     shrdExt.setExtdata(0xF0000001);
@@ -109,6 +111,7 @@ void ui::shrdInit()
     shared.push_back(shrdExt);
 
     shrdView = new titleview(shared, shrdViewCallback, NULL);
+    t->finished = true;
 }
 
 void ui::shrdExit()
@@ -129,14 +132,20 @@ void ui::shrdUpdate()
 
 void ui::shrdDrawTop()
 {
-    ui::drawUIBar(TITLE_TEXT + "- Shared ExtData", ui::SCREEN_TOP, true);
     shrdView->draw();
+    ui::drawUIBar(TITLE_TEXT + "- Shared ExtData", ui::SCREEN_TOP, true);
 }
 
 void ui::shrdDrawBot()
 {
     if(fldOpen)
+    {
         ui::fldDraw();
-
-    ui::drawUIBar("", ui::SCREEN_BOT, false);
+        ui::drawUIBar(FLD_GUIDE_TEXT, ui::SCREEN_BOT, true);
+    }
+    else
+    {
+        gfx::drawTextWrap("3DBREW: " + sharedDesc[shrdView->getSelected()], 8, 8, GFX_DEPTH_DEFAULT, 0.5f, 300, 0xFFFFFFFF);
+        ui::drawUIBar("\ue000 Open \ue01A\ue077\ue019 Save Type", ui::SCREEN_BOT, false);
+    }
 }

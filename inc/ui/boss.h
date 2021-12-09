@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void bossViewInit();
+    void bossViewInit(void *a);
     void bossViewExit();
     void bossViewUpdate();
     void bossViewDrawTop();

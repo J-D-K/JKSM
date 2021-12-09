@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void ttlInit();
+    void ttlInit(void *a);
     void ttlExit();
     void ttlRefresh();
     void ttlUpdate();

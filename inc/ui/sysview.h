@@ -2,7 +2,7 @@
 
 namespace ui
 {
-    void sysInit();
+    void sysInit(void *a);
     void sysExit();
     void sysUpdate();
     void sysDrawTop();
