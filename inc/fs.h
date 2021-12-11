@@ -7,11 +7,25 @@
 #include <string>
 #include "data.h"
 #include "ui.h"
+#include "gd.h"
+
+#define DRIVE_JKSM_DIR "JKSM"
+#define DRIVE_USER_SAVE_DIR "Saves"
+#define DRIVE_EXTDATA_DIR "ExtData"
+#define DRIVE_SYSTEM_DIR "SysSave"
+#define DRIVE_BOSS_DIR "Boss"
+#define DRIVE_SHARED_DIR "Shared"
 
 namespace fs
 {
     void init();
     void exit();
+
+    void driveInit(void *a);
+    void driveExit();
+
+    extern drive::gd *gDrive;
+    extern std::string jksmDirID, usrSaveDirID, extDataDirID, sysSaveDirID, bossExtDirID, sharedExtID;
 
     enum fsSeek
     {
@@ -29,6 +43,8 @@ namespace fs
     void commitData(const uint32_t& mode);
     void deleteSv(const uint32_t& mode);
 
+    bool fsfexists(const FS_Archive& _arch, const std::string& _path);
+    bool fsfexists(const FS_Archive& _arch, const std::u16string& _path);
     inline void fcreate(const std::string& path){ FSUSER_CreateFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()), 0, 0); }
     inline void fdelete(const std::string& path){ FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str())); }
 
@@ -72,6 +88,12 @@ namespace fs
             bool open = false;
     };
 
+    typedef struct
+    {
+        std::u16string name;
+        bool isDir;
+    } dirItem;
+
     class dirList
     {
         public:
@@ -82,14 +104,15 @@ namespace fs
             void rescan();
             void reassign(const FS_Archive& arch, const std::u16string& p);
             const uint32_t getCount(){ return entry.size(); }
-            bool isDir(unsigned i){ return entry[i].attributes == FS_ATTRIBUTE_DIRECTORY; }
-            const std::u16string getItem(unsigned i){ return std::u16string((char16_t *)entry[i].name); }
+            bool isDir(unsigned i){ return entry[i].isDir; }
+            const std::u16string getItem(unsigned i){ return entry[i].name; }
+            dirItem *getDirItemAt(int i) { return &entry[i]; }
 
         private:
             Handle d;
             FS_Archive a;
             std::u16string path;
-            std::vector<FS_DirectoryEntry> entry;
+            std::vector<dirItem> entry;
     };
 
     void backupArchive(const std::u16string& outpath);

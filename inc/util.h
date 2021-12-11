@@ -35,6 +35,13 @@ namespace util
     bool touchPressed(const touchPosition& p);
 
     bool fexists(const std::string& path);
+
+    inline void stripChar(char _c, std::string& _s)
+    {
+        size_t pos = 0;
+        while((pos = _s.find(_c)) != _s.npos)
+            _s.erase(pos, 1);
+    }
 }
 
 #endif

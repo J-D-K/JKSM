@@ -26,11 +26,21 @@ static void sysViewCallback(void *a)
         case KEY_A:
             {
                 data::titleData *t = &data::sysDataTitles[sysView->getSelected()];
+                std::string uploadParent;
+                if(fs::gDrive)
+                {
+                    std::string ttlUTF8 = t->getTitleUTF8();
+                    if(!fs::gDrive->dirExists(ttlUTF8, fs::sysSaveDirID))
+                        fs::gDrive->createDir(ttlUTF8, fs::sysSaveDirID);
+
+                    uploadParent = fs::gDrive->getFolderID(ttlUTF8, fs::sysSaveDirID);
+                }
+
                 if(fs::openArchive(*t, ARCHIVE_SYSTEM_SAVEDATA, false))
                 {
                     util::createTitleDir(*t, ARCHIVE_SYSTEM_SAVEDATA);
                     std::u16string targetDir = util::createPath(*t, ARCHIVE_SYSTEM_SAVEDATA);
-                    ui::fldInit(targetDir, fldCallback, NULL);
+                    ui::fldInit(targetDir, uploadParent, fldCallback, NULL);
                     fldOpen = true;
                 }
             }

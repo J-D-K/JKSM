@@ -38,13 +38,22 @@ static void ttlViewCallback(void *a)
         case KEY_A:
             {
                 data::titleData *t = &data::usrSaveTitles[ttlView->getSelected()];
-                //For now for compatibility with old code
                 data::curData = *t;
+
+                std::string uploadParent;
+                if(fs::gDrive)
+                {
+                    if(!fs::gDrive->dirExists(t->getTitleUTF8(), fs::usrSaveDirID))
+                        fs::gDrive->createDir(t->getTitleUTF8(), fs::usrSaveDirID);
+
+                    uploadParent = fs::gDrive->getFolderID(t->getTitleUTF8(), fs::usrSaveDirID);
+                }
+
                 if(fs::openArchive(*t, ARCHIVE_USER_SAVEDATA, false))
                 {
                     util::createTitleDir(*t, ARCHIVE_USER_SAVEDATA);
                     std::u16string targetPath = util::createPath(*t, ARCHIVE_USER_SAVEDATA);
-                    ui::fldInit(targetPath, fldCallback, NULL);
+                    ui::fldInit(targetPath, uploadParent, fldCallback, NULL);
                     fldOpen = true;
                 }
             }

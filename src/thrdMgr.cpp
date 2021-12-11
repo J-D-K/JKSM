@@ -6,14 +6,13 @@
 #include "gfx.h"
 #include "fs.h"
 #include "util.h"
+#include "sys.h"
 
 #include "thrdMgr.h"
 
 /*Adapted the best I can from switch*/
 ui::threadProcMngr::threadProcMngr()
 {
-    svcGetThreadPriority((s32 *)&prio, CUR_THREAD_HANDLE);
-    prio -= 2;
     svcCreateMutex(&threadLock, false);
 }
 
@@ -54,7 +53,7 @@ void ui::threadProcMngr::update()
         threadInfo *t = threads[0];
         if(!t->running)
         {
-            t->thrd = threadCreate(t->thrdFunc, t, 0x10000, prio, -2, false);
+            t->thrd = threadCreate(t->thrdFunc, t, 0x10000, sys::threadPrio, sys::threadCore, false);
             t->running = true;
         }
         else if(t->finished)

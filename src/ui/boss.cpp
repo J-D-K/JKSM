@@ -26,11 +26,21 @@ static void bossViewCallback(void *a)
         case KEY_A:
             {
                 data::titleData *t = &data::bossDataTitles[bossView->getSelected()];
+                std::string uploadParent;
+                if(fs::gDrive)
+                {
+                    std::string ttlUTF8 = t->getTitleUTF8();
+                    if(!fs::gDrive->dirExists(ttlUTF8, fs::bossExtDirID))
+                        fs::gDrive->createDir(ttlUTF8, fs::bossExtDirID);
+
+                    uploadParent = fs::gDrive->getFolderID(ttlUTF8, fs::bossExtDirID);
+                }
+
                 if(fs::openArchive(*t, ARCHIVE_BOSS_EXTDATA, false))
                 {
                     util::createTitleDir(*t, ARCHIVE_BOSS_EXTDATA);
                     std::u16string targetDir = util::createPath(*t, ARCHIVE_BOSS_EXTDATA);
-                    ui::fldInit(targetDir, fldCallback, NULL);
+                    ui::fldInit(targetDir, uploadParent, fldCallback, NULL);
                     fldOpen = true;
                 }
             }

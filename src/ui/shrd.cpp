@@ -42,11 +42,21 @@ static void shrdViewCallback(void *)
         case KEY_A:
         {
             data::titleData *t = &shared[shrdView->getSelected()];
+            std::string uploadParent;
+            if(fs::gDrive)
+            {
+                std::string ttl = util::toUtf8(shared[shrdView->getSelected()].getTitle());
+                if(!fs::gDrive->dirExists(ttl, fs::sharedExtID))
+                    fs::gDrive->createDir(ttl, fs::sharedExtID);
+
+                uploadParent = fs::gDrive->getFolderID(ttl, fs::sharedExtID);
+            }
+
             if(fs::openArchive(*t, ARCHIVE_SHARED_EXTDATA, false))
             {
                 util::createTitleDir(*t, ARCHIVE_SHARED_EXTDATA);
                 std::u16string targetDir = util::createPath(*t, ARCHIVE_SHARED_EXTDATA);
-                ui::fldInit(targetDir, fldCallback, NULL);
+                ui::fldInit(targetDir, uploadParent, fldCallback, NULL);
                 fldOpen = true;
             }
         }

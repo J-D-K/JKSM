@@ -139,9 +139,7 @@ static C3D_Tex *loadIcon(smdh_s *smdh)
 
 void data::init()
 {
-    cfguInit();
     CFGU_GetSystemLanguage(&lang);
-    cfguExit();
 }
 
 void data::exit()
@@ -180,6 +178,8 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
         if(title.empty())
             title.assign((char16_t *)(smdh->applicationTitles[1].shortDescription));
 
+        titleUTF8 = util::toUtf8(title);
+
         titleSafe.assign(util::safeString(title));
 
         publisher.assign((char16_t *)(smdh->applicationTitles[lang].publisher));
@@ -192,6 +192,7 @@ bool data::titleData::init(const uint64_t& _id, const FS_MediaType& mt)
     else if(hasSaveData())
     {
         title.assign(util::toUtf16(idStr));
+        titleUTF8 = idStr;
         titleSafe.assign(util::toUtf16(idStr));
         publisher.assign(util::toUtf16("Someone?"));
         unsigned lowerFour = low & 0x0000FFFF;
@@ -215,6 +216,7 @@ bool data::titleData::initFromCache(const uint64_t& _id, const std::u16string& _
         fav = true;
 
     title.assign(_title);
+    titleUTF8 = util::toUtf8(title);
     titleSafe.assign(util::safeString(title));
     publisher = _pub;
     if(publisher.empty())
@@ -302,11 +304,13 @@ void data::titleData::drawInfo(unsigned x, unsigned y)
     C2D_DrawRectSolid(0, 16, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF202020);
     C2D_DrawRectSolid(0, 32, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF505050);
     C2D_DrawRectSolid(0, 48, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF202020);
+    C2D_DrawRectSolid(0, 64, GFX_DEPTH_DEFAULT, 320.0f, 16.0f, 0xFF505050);
 
     gfx::drawU16Text(title, 8, 0, GFX_DEPTH_DEFAULT, 0xFFFFFFFF);
     gfx::drawU16Text(publisher, 8, 16, GFX_DEPTH_DEFAULT, 0xFFFFFFFF);
     gfx::drawText(idStr, 8, 32, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
-    gfx::drawText(media, 8, 48, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
+    gfx::drawText(prodCode, 8, 48, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
+    gfx::drawText(media, 8,64, GFX_DEPTH_DEFAULT, 0.5f, 0xFFFFFFFF);
 }
 
 void data::titleData::drawIconAt(float x, float y, uint16_t w, uint16_t h, float depth)
@@ -653,6 +657,8 @@ bool data::readCache(std::vector<titleData>& vect, const std::string& path, bool
     cache.getByte();
 
     uint8_t *readBuff = new uint8_t[ICON_BUFF_SIZE];
+
+    titles.reserve(count);
 
     for(unsigned i = 0; i < count; i++)
     {

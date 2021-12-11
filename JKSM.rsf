@@ -71,7 +71,7 @@ AccessControlInfo:
   IdealProcessor                : 0
   AffinityMask                  : 1
   Priority                      : 16
-  MaxCpu                        : 0x9E # Default
+  MaxCpu                        : 0 # Default
   HandleTableSize               : 0x200
   DisableDebug                  : false
   EnableForceDebug              : false
@@ -87,7 +87,7 @@ AccessControlInfo:
   SystemModeExt                 : Legacy # Legacy(Default)/124MB/178MB  Legacy:Use Old3DS SystemMode
   CpuSpeed                      : 804MHz # 256MHz(Default)/804MHz
   EnableL2Cache                 : true # false(default)/true
-  CanAccessCore2                : false
+  CanAccessCore2                : true
 
   # Virtual Address Mappings
   IORegisterMapping:

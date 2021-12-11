@@ -11,4 +11,5 @@ namespace cfg
     void save();
 
     extern std::unordered_map<std::string, bool> config;
+    extern std::string driveClientID, driveClientSecret, driveAuthCode, driveRefreshToken;
 }

@@ -9,7 +9,9 @@ namespace sys
     void exit();
 
     extern bool run;
-    extern uint8_t lang;
+    extern int8_t threadCore;
+    extern int threadPrio;
+    extern bool isNew3DS;
 }
 
 #endif // SYS_H

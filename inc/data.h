@@ -44,6 +44,7 @@ namespace data
             std::string getProdCode() { return prodCode; }
             std::string getIDStr()    { return idStr; }
             std::u16string getTitle() { return title; }
+            std::string getTitleUTF8() { return titleUTF8; }
             std::u16string getTitleSafe() { return titleSafe; }
             std::u16string getPublisher() { return publisher; }
             data::titleSaveTypes getSaveTypes() { return types; }
@@ -60,7 +61,7 @@ namespace data
         private:
             uint64_t id;
             uint32_t high, low, unique, extdata;
-            std::string prodCode, idStr;
+            std::string prodCode, idStr, titleUTF8;
             std::u16string title, titleSafe, publisher;
             FS_MediaType m;
             bool fav = false;

@@ -10,11 +10,16 @@
 #include "gfx.h"
 #include "data.h"
 #include "type.h"
+#include "cfg.h"
+#include "gd.h"
 
 #define buff_size 0x8000
 
 static FS_Archive sdmcArch, saveArch;
 static FS_ArchiveID saveMode = (FS_ArchiveID)0;
+
+drive::gd *fs::gDrive = NULL;
+std::string fs::jksmDirID, fs::usrSaveDirID, fs::extDataDirID, fs::sysSaveDirID, fs::bossExtDirID, fs::sharedExtID;
 
 typedef struct 
 {
@@ -47,6 +52,62 @@ void fs::exit()
 {
     FSUSER_CloseArchive(sdmcArch);
     FSUSER_CloseArchive(saveArch);
+}
+
+void fs::driveInit(void *a)
+{
+    threadInfo *t = (threadInfo *)a;
+    t->status->setStatus("Starting Google Drive...");
+    fs::gDrive = new drive::gd(cfg::driveClientID, cfg::driveClientSecret, cfg::driveAuthCode, cfg::driveRefreshToken);
+    if(fs::gDrive->hasToken())
+    {
+        cfg::driveRefreshToken = fs::gDrive->getRefreshToken();
+        if(!cfg::driveAuthCode.empty())
+            cfg::save();
+
+        fs::gDrive->loadDriveList();
+        if(!fs::gDrive->dirExists(DRIVE_JKSM_DIR))
+            fs::gDrive->createDir(DRIVE_JKSM_DIR, "");
+        
+        fs::jksmDirID = fs::gDrive->getFolderID("JKSM");
+
+        if(!fs::gDrive->dirExists(DRIVE_USER_SAVE_DIR, fs::jksmDirID))
+            fs::gDrive->createDir(DRIVE_USER_SAVE_DIR, fs::jksmDirID);
+
+        fs::usrSaveDirID = fs::gDrive->getFolderID(DRIVE_USER_SAVE_DIR, fs::jksmDirID);
+
+        if(!fs::gDrive->dirExists(DRIVE_EXTDATA_DIR, fs::jksmDirID))
+            fs::gDrive->createDir(DRIVE_EXTDATA_DIR, fs::jksmDirID);
+
+        fs::extDataDirID = fs::gDrive->getFolderID(DRIVE_EXTDATA_DIR, fs::jksmDirID);
+
+        if(!fs::gDrive->dirExists(DRIVE_SYSTEM_DIR, fs::jksmDirID))
+            fs::gDrive->createDir(DRIVE_SYSTEM_DIR, fs::jksmDirID);
+
+        fs::sysSaveDirID = fs::gDrive->getFolderID(DRIVE_SYSTEM_DIR, fs::jksmDirID);
+
+        if(!fs::gDrive->dirExists(DRIVE_BOSS_DIR, fs::jksmDirID))
+            fs::gDrive->createDir(DRIVE_BOSS_DIR, fs::jksmDirID);
+
+        fs::bossExtDirID = fs::gDrive->getFolderID(DRIVE_BOSS_DIR, fs::jksmDirID);
+
+        if(!fs::gDrive->dirExists(DRIVE_SHARED_DIR, fs::jksmDirID))
+            fs::gDrive->createDir(DRIVE_SHARED_DIR, fs::jksmDirID);
+
+        fs::sharedExtID = fs::gDrive->getFolderID(DRIVE_SHARED_DIR, fs::jksmDirID);
+    }
+    else
+    {
+        delete fs::gDrive;
+        fs::gDrive = NULL;
+    }
+    t->finished = true;
+}
+
+void fs::driveExit()
+{
+    if(fs::gDrive)
+        delete fs::gDrive;
 }
 
 FS_Archive fs::getSDMCArch()
@@ -155,6 +216,24 @@ void fs::deleteSv(const uint32_t& mode)
     }
 }
 
+bool fs::fsfexists(const FS_Archive& _arch, const std::string& _path)
+{
+    Handle tmp;
+    FS_Path testPath = fsMakePath(PATH_ASCII, _path.c_str());
+    Result res = FSUSER_OpenFile(&tmp, _arch, testPath, FS_OPEN_READ, 0);
+    FSFILE_Close(tmp);
+    return R_SUCCEEDED(res);
+}
+
+bool fs::fsfexists(const FS_Archive& _arch, const std::u16string& _path)
+{
+    Handle tmp;
+    FS_Path testPath = fsMakePath(PATH_UTF16, _path.c_str());
+    Result res = FSUSER_OpenFile(&tmp, _arch, testPath, FS_OPEN_READ, 0);
+    FSFILE_Close(tmp);
+    return R_SUCCEEDED(res);
+}
+
 void fs::delDirRec(const FS_Archive& _arch, const std::u16string& path)
 {
     FS_Path delPath = fsMakePath(PATH_UTF16, path.c_str());
@@ -177,20 +256,13 @@ void fs::createDirRec(const FS_Archive& _arch, const std::u16string& path)
     }
 }
 
-static inline void nukeFile(const std::string& path)
-{
-    FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_ASCII, path.c_str()));
-}
-
-static inline void nukeFile(const std::u16string& path)
-{
-    FSUSER_DeleteFile(fs::getSDMCArch(), fsMakePath(PATH_UTF16, path.data()));
-}
-
 fs::fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags)
 {
     if(openFlags & FS_OPEN_CREATE)
-        nukeFile(_path);
+    {
+        FS_Path delPath = fsMakePath(PATH_ASCII, _path.c_str());
+        FSUSER_DeleteFile(_arch, delPath);
+    }
 
     error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.c_str()), openFlags, 0);
     if(R_SUCCEEDED(error))
@@ -203,7 +275,10 @@ fs::fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint
 fs::fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint32_t& openFlags, const uint64_t& crSize)
 {
     if(openFlags & FS_OPEN_CREATE)
-        nukeFile(_path);
+    {
+        FS_Path delPath = fsMakePath(PATH_ASCII, _path.c_str());
+        FSUSER_DeleteFile(_arch, delPath);
+    }
 
     FSUSER_CreateFile(_arch, fsMakePath(PATH_ASCII, _path.c_str()), 0, crSize);
     error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_ASCII, _path.c_str()), openFlags, 0);
@@ -217,7 +292,10 @@ fs::fsfile::fsfile(const FS_Archive& _arch, const std::string& _path, const uint
 fs::fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags)
 {
     if(openFlags & FS_OPEN_CREATE)
-        nukeFile(_path);
+    {
+        FS_Path delPath = fsMakePath(PATH_UTF16, _path.c_str());
+        FSUSER_DeleteFile(_arch, delPath);
+    }
 
     error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.c_str()), openFlags, 0);
     if(R_SUCCEEDED(error))
@@ -230,7 +308,10 @@ fs::fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const u
 fs::fsfile::fsfile(const FS_Archive& _arch, const std::u16string& _path, const uint32_t& openFlags, const uint64_t& crSize)
 {
     if(openFlags & FS_OPEN_CREATE)
-        nukeFile(_path);
+    {
+        FS_Path delPath = fsMakePath(PATH_UTF16, _path.c_str());
+        FSUSER_DeleteFile(_arch, delPath);
+    }
 
     FSUSER_CreateFile(_arch, fsMakePath(PATH_UTF16, _path.c_str()), 0, crSize);
     error = FSUSER_OpenFile(&fHandle, _arch, fsMakePath(PATH_UTF16, _path.c_str()), openFlags, 0);
@@ -345,10 +426,10 @@ void fs::fsfile::seek(const int& pos, const uint8_t& seekFrom)
 
 struct
 {
-    bool operator()(const FS_DirectoryEntry& a, const FS_DirectoryEntry& b)
+    bool operator()(const fs::dirItem& a, const fs::dirItem& b)
     {
-        if(a.attributes != b.attributes)
-            return a.attributes == FS_ATTRIBUTE_DIRECTORY;
+        if(a.isDir != b.isDir)
+            return a.isDir;
 
         for(unsigned i = 0; i < 0x106; i++)
         {
@@ -372,10 +453,13 @@ fs::dirList::dirList(const FS_Archive& arch, const std::u16string& p)
     uint32_t read = 0;
     do
     {
-        FS_DirectoryEntry get;
-        FSDIR_Read(d, &read, 1, &get);
+        FS_DirectoryEntry ent;
+        FSDIR_Read(d, &read, 1, &ent);
         if(read == 1)
-            entry.push_back(get);
+        {
+            fs::dirItem newEntry = {std::u16string((char16_t *)ent.name), ent.attributes == FS_ATTRIBUTE_DIRECTORY};
+            entry.push_back(newEntry);
+        }
     }
     while(read > 0);
 
@@ -400,9 +484,11 @@ void fs::dirList::rescan()
     {
         FS_DirectoryEntry ent;
         FSDIR_Read(d, &read, 1, &ent);
-
         if(read == 1)
-            entry.push_back(ent);
+        {
+            fs::dirItem newEntry = {std::u16string((char16_t *)ent.name), ent.attributes == FS_ATTRIBUTE_DIRECTORY};
+            entry.push_back(newEntry);
+        }
     }
     while(read > 0);
 
@@ -424,9 +510,11 @@ void fs::dirList::reassign(const FS_Archive& arch, const std::u16string& p)
     {
         FS_DirectoryEntry ent;
         FSDIR_Read(d, &read, 1, &ent);
-
         if(read == 1)
-            entry.push_back(ent);
+        {
+            fs::dirItem newEntry = {std::u16string((char16_t *)ent.name), ent.attributes == FS_ATTRIBUTE_DIRECTORY};
+            entry.push_back(newEntry);
+        }
     }
     while(read > 0);
 
