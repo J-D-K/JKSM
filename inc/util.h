@@ -22,6 +22,7 @@ namespace util
     std::u16string safeString(const std::u16string& s);
     int getInt(const std::string& hint, const int& init, const int& max);
     std::string getDateString(const int& fmt);
+    
     void removeLastDirFromString(std::u16string& s);
 
     void createTitleDir(data::titleData& dat, const uint32_t& mode);

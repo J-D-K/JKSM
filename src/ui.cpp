@@ -32,7 +32,7 @@ int ui::state = DAT, ui::prev = DAT;
 static ui::threadProcMngr *thrdMgr;
 static ui::button *ok, *yes, *no;
 
-const std::string TITLE_TEXT = "JK's Save Manager - 12.08.2021 ";
+const std::string TITLE_TEXT = "JK's Save Manager - 12.11.2021 ";
 
 uint32_t ui::down = 0, ui::held = 0;
 touchPosition ui::p;

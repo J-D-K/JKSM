@@ -438,6 +438,7 @@ void drive::gd::uploadFile(const std::string& _filename, const std::string& _par
             uploadData.parent = _parent;
             driveList.push_back(uploadData);
         }
+        json_object_put(parse);
     }
 
     delete jsonResp;

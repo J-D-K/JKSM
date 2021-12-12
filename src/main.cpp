@@ -27,8 +27,8 @@ int main(int argc, const char *argv[])
     ui::init();
 
     //Need to init soc so curl and drive work
-    socBuffer = (uint32_t *)memalign(0x1000, 0x200000);
-    socInit(socBuffer, 0x200000);
+    socBuffer = (uint32_t *)memalign(0x1000, 0x80000);
+    socInit(socBuffer, 0x80000);
 
     curl_global_init(CURL_GLOBAL_ALL);
 

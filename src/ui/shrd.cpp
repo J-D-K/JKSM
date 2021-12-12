@@ -24,6 +24,19 @@ static const std::string sharedDesc[] =
     "Contains versionlist.dat, used by Home Menu for the software update notification added with 7.0.0-13."
 };
 
+static inline void addSharedEntry(const uint32_t& _id, const std::string& _icnTxt)
+{
+    char tmp[16];
+    sprintf(tmp, "%08X", (unsigned)_id);
+
+    data::titleData newShrd;
+    newShrd.setExtdata(_id);
+    newShrd.setTitle(util::toUtf16(tmp));
+    C2D_Image icn = util::createIconGeneric(_icnTxt, &gfx::iconSubTex);
+    newShrd.setIcon(icn);
+    shared.push_back(newShrd);
+}
+
 static void fldCallback(void *)
 {
     switch(ui::padKeysDown())
@@ -77,49 +90,13 @@ void ui::shrdInit(void *a)
     threadInfo *t = (threadInfo *)a;
 
     //Skip E0 since it doesn't open
-    data::titleData shrdExt;
-    shrdExt.setExtdata(0xF0000001);
-    shrdExt.setTitle(util::toUtf16("F0000001"));
-    C2D_Image icon = util::createIconGeneric("F1", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF0000002);
-    shrdExt.setTitle(util::toUtf16("F0000002"));
-    icon = util::createIconGeneric("F2", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF0000009);
-    shrdExt.setTitle(util::toUtf16("F0000009"));
-    icon = util::createIconGeneric("F9", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF000000B);
-    shrdExt.setTitle(util::toUtf16("F000000B"));
-    icon = util::createIconGeneric("FB", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF000000C);
-    shrdExt.setTitle(util::toUtf16("F000000C"));
-    icon = util::createIconGeneric("FC", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF000000D);
-    shrdExt.setTitle(util::toUtf16("F000000D"));
-    icon = util::createIconGeneric("FD", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
-    shrdExt.setExtdata(0xF000000E);
-    shrdExt.setTitle(util::toUtf16("F000000E"));
-    icon = util::createIconGeneric("FE", &gfx::iconSubTex);
-    shrdExt.setIcon(icon);
-    shared.push_back(shrdExt);
-
+    addSharedEntry(0xF0000001, "F1");
+    addSharedEntry(0xF0000002, "F2");
+    addSharedEntry(0xF0000009, "F9");
+    addSharedEntry(0xF000000B, "FB");
+    addSharedEntry(0xF000000C, "FC");
+    addSharedEntry(0xF000000D, "FD");
+    addSharedEntry(0xF000000E, "FE");
     shrdView = new titleview(shared, shrdViewCallback, NULL);
     t->finished = true;
 }
