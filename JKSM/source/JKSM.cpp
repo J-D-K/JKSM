@@ -32,6 +32,8 @@ namespace
     std::vector<std::shared_ptr<AppState>> s_AppStateVector;
     // Array of TitleSelectionStates for each save type.
     std::array<std::shared_ptr<AppState>, Data::SaveTypeTotal> s_TitleSelectionStateArray = {nullptr};
+    // Current state we're on
+    size_t s_CurrentState = 0;
 } // namespace
 
 // This function makes it easier to log init errors for services.
@@ -172,6 +174,19 @@ void JKSM::Update(void)
     if (Input::ButtonPressed(KEY_START))
     {
         m_IsRunning = false;
+    }
+
+    if (Input::ButtonPressed(KEY_CPAD_LEFT) && s_AppStateVector.size() > 1)
+    {
+        s_AppStateVector.pop_back();
+        s_AppStateVector.back()->GiveFocus();
+        s_CurrentState--;
+    }
+    else if (Input::ButtonPressed(KEY_CPAD_RIGHT))
+    {
+        s_AppStateVector.back()->TakeFocus();
+        s_AppStateVector.push_back(s_TitleSelectionStateArray[++s_CurrentState]);
+        s_AppStateVector.back()->GiveFocus();
     }
 
     while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())

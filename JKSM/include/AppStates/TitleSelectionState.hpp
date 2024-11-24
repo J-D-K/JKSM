@@ -20,4 +20,8 @@ class TitleSelectionState : public AppState
         std::unique_ptr<UI::TitleView> m_TitleView;
         // Noto for text
         SDL::SharedFont m_Noto;
+        // X coordinate for bottom text.
+        int m_TextX = 0;
+        // SaveType used.
+        Data::SaveDataType m_SaveType;
 };

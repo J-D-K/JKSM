@@ -27,6 +27,18 @@ void UI::TitleView::Update(void)
     {
         m_Selected = TileTotal;
     }
+
+    // I know some of these are magic numbers and I can't remember how I came up with them. I just remember this being like a balancing act.
+    if (m_SelectionY > 160)
+    {
+        double Add = (160.0f - static_cast<double>(m_SelectionY)) / 2.0f;
+        m_Y += std::ceil(Add);
+    }
+    else if (m_SelectionY < 18)
+    {
+        double Add = (18.0f - static_cast<double>(m_SelectionY)) / 2.0f;
+        m_Y += std::ceil(Add);
+    }
 }
 
 void UI::TitleView::Draw(SDL_Surface *Target)
@@ -36,29 +48,24 @@ void UI::TitleView::Draw(SDL_Surface *Target)
         return;
     }
 
-    // I know some of these are magic numbers and I can't remember how I came up with them. I just remember this being like a balancing act.
-    if (m_SelectionY > 176)
-    {
-        double Add = (176.0f - static_cast<double>(m_SelectionY)) / 3.0f;
-        m_Y += std::ceil(Add);
-    }
-    else if (m_SelectionY < 21)
-    {
-        double Add = (21.0f - static_cast<double>(m_SelectionY)) / 3.0f;
-        m_Y += std::ceil(Add);
-    }
-
-    for (size_t TemporaryY = 24, i = 0; i < m_TitleTiles.size(); TemporaryY += 56)
+    for (int TemporaryY = m_Y, i = 0; i < static_cast<int>(m_TitleTiles.size()); TemporaryY += 56)
     {
         size_t RowEnd = i + 7;
-        for (size_t TemporaryX = 14; i < (RowEnd > m_TitleTiles.size() ? m_TitleTiles.size() : RowEnd); TemporaryX += 54, i++)
+        for (int TemporaryX = m_X; i < static_cast<int>(RowEnd > m_TitleTiles.size() ? m_TitleTiles.size() : RowEnd); TemporaryX += 54, i++)
         {
-            if (i == static_cast<size_t>(m_Selected))
+            if (i == m_Selected)
             {
                 m_SelectionX = TemporaryX - 4;
                 m_SelectionY = TemporaryY - 4;
                 SDL::DrawRect(Target, m_SelectionX, m_SelectionY, 56, 56, {0x00FFFFFF});
             }
+
+            // Don't bother wasting time processing or bliting stuff we can't see anyway.
+            if (TemporaryY < -32 || TemporaryY > 224)
+            {
+                continue;
+            }
+
             m_TitleTiles[i].DrawAt(Target, TemporaryX, TemporaryY);
         }
     }
@@ -85,4 +92,9 @@ void UI::TitleView::SetSelected(int Selected)
 int UI::TitleView::GetSelected(void) const
 {
     return m_Selected;
+}
+
+Data::TitleData *UI::TitleView::GetSelectedTitleData(void)
+{
+    return m_TitleData.at(m_Selected);
 }

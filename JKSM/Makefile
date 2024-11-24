@@ -49,7 +49,7 @@ APP_AUTHOR	:= JK
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -O2 -mword-relocations `sdl-config --cflags` \
+CFLAGS	:=	-g -Wall -O2 -mword-relocations `sdl-config --cflags` -ffast-math \
 			`freetype-config --cflags` -fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 

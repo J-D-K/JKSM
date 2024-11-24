@@ -1,4 +1,5 @@
 #include "StringUtil.hpp"
+#include <3ds.h>
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -28,4 +29,12 @@ void StringUtil::SanitizeStringForPath(const char16_t *StringIn, char16_t *Strin
     {
         StringOut[SanitizedLength - 1] = 0x00;
     }
+}
+
+std::string StringUtil::ToUTF8(const char16_t *String)
+{
+    size_t StringLength = std::char_traits<char16_t>::length(String) + 1;
+    char StringBuffer[StringLength] = {0};
+    utf16_to_utf8(reinterpret_cast<uint8_t *>(StringBuffer), reinterpret_cast<const uint16_t *>(String), StringLength);
+    return std::string(StringBuffer);
 }

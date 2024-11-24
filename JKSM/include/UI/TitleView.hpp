@@ -22,6 +22,8 @@ namespace UI
             void SetSelected(int Selected);
             // Returns index of selected tile.
             int GetSelected(void) const;
+            // Returns the pointer to the selected TitleData
+            Data::TitleData *GetSelectedTitleData(void);
 
         private:
             // Save type of view
@@ -29,9 +31,9 @@ namespace UI
             // Currently selected title.
             int m_Selected = 0;
             // X and Y coordinates to begin drawing at.
-            int m_X = 14, m_Y = 24;
+            int m_X = 14, m_Y = 22;
             // X and Y coordinates of selection bounding box.
-            int m_SelectionX = 0, m_SelectionY = 0;
+            int m_SelectionX = 0, m_SelectionY = 18;
             // Vector of pointers to title data. I don't want to make copies.
             std::vector<Data::TitleData *> m_TitleData;
             // Tile vector.
