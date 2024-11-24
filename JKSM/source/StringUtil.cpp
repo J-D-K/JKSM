@@ -2,13 +2,17 @@
 #include <3ds.h>
 #include <algorithm>
 #include <array>
+#include <cstdarg>
 #include <cstring>
 #include <string>
 
 namespace
 {
+    // These are characters that can't be in paths.
     constexpr std::array<char16_t, 11> s_ForbiddenChars = {u'.', u',', u'/', u'\\', u'<', u'>', u':', u'"', u'|', u'?', u'*'};
-}
+    // This is the size for VA
+    constexpr size_t VA_BUFFER_SIZE = 0x1000;
+} // namespace
 
 void StringUtil::SanitizeStringForPath(const char16_t *StringIn, char16_t *StringOut, size_t StringLength)
 {
@@ -29,6 +33,18 @@ void StringUtil::SanitizeStringForPath(const char16_t *StringIn, char16_t *Strin
     {
         StringOut[SanitizedLength - 1] = 0x00;
     }
+}
+
+std::string StringUtil::GetFormattedString(const char *Format, ...)
+{
+    char VaBuffer[VA_BUFFER_SIZE] = {0};
+
+    std::va_list VaList;
+    va_start(VaList, Format);
+    vsnprintf(VaBuffer, VA_BUFFER_SIZE, Format, VaList);
+    va_end(VaList);
+
+    return std::string(VaBuffer);
 }
 
 std::string StringUtil::ToUTF8(const char16_t *String)

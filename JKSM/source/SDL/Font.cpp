@@ -61,7 +61,7 @@ void SDL::FreeType::Exit(void)
     }
 }
 
-SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({TextColor.RAW & 0xFFFFFF00})
+SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({TextColor.RAW})
 {
     // Unfortunately, I'm not sure FsLib is ever going to get RomFS support. Still need stdio or fstream for this...
     std::FILE *FontFile = std::fopen(FontPath.data(), "rb");
@@ -281,7 +281,7 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
 
     for (size_t i = 0; i < BitmapSize; i++)
     {
-        SurfacePixels[i] = (m_TextColor.RAW | BitmapBuffer[i]);
+        SurfacePixels[i] = ((m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i]);
     }
 
     m_GlyphCacheMap[std::make_pair(Codepoint, FontSize)] = {.AdvanceX = static_cast<int16_t>(m_FTFace->glyph->advance.x >> 6),

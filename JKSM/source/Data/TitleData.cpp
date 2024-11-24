@@ -1,4 +1,5 @@
 #include "Data/TitleData.hpp"
+#include "Assets.hpp"
 #include "Data/SMDH.hpp"
 #include "FsLib.hpp"
 #include "Logger.hpp"
@@ -63,7 +64,6 @@ Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType) : m_TitleID
     Data::SMDH TitleSMDH;
     if (!Data::LoadSMDH(m_TitleID, m_MediaType, TitleSMDH))
     {
-        Logger::Log("Error loading SMDH for %016llX!", m_TitleID);
         TitleData::TitleInitializeDefault();
     }
     else
@@ -242,8 +242,24 @@ void Data::TitleData::TestArchives(void)
 
 void Data::TitleData::TitleInitializeDefault(void)
 {
-    static int Unknown = 0;
-    m_Icon = SDL::SurfaceManager::CreateLoadResource(std::to_string(Unknown++), 48, 48, false);
+    // This should just grab a pointer. Not load the font again.
+    SDL::SharedFont Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
+    m_Icon = SDL::SurfaceManager::CreateLoadResource(std::to_string(m_TitleID), 48, 48, false);
+
+    // Clear icon to bar color.
+    uint32_t *IconPixels = reinterpret_cast<uint32_t *>(m_Icon->Get()->pixels);
+    for (int i = 0; i < 48 * 48; i++)
+    {
+        *IconPixels++ = SDL::Colors::BarColor.RAW;
+    }
+    /*
+    std::string UniqueString = StringUtil::GetFormattedString("%04X", m_TitleID >> 8 & 0xFFFF);
+    Logger::Log("Unique String: %s.", UniqueString.c_str());
+
+    int TextX = 24 - (Noto->GetTextWidth(10, UniqueString.c_str()) / 2);
+    Logger::Log("TextX: %i", TextX);
+
+    //Noto->BlitTextAt(m_Icon->Get(), TextX, 14, 10, SDL::Font::NO_TEXT_WRAP, UniqueString.c_str());*/
 }
 
 void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)

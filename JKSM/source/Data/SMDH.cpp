@@ -22,7 +22,6 @@ bool Data::LoadSMDH(uint64_t TitleID, FS_MediaType MediaType, SMDH &Out)
     Result FsError = FSUSER_OpenFileDirectly(&SDMHHandle, ARCHIVE_SAVEDATA_AND_CONTENT, BinaryArchivePath, BinaryFilePath, FS_OPEN_READ, 0);
     if (R_FAILED(FsError))
     {
-        Logger::Log("Error opening SMDH for 0x%016llX: 0x%08X.", TitleID);
         return false;
     }
 
@@ -30,7 +29,6 @@ bool Data::LoadSMDH(uint64_t TitleID, FS_MediaType MediaType, SMDH &Out)
     FsError = FSFILE_Read(SDMHHandle, &BytesRead, 0, &Out, sizeof(SMDH));
     if (R_FAILED(FsError) || BytesRead != sizeof(SMDH))
     {
-        Logger::Log("Error reading SDMH for 0x%016llX: 0x%08X.", TitleID, FsError);
         FSFILE_Close(SDMHHandle);
         return false;
     }

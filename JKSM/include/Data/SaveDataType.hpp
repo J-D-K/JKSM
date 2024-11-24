@@ -8,6 +8,7 @@ namespace Data
         SaveTypeExtData,
         SaveTypeSystem,
         SaveTypeBOSS,
+        SaveTypeSharedExtData, // Nothing besides the system has this, but it's needed to grab paths.
         SaveTypeTotal,
     } SaveDataType;
 }

@@ -2,6 +2,7 @@
 #include "FsLib.hpp"
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
+#include <3ds.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -77,14 +78,12 @@ bool Data::Initialize(void)
         uint32_t UpperID = static_cast<uint32_t>(TitleIDList[i] >> 32);
         if (UpperID != 0x00040000 && UpperID != 0x00040002)
         {
-            Logger::Log("Continue on %016llX : %08X", TitleIDList[i], UpperID);
             continue;
         }
 
         Data::TitleData NewTitleData(TitleIDList[i], MEDIATYPE_SD);
         if (NewTitleData.HasSaveData())
         {
-            Logger::Log("push_back %016llX.", TitleIDList[i]);
             s_TitleVector.push_back(std::move(NewTitleData));
         }
     }
@@ -111,7 +110,6 @@ bool Data::Initialize(void)
         Data::TitleData NewNANDTitle(TitleIDList[i], MEDIATYPE_NAND);
         if (NewNANDTitle.HasSaveData())
         {
-            Logger::Log("push_back %016llX.", TitleIDList[i]);
             s_TitleVector.push_back(std::move(NewNANDTitle));
         }
     }
@@ -121,6 +119,57 @@ bool Data::Initialize(void)
     CreateCacheFile();
 
     return true;
+}
+
+// To do: This works, but not up to current standards.
+bool Data::GameCardUpdateCheck(void)
+{
+    // Game card always sits at the beginning of vector.
+    FS_MediaType BeginningMediaType = s_TitleVector.begin()->GetMediaType();
+
+    bool CardInserted = false;
+    Result FsError = FSUSER_CardSlotIsInserted(&CardInserted);
+    if (R_FAILED(FsError))
+    {
+        return false;
+    }
+
+    if (!CardInserted && BeginningMediaType == MEDIATYPE_GAME_CARD)
+    {
+        s_TitleVector.erase(s_TitleVector.begin());
+        return true;
+    }
+
+    // Only 3DS for now.
+    FS_CardType CardType;
+    FsError = FSUSER_GetCardType(&CardType);
+    if (R_FAILED(FsError) || CardType == CARD_TWL)
+    {
+        return false;
+    }
+
+    if (CardInserted && BeginningMediaType != MEDIATYPE_GAME_CARD)
+    {
+        // This is just 1 for everything.
+        uint32_t TitlesRead = 0;
+        uint64_t GameCardTitleID = 0;
+        Result AmError = AM_GetTitleList(&TitlesRead, MEDIATYPE_GAME_CARD, 1, &GameCardTitleID);
+        if (R_FAILED(AmError))
+        {
+            return false;
+        }
+
+        Data::TitleData GameCardData(GameCardTitleID, MEDIATYPE_GAME_CARD);
+        if (!GameCardData.HasSaveData())
+        {
+            return false;
+        }
+        s_TitleVector.insert(s_TitleVector.begin(), std::move(GameCardData));
+
+        return true;
+    }
+
+    return false;
 }
 
 void Data::GetTitlesWithType(Data::SaveDataType SaveType, std::vector<Data::TitleData *> &Out)

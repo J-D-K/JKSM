@@ -14,10 +14,8 @@ namespace UI
 
             void Update(void);
             void Draw(SDL_Surface *Target);
-
             // Forces a complete refresh of view
             void Refresh(void);
-
             // Allows you to set the selected tile.
             void SetSelected(int Selected);
             // Returns index of selected tile.
