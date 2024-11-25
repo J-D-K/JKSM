@@ -8,7 +8,7 @@ namespace Data
         SaveTypeExtData,
         SaveTypeSystem,
         SaveTypeBOSS,
-        SaveTypeSharedExtData, // Nothing besides the system has this, but it's needed to grab paths.
+        SaveTypeSharedExtData, // This is kind of faked and tacked on to the data vector at the end.
         SaveTypeTotal,
     } SaveDataType;
 }

@@ -3,13 +3,13 @@
 #include "Input.hpp"
 #include <3ds.h>
 
-UI::Menu::Menu(int X, int Y, int MaxDrawLength)
-    : m_X(X), m_Y(Y), m_MaximumDrawLength(MaxDrawLength),
+UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength)
+    : m_X(X), m_Y(Y), m_Width(Width), m_MaximumDrawLength(MaxDrawLength - 1),
       m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White))
 {
 }
 
-UI::Menu::Menu(int X, int Y, int MaxDrawLength, std::string_view *Options, size_t OptionCount) : Menu(X, Y, MaxDrawLength)
+UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength, std::string_view *Options, size_t OptionCount) : Menu(X, Y, Width, MaxDrawLength)
 {
     for (size_t i = 0; i < OptionCount; i++)
     {
@@ -26,7 +26,7 @@ void UI::Menu::Update(void)
 {
     int OptionEnd = m_Options.size() - 1;
 
-    if (Input::ButtonPressed(KEY_UP) && --m_Selected < m_OptionStart && m_OptionStart < 0)
+    if (Input::ButtonPressed(KEY_UP) && --m_Selected < m_OptionStart && --m_OptionStart < 0)
     {
         m_Selected = 0;
         m_OptionStart = 0;
@@ -45,15 +45,12 @@ void UI::Menu::Draw(SDL_Surface *Target)
         return;
     }
 
-    for (int i = m_OptionStart; i < m_MaximumDrawLength; i++)
+    for (int i = m_OptionStart, Y = m_Y; i < m_OptionStart + (m_MaximumDrawLength + 1); i++, Y += (12 + 4))
     {
         if (i == m_Selected)
         {
-            m_Noto->BlitTextAt(Target, m_X, m_Y * (i - m_OptionStart) + 4, 12, SDL::Font::NO_TEXT_WRAP, "-> %s", m_Options.at(i).c_str());
+            SDL::DrawRect(Target, m_X - 2, Y - 2, m_Width, 16, {0x00FFFFFF});
         }
-        else
-        {
-            m_Noto->BlitTextAt(Target, m_X, m_Y * (i - m_OptionStart) + 4, 12, SDL::Font::NO_TEXT_WRAP, "%s", m_Options.at(i).c_str());
-        }
+        m_Noto->BlitTextAt(Target, m_X, Y, 10, SDL::Font::NO_TEXT_WRAP, m_Options.at(i).c_str());
     }
 }

@@ -72,10 +72,10 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({
     }
 
     // These are needed for decompressing the font.
-    uint64_t UncompressedFontsize = 0;
-    uint64_t CompressedFontSize = 0;
-    fread(&UncompressedFontsize, sizeof(uint64_t), 1, FontFile);
-    fread(&CompressedFontSize, sizeof(uint64_t), 1, FontFile);
+    uLongf UncompressedFontsize = 0;
+    uLongf CompressedFontSize = 0;
+    fread(&UncompressedFontsize, sizeof(uLongf), 1, FontFile);
+    fread(&CompressedFontSize, sizeof(uLongf), 1, FontFile);
 
     {
         // Allocate buffer to read compressed data.
@@ -191,7 +191,7 @@ void SDL::Font::BlitTextAt(SDL_Surface *Target, int X, int Y, int FontSize, int 
                 CurrentGlyph->GlyphSurface->BlitAt(Target, WorkingX + CurrentGlyph->Left, Y + (FontSize - CurrentGlyph->Top));
                 WorkingX += CurrentGlyph->AdvanceX;
             }
-            else // Space needs special handling because its surface is NULL
+            else if (CurrentGlyph) // Space needs special handling because its surface is NULL
             {
                 WorkingX += CurrentGlyph->AdvanceX;
             }
@@ -217,8 +217,7 @@ size_t SDL::Font::GetTextWidth(int FontSize, const char *Text)
         }
 
         i += UnitCount;
-
-        if (Codepoint == '\n')
+        if (Codepoint == L'\n')
         {
             continue;
         }
@@ -258,6 +257,7 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     FT_Error FTError = FT_Load_Glyph(m_FTFace, CodepointIndex, FreeTypeLoadFlags);
     if (CodepointIndex == 0 || FTError != 0 || m_FTFace->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY)
     {
+        Logger::Log("Glyph could not be loaded.");
         return nullptr;
     }
     // Pointer to bitmap in FTFace
@@ -269,7 +269,6 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     SDL::SharedSurface GlyphSurface = SDL::SurfaceManager::CreateLoadResource(GlyphName, GlyphBitmap.width, GlyphBitmap.rows);
     if (!GlyphSurface)
     {
-        Logger::Log("Glyph surface is NULL?");
         return nullptr;
     }
 

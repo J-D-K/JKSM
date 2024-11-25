@@ -15,6 +15,9 @@ class TitleSelectionState : public AppState
         void DrawTop(SDL_Surface *Target);
         void DrawBottom(SDL_Surface *Target);
 
+        // Refreshes title view.
+        void Refresh(void);
+
     private:
         // To do: Maybe not a pointer...
         std::unique_ptr<UI::TitleView> m_TitleView;

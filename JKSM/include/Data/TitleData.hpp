@@ -74,7 +74,7 @@ namespace Data
             // Icon.
             SDL::SharedSurface m_Icon = nullptr;
             // This function tests what archives can be opened using instance of TitleData
-            void TestArchives(void);
+            bool TestArchives(void);
             // This function loads defaults in case of SDMH loading failure.
             void TitleInitializeDefault(void);
             // This method initializes TitleData using an SMDH

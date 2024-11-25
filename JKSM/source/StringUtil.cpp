@@ -47,10 +47,12 @@ std::string StringUtil::GetFormattedString(const char *Format, ...)
     return std::string(VaBuffer);
 }
 
-std::string StringUtil::ToUTF8(const char16_t *String)
+void StringUtil::ToUTF8(const char16_t *String, char *StringOut, size_t StringOutSize)
 {
-    size_t StringLength = std::char_traits<char16_t>::length(String) + 1;
-    char StringBuffer[StringLength] = {0};
-    utf16_to_utf8(reinterpret_cast<uint8_t *>(StringBuffer), reinterpret_cast<const uint16_t *>(String), StringLength);
-    return std::string(StringBuffer);
+    utf16_to_utf8(reinterpret_cast<uint8_t *>(StringOut), reinterpret_cast<const uint16_t *>(String), StringOutSize);
+}
+
+void StringUtil::ToUTF16(const char *String, char16_t *StringOut, size_t StringOutSize)
+{
+    utf8_to_utf16(reinterpret_cast<uint16_t *>(StringOut), reinterpret_cast<const uint8_t *>(String), StringOutSize);
 }

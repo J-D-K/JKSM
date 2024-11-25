@@ -24,6 +24,9 @@ namespace
     constexpr std::u16string_view EXTDATA_MOUNT = u"ExtData";
     constexpr std::u16string_view SYS_MOUNT = u"Sys";
     constexpr std::u16string_view BOSS_MOUNT = u"Boss";
+    constexpr std::u16string_view SHARED_MOUNT = u"Shared";
+    // Publisher for blank/unknown.
+    constexpr std::u16string_view PUBLISHER_NOT_KNOWN = u"A Company";
 } // namespace
 
 // Same as above, but modified to work with SDL_Surfaces.
@@ -45,6 +48,12 @@ static inline void WritePixelToSurface(SDL_Surface *Surface, int X, int Y, uint1
 
 Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType) : m_TitleID(TitleID), m_MediaType(MediaType)
 {
+    if (!TitleData::TestArchives())
+    {
+        // Don't bother continuing.
+        return;
+    }
+
     uint8_t SystemLanguage = 0;
     Result CFGUError = CFGU_GetSystemLanguage(&SystemLanguage);
     if (R_FAILED(CFGUError))
@@ -59,14 +68,12 @@ Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType) : m_TitleID
         Logger::Log("Error getting product code for %016llX.", m_TitleID);
     }
 
-    TitleData::TestArchives();
-
     Data::SMDH TitleSMDH;
-    if (!Data::LoadSMDH(m_TitleID, m_MediaType, TitleSMDH))
+    if (TitleData::HasSaveData() && !Data::LoadSMDH(m_TitleID, m_MediaType, TitleSMDH))
     {
         TitleData::TitleInitializeDefault();
     }
-    else
+    else if (TitleData::HasSaveData())
     {
         TitleData::TitleInitializeSMDH(TitleSMDH);
     }
@@ -83,7 +90,7 @@ Data::TitleData::TitleData(uint64_t TitleID,
 {
     // The rest needs manual copying.
     std::memcpy(m_ProductCode, ProductCode, 0x20);
-    std::memcpy(m_Title, Title, 0x80 * sizeof(char16_t));
+    std::memcpy(m_Title, Title, 0x40 * sizeof(char16_t));
     std::memcpy(m_Publisher, Publisher, 0x40 * sizeof(char16_t));
 
     StringUtil::SanitizeStringForPath(m_Title, m_PathSafeTitle, 0x40);
@@ -96,7 +103,8 @@ Data::TitleData::TitleData(uint64_t TitleID,
 bool Data::TitleData::HasSaveData(void) const
 {
     return m_TitleSaveTypes.HasSaveType[SaveTypeUser] || m_TitleSaveTypes.HasSaveType[SaveTypeExtData] ||
-           m_TitleSaveTypes.HasSaveType[SaveTypeSystem] || m_TitleSaveTypes.HasSaveType[SaveTypeBOSS];
+           m_TitleSaveTypes.HasSaveType[SaveTypeSystem] || m_TitleSaveTypes.HasSaveType[SaveTypeBOSS] ||
+           m_TitleSaveTypes.HasSaveType[SaveTypeSharedExtData];
 }
 
 uint64_t Data::TitleData::GetTitleID(void) const
@@ -213,7 +221,7 @@ SDL::SharedSurface Data::TitleData::GetIcon(void)
     return m_Icon;
 }
 
-void Data::TitleData::TestArchives(void)
+bool Data::TitleData::TestArchives(void)
 {
     if (FsLib::OpenUserSaveData(USER_MOUNT, m_MediaType, TitleData::GetLowerID(), TitleData::GetUpperID()))
     {
@@ -238,13 +246,33 @@ void Data::TitleData::TestArchives(void)
         FsLib::CloseDevice(BOSS_MOUNT);
         m_TitleSaveTypes.HasSaveType[Data::SaveTypeBOSS] = true;
     }
+
+    if (FsLib::OpenSharedExtData(SHARED_MOUNT, TitleData::GetLowerID()))
+    {
+        FsLib::CloseDevice(SHARED_MOUNT);
+        m_TitleSaveTypes.HasSaveType[Data::SaveTypeSharedExtData] = true;
+    }
+
+    return TitleData::HasSaveData();
 }
 
 void Data::TitleData::TitleInitializeDefault(void)
 {
+    // Set title to title ID.
+    std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
+    StringUtil::ToUTF16(TitleIDString.c_str(), m_Title, 0x40);
+
+    // Memcpy publisher string
+    std::memcpy(m_Publisher, PUBLISHER_NOT_KNOWN.data(), PUBLISHER_NOT_KNOWN.length() * sizeof(char16_t));
+
     // This should just grab a pointer. Not load the font again.
     SDL::SharedFont Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
-    m_Icon = SDL::SurfaceManager::CreateLoadResource(std::to_string(m_TitleID), 48, 48, false);
+    m_Icon = SDL::SurfaceManager::CreateLoadResource(TitleIDString, 48, 48, false);
+    if (!Noto || !m_Icon)
+    {
+        Logger::Log("One of these?");
+        return;
+    }
 
     // Clear icon to bar color.
     uint32_t *IconPixels = reinterpret_cast<uint32_t *>(m_Icon->Get()->pixels);
@@ -252,14 +280,11 @@ void Data::TitleData::TitleInitializeDefault(void)
     {
         *IconPixels++ = SDL::Colors::BarColor.RAW;
     }
-    /*
-    std::string UniqueString = StringUtil::GetFormattedString("%04X", m_TitleID >> 8 & 0xFFFF);
-    Logger::Log("Unique String: %s.", UniqueString.c_str());
 
-    int TextX = 24 - (Noto->GetTextWidth(10, UniqueString.c_str()) / 2);
-    Logger::Log("TextX: %i", TextX);
+    std::string UniqueString = StringUtil::GetFormattedString("%04X", m_TitleID & 0xFFFF);
 
-    //Noto->BlitTextAt(m_Icon->Get(), TextX, 14, 10, SDL::Font::NO_TEXT_WRAP, UniqueString.c_str());*/
+    int TextX = 24 - (Noto->GetTextWidth(12, UniqueString.c_str()) / 2);
+    Noto->BlitTextAt(m_Icon->Get(), TextX, 18, 12, SDL::Font::NO_TEXT_WRAP, UniqueString.c_str());
 }
 
 void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)

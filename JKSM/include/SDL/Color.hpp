@@ -13,5 +13,6 @@ namespace SDL
     {
         static constexpr SDL::Color White = {0xFFFFFFFF};
         static constexpr SDL::Color BarColor = {0x4D4D4DFF};
+        static constexpr SDL::Color Green = {0x00FF00FF};
     } // namespace Colors
 } // namespace SDL

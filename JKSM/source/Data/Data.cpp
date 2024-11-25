@@ -6,6 +6,7 @@
 #include "StringUtil.hpp"
 #include <3ds.h>
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -23,6 +24,14 @@ namespace
     constexpr std::u16string_view CACHE_PATH = u"sdmc:/JKSM/cache.bin";
     // Vector instead of map to preserve order and sorting.
     std::vector<Data::TitleData> s_TitleVector;
+    // Array of fake title ID's to add shared extdata to the TitleVector.
+    constexpr std::array<uint64_t, 7> s_FakeSharedTitleIDs = {0x00000000F0000001,
+                                                              0x00000000F0000002,
+                                                              0x00000000F0000009,
+                                                              0x00000000F000000B,
+                                                              0x00000000F000000C,
+                                                              0x00000000F000000D,
+                                                              0x00000000F000000E};
     // This is to prevent the main thread from requesting a cart read before data is finished being read.
     bool s_DataInitialized = false;
 } // namespace
@@ -55,9 +64,12 @@ static bool CompareTitles(const Data::TitleData &TitleA, const Data::TitleData &
 void Data::Initialize(System::Task *Task)
 {
     s_DataInitialized = false;
+    // Just in case.
+    s_TitleVector.clear();
+
     if (LoadCacheFile(Task))
     {
-        JKSM::InitializeAppStates();
+        JKSM::RefreshSaveTypeStates();
         s_DataInitialized = true;
         Task->Finish();
         return;
@@ -129,11 +141,17 @@ void Data::Initialize(System::Task *Task)
         }
     }
 
+    // Shared Extdata. These are fake and pushed at the end just to have them.
+    for (size_t i = 0; i < 7; i++)
+    {
+        s_TitleVector.emplace_back(s_FakeSharedTitleIDs.at(i), MEDIATYPE_NAND);
+    }
+
     std::sort(s_TitleVector.begin(), s_TitleVector.end(), CompareTitles);
 
     CreateCacheFile(Task);
 
-    JKSM::InitializeAppStates();
+    JKSM::RefreshSaveTypeStates();
     s_DataInitialized = true;
     Task->Finish();
 }
@@ -287,7 +305,10 @@ void CreateCacheFile(System::Task *Task)
 
     for (Data::TitleData &CurrentTitle : s_TitleVector)
     {
-        Task->SetStatus("Writing %016llX's data...", CurrentTitle.GetTitleID());
+        char UTF8Title[0x80] = {0};
+        StringUtil::ToUTF8(CurrentTitle.GetTitle(), UTF8Title, 0x80);
+
+        Task->SetStatus("Writing %s's data...", UTF8Title);
         uint64_t TitleID = CurrentTitle.GetTitleID();
         FS_MediaType MediaType = CurrentTitle.GetMediaType();
         Data::TitleSaveTypes SaveTypes = CurrentTitle.GetSaveTypes();

@@ -16,6 +16,6 @@ namespace JKSM
     void Render(void);
     // Pushes a new state to the state vector
     void PushState(std::shared_ptr<AppState> NewState);
-    // Clears and initializes all JKSM's AppStates.
-    void InitializeAppStates(void);
+    // Signals that JKSM should refresh the save title views the next time Update() is called.
+    void RefreshSaveTypeStates(void);
 } // namespace JKSM
