@@ -16,4 +16,6 @@ namespace JKSM
     void Render(void);
     // Pushes a new state to the state vector
     void PushState(std::shared_ptr<AppState> NewState);
+    // Clears and initializes all JKSM's AppStates.
+    void InitializeAppStates(void);
 } // namespace JKSM

@@ -1,6 +1,7 @@
 #include "Logger.hpp"
 #include "FsLib.hpp"
 #include <cstdarg>
+#include <mutex>
 
 namespace
 {
@@ -8,6 +9,8 @@ namespace
     static constexpr size_t VA_BUFFER_SIZE = 0x1000;
     // This is the path the log uses.
     const std::u16string_view LOG_FILE_PATH = u"sdmc:/JKSM/JKSM.log";
+    // This protects log from being corrupted from threading.
+    std::mutex s_LogLock;
 } // namespace
 
 void Logger::Initialize(void)
@@ -25,6 +28,7 @@ void Logger::Log(const char *Format, ...)
     vsnprintf(VaBuffer, VA_BUFFER_SIZE, Format, VaList);
     va_end(VaList);
 
+    std::scoped_lock LogLock(s_LogLock);
     FsLib::OutputFile LogFile(LOG_FILE_PATH, true);
     LogFile << VaBuffer << "\n";
     // This can be error checked but eh.

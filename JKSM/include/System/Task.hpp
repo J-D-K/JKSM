@@ -1,4 +1,5 @@
 #pragma once
+#include "Logger.hpp"
 #include <cstdarg>
 #include <mutex>
 #include <string>
@@ -15,29 +16,34 @@ namespace System
     {
         public:
             template <typename... Args>
-            Task(void (*Function)(Args...), Args... Arguments)
+            Task(void (*Function)(System::Task *, Args...), Args &&...Arguments)
             {
-                m_Thread = std::thread(Function, this, Arguments...);
+                m_Thread = std::thread(Function, this, std::forward<Args>(Arguments)...);
+            }
+
+            ~Task()
+            {
+                m_Thread.join();
             }
 
             // Returns whether thread has signaled its finished.
             bool IsFinished(void)
             {
-                std::lock_guard<std::mutex> ThreadLock(m_ThreadLock);
+                std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 return m_Finished;
             }
 
             // Allows thread to signal finishing its task.
             void Finish(void)
             {
-                std::lock_guard<std::mutex> ThreadLock(m_ThreadLock);
+                std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 m_Finished = true;
             }
 
             // Returns status string.
             std::string GetStatus(void)
             {
-                std::lock_guard<std::mutex> ThreadLock(m_ThreadLock);
+                std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 return m_ThreadStatus;
             }
 
@@ -50,7 +56,7 @@ namespace System
                 vsnprintf(VaBuffer, 0x1000, Format, VaList);
                 va_end(VaList);
 
-                std::lock_guard<std::mutex> ThreadLock(m_ThreadLock);
+                std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 m_ThreadStatus = VaBuffer;
             }
 

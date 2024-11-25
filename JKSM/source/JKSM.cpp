@@ -1,4 +1,5 @@
 #include "JKSM.hpp"
+#include "AppStates/TaskState.hpp"
 #include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
 #include "Data/Data.hpp"
@@ -8,8 +9,16 @@
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include <3ds.h>
+#include <mutex>
 #include <string_view>
 #include <vector>
+
+// This macro cleans stuff up a lot IMO, so I'm going to use it.
+#define ABORT_ON_FAILURE(x)                                                                                                                    \
+    if (!x)                                                                                                                                    \
+    {                                                                                                                                          \
+        return;                                                                                                                                \
+    }
 
 namespace
 {
@@ -26,6 +35,8 @@ namespace
     std::array<std::shared_ptr<AppState>, Data::SaveTypeTotal - 1> s_TitleSelectionStateArray = {nullptr};
     // Current state we're on
     size_t s_CurrentState = 1;
+    // Mutex to protect vector from corruption
+    std::mutex s_AppStateVectorLock;
 } // namespace
 
 // This function makes it easier to log init errors for services.
@@ -41,32 +52,23 @@ bool IntializeService(Result (*Function)(Args...), const char *ServiceName, Args
     return true;
 }
 
-// This function initializes the states for the different save types.
-static void InitializeSaveAppStates(void)
+// This assumes this is only being called on Update and after the mutex is already locked.
+static void PurgeDeactivatedStates(void)
 {
-    // Clear the vector first.
-    s_AppStateVector.clear();
-
-    // Initialize states. Since we're using smart pointers we don't need to worry about leaks.
-    for (int i = 0; i < Data::SaveTypeTotal - 1; i++)
+    for (size_t i = 0; i < s_AppStateVector.size(); i++)
     {
-        s_TitleSelectionStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
-    }
-
-    // Loop and replace what we were on previously. The end user won't even know this happened.
-    for (size_t i = 0; i < s_CurrentState; i++)
-    {
-        JKSM::PushState(s_TitleSelectionStateArray[i]);
+        if (!s_AppStateVector.at(i)->IsActive())
+        {
+            Logger::Log("Purge @ %u", i);
+            s_AppStateVector.erase(s_AppStateVector.begin() + i);
+        }
     }
 }
 
 void JKSM::Initialize(void)
 {
     // FsLib is needed for almost everything, so it's first.
-    if (!FsLib::Initialize())
-    {
-        return;
-    }
+    ABORT_ON_FAILURE(FsLib::Initialize())
 
     // All this does is take care of the directories. Everything is all FsLib now.
     FS::Initialize();
@@ -75,46 +77,15 @@ void JKSM::Initialize(void)
     Logger::Initialize();
 
     // These are the services JKSM needs
-    if (!IntializeService(amInit, "AM"))
-    {
-        return;
-    }
+    ABORT_ON_FAILURE(IntializeService(amInit, "AM"));
+    ABORT_ON_FAILURE(IntializeService(aptInit, "APT"));
+    ABORT_ON_FAILURE(IntializeService(cfguInit, "CFGU"));
+    ABORT_ON_FAILURE(IntializeService(hidInit, "HID"));
+    ABORT_ON_FAILURE(IntializeService(romfsInit, "RomFs"));
 
-    if (!IntializeService(aptInit, "APT"))
-    {
-        return;
-    }
-
-    if (!IntializeService(cfguInit, "CFGU"))
-    {
-        return;
-    }
-
-    if (!IntializeService(hidInit, "HID"))
-    {
-        return;
-    }
-
-    if (!IntializeService(romfsInit, "RomFS"))
-    {
-        return;
-    }
-
-    if (!SDL::Initialize())
-    {
-        return;
-    }
-
-    // This isn't part of SDL at all, but I don't really want a whole header and source file for one thing....
-    if (!SDL::FreeType::Initialize())
-    {
-        return;
-    }
-
-    if (!Data::Initialize())
-    {
-        return;
-    }
+    // SDL Stuff
+    ABORT_ON_FAILURE(SDL::Initialize());
+    ABORT_ON_FAILURE(SDL::FreeType::Initialize());
 
     // Load Font if it wasn't already.
     s_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
@@ -127,7 +98,8 @@ void JKSM::Initialize(void)
     // Center the title title
     s_TitleTextX = 200 - (s_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
 
-    InitializeSaveAppStates();
+    // This will spawn the loading state.
+    JKSM::PushState(std::make_shared<TaskState>(nullptr, Data::Initialize));
 
     m_IsRunning = true;
 }
@@ -150,18 +122,21 @@ bool JKSM::IsRunning(void)
 void JKSM::Update(void)
 {
     Input::Update();
+
     if (Input::ButtonPressed(KEY_START))
     {
         m_IsRunning = false;
     }
     else if (Input::ButtonPressed(KEY_CPAD_LEFT) && s_AppStateVector.size() > 1)
     {
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
         s_AppStateVector.pop_back();
         s_AppStateVector.back()->GiveFocus();
         s_CurrentState--;
     }
     else if (Input::ButtonPressed(KEY_CPAD_RIGHT))
     {
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
         s_AppStateVector.back()->TakeFocus();
         s_AppStateVector.push_back(s_TitleSelectionStateArray[s_CurrentState++]);
         s_AppStateVector.back()->GiveFocus();
@@ -170,33 +145,54 @@ void JKSM::Update(void)
     // If a card was inserted and successfully read update title selection states.
     if (Data::GameCardUpdateCheck())
     {
-        InitializeSaveAppStates();
+        JKSM::InitializeAppStates();
     }
 
-    while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())
+
     {
-        s_AppStateVector.pop_back();
-        s_AppStateVector.back()->GiveFocus();
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
+        PurgeDeactivatedStates();
+        while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())
+        {
+            s_AppStateVector.pop_back();
+            s_AppStateVector.back()->GiveFocus();
+        }
+
+        if (!s_AppStateVector.empty())
+        {
+            s_AppStateVector.back()->Update();
+        }
     }
-    s_AppStateVector.back()->Update();
 }
 
+// This needs to be thread safe. That's why it looks like this.
 void JKSM::Render(void)
 {
     SDL::FrameBegin();
+    // Top screen
     SDL_Surface *TopScreen = SDL::GetCurrentBuffer();
-    s_AppStateVector.back()->DrawTop(TopScreen);
+    {
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
+        s_AppStateVector.back()->DrawTop(TopScreen);
+    }
     SDL::DrawRect(TopScreen, 0, 0, 400, 16, SDL::Colors::BarColor);
     s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, SDL::Font::NO_TEXT_WRAP, TITLE_TEXT.data());
+
+    // Bottom screen
     SDL::FrameChangeScreens();
     SDL_Surface *BottomScreen = SDL::GetCurrentBuffer();
-    s_AppStateVector.back()->DrawBottom(BottomScreen);
+    {
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
+        s_AppStateVector.back()->DrawBottom(BottomScreen);
+    }
     SDL::DrawRect(BottomScreen, 0, 224, 320, 16, SDL::Colors::BarColor);
     SDL::FrameEnd();
 }
 
 void JKSM::PushState(std::shared_ptr<AppState> NewState)
 {
+    std::scoped_lock<std::mutex> AppStateVectorGuard(s_AppStateVectorLock);
+
     if (!s_AppStateVector.empty())
     {
         s_AppStateVector.back()->TakeFocus();
@@ -204,4 +200,26 @@ void JKSM::PushState(std::shared_ptr<AppState> NewState)
 
     NewState->GiveFocus();
     s_AppStateVector.push_back(NewState);
+}
+
+// This function initializes the states for the different save types.
+void JKSM::InitializeAppStates(void)
+{
+    // Initialize states. Since we're using smart pointers we don't need to worry about leaks.
+    for (int i = 0; i < Data::SaveTypeTotal - 1; i++)
+    {
+        Logger::Log("Create %i", i);
+        s_TitleSelectionStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
+    }
+
+    {
+        std::scoped_lock<std::mutex> AppStateLock(s_AppStateVectorLock);
+        // Loop and replace what we were on previously. The end user won't even know this happened.
+        for (size_t i = 0; i < s_CurrentState; i++)
+        {
+            s_TitleSelectionStateArray.at(i)->TakeFocus();
+            s_AppStateVector.push_back(s_TitleSelectionStateArray.at(i));
+        }
+        s_AppStateVector.back()->GiveFocus();
+    }
 }

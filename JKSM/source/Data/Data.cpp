@@ -1,14 +1,15 @@
 #include "Data/Data.hpp"
 #include "FsLib.hpp"
+#include "JKSM.hpp"
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
+#include "StringUtil.hpp"
 #include <3ds.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
-#include <zlib.h>
 
 namespace
 {
@@ -22,11 +23,13 @@ namespace
     constexpr std::u16string_view CACHE_PATH = u"sdmc:/JKSM/cache.bin";
     // Vector instead of map to preserve order and sorting.
     std::vector<Data::TitleData> s_TitleVector;
+    // This is to prevent the main thread from requesting a cart read before data is finished being read.
+    bool s_DataInitialized = false;
 } // namespace
 
 // These are declarations. Defined at end of file.
-static bool LoadCacheFile(void);
-static void CreateCacheFile(void);
+static bool LoadCacheFile(System::Task *Task);
+static void CreateCacheFile(System::Task *Task);
 
 // This is for sorting titles pseudo-alphabetically.
 static bool CompareTitles(const Data::TitleData &TitleA, const Data::TitleData &TitleB)
@@ -49,19 +52,25 @@ static bool CompareTitles(const Data::TitleData &TitleA, const Data::TitleData &
     return false;
 }
 
-bool Data::Initialize(void)
+void Data::Initialize(System::Task *Task)
 {
-    if (LoadCacheFile())
+    s_DataInitialized = false;
+    if (LoadCacheFile(Task))
     {
-        return true;
+        JKSM::InitializeAppStates();
+        s_DataInitialized = true;
+        Task->Finish();
+        return;
     }
 
+    Task->SetStatus("Retrieving SD title list from system...");
     uint32_t TitleCount = 0;
     Result AmError = AM_GetTitleCount(MEDIATYPE_SD, &TitleCount);
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title count for SD: 0x%08X.", AmError);
-        return false;
+        Task->Finish();
+        return;
     }
 
     uint32_t TitlesRead = 0;
@@ -70,11 +79,14 @@ bool Data::Initialize(void)
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title ID list for SD: 0x%08X.", AmError);
-        return false;
+        Task->Finish();
+        return;
     }
 
     for (uint32_t i = 0; i < TitleCount; i++)
     {
+        Task->SetStatus("Loading SD title %016llX", TitleIDList[i]);
+
         uint32_t UpperID = static_cast<uint32_t>(TitleIDList[i] >> 32);
         if (UpperID != 0x00040000 && UpperID != 0x00040002)
         {
@@ -93,7 +105,8 @@ bool Data::Initialize(void)
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title count for NAND: 0x%08X.", AmError);
-        return false;
+        Task->Finish();
+        return;
     }
 
     uint32_t NandTitlesRead = 0;
@@ -102,11 +115,13 @@ bool Data::Initialize(void)
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title ID list for NAND: 0x%08X.", AmError);
-        return false;
+        Task->Finish();
+        return;
     }
 
     for (uint32_t i = 0; i < NandTitleCount; i++)
     {
+        Task->SetStatus("Loading NAND title %016llX", TitleIDList[i]);
         Data::TitleData NewNANDTitle(TitleIDList[i], MEDIATYPE_NAND);
         if (NewNANDTitle.HasSaveData())
         {
@@ -116,14 +131,21 @@ bool Data::Initialize(void)
 
     std::sort(s_TitleVector.begin(), s_TitleVector.end(), CompareTitles);
 
-    CreateCacheFile();
+    CreateCacheFile(Task);
 
-    return true;
+    JKSM::InitializeAppStates();
+    s_DataInitialized = true;
+    Task->Finish();
 }
 
 // To do: This works, but not up to current standards.
 bool Data::GameCardUpdateCheck(void)
 {
+    if (!s_DataInitialized)
+    {
+        return false;
+    }
+
     // Game card always sits at the beginning of vector.
     FS_MediaType BeginningMediaType = s_TitleVector.begin()->GetMediaType();
 
@@ -186,16 +208,13 @@ void Data::GetTitlesWithType(Data::SaveDataType SaveType, std::vector<Data::Titl
     }
 }
 
-bool LoadCacheFile(void)
+bool LoadCacheFile(System::Task *Task)
 {
-    /*
-        Big note: Technically I should be checking the read counts but I believe in myself.
-    */
-
     if (!FsLib::FileExists(CACHE_PATH))
     {
         return false;
     }
+    Task->SetStatus("Reading cache file...");
 
     FsLib::InputFile CacheFile(CACHE_PATH);
 
@@ -220,13 +239,13 @@ bool LoadCacheFile(void)
         return false;
     }
 
-    // I'm putting these here so they don't get reallocated every loop.
-    std::unique_ptr<Bytef[]> CompressedIconBuffer(new Bytef[ICON_BUFFER_SIZE]);
-    std::unique_ptr<Bytef[]> DecompressedIconBuffer(new Bytef[ICON_BUFFER_SIZE]);
+    std::unique_ptr<unsigned char[]> IconBuffer(new unsigned char[ICON_BUFFER_SIZE]);
     for (uint16_t i = 0; i < TitleCount; i++)
     {
         uint64_t TitleID = 0;
         CacheFile.Read(&TitleID, sizeof(uint64_t));
+
+        Task->SetStatus("Reading data for %016llX", TitleID);
 
         FS_MediaType MediaType;
         CacheFile.Read(&MediaType, sizeof(FS_MediaType));
@@ -244,24 +263,14 @@ bool LoadCacheFile(void)
         CacheFile.Read(Publisher, 0x40 * sizeof(char16_t));
 
         // Icon. We always know the end size since it's RAW RGBA8 pixels.
-        uLongf CompressedIconSize = 0;
-        uLongf IconBufferSize = ICON_BUFFER_SIZE;
-        CacheFile.Read(&CompressedIconSize, sizeof(uLongf));
-        CacheFile.Read(CompressedIconBuffer.get(), CompressedIconSize);
-        // Decompress
-        int ZError = uncompress(DecompressedIconBuffer.get(), &IconBufferSize, CompressedIconBuffer.get(), CompressedIconSize);
-        if (ZError != Z_OK)
-        {
-            Logger::Log("Error decompressing icon for %016llX.", TitleID);
-            continue;
-        }
+        CacheFile.Read(IconBuffer.get(), ICON_BUFFER_SIZE);
 
-        s_TitleVector.emplace_back(TitleID, MediaType, ProductCode, Title, Publisher, SaveTypes, DecompressedIconBuffer.get());
+        s_TitleVector.emplace_back(TitleID, MediaType, ProductCode, Title, Publisher, SaveTypes, IconBuffer.get());
     }
     return true;
 }
 
-void CreateCacheFile(void)
+void CreateCacheFile(System::Task *Task)
 {
     FsLib::OutputFile CacheFile(CACHE_PATH, false);
     if (!CacheFile.IsOpen())
@@ -276,9 +285,9 @@ void CreateCacheFile(void)
 
     CacheFile.Write(&CURRENT_CACHE_REVISION, sizeof(uint8_t));
 
-    std::unique_ptr<Bytef[]> IconCompressionBuffer(new Bytef[ICON_BUFFER_SIZE]);
     for (Data::TitleData &CurrentTitle : s_TitleVector)
     {
+        Task->SetStatus("Writing %016llX's data...", CurrentTitle.GetTitleID());
         uint64_t TitleID = CurrentTitle.GetTitleID();
         FS_MediaType MediaType = CurrentTitle.GetMediaType();
         Data::TitleSaveTypes SaveTypes = CurrentTitle.GetSaveTypes();
@@ -289,21 +298,6 @@ void CreateCacheFile(void)
         CacheFile.Write(&SaveTypes, sizeof(Data::TitleSaveTypes));
         CacheFile.Write(CurrentTitle.GetTitle(), 0x40 * sizeof(char16_t));
         CacheFile.Write(CurrentTitle.GetPublisher(), 0x40 * sizeof(char16_t));
-
-        // Icon is trickier.
-        uLongf CompressedIconSize = ICON_BUFFER_SIZE;
-        int ZError = compress(IconCompressionBuffer.get(),
-                              &CompressedIconSize,
-                              reinterpret_cast<const Bytef *>(CurrentTitle.GetIcon()->Get()->pixels),
-                              ICON_BUFFER_SIZE);
-        if (ZError != Z_OK)
-        {
-            Logger::Log("Error compressing icon for cache!");
-        }
-        else
-        {
-            CacheFile.Write(&CompressedIconSize, sizeof(uLongf));
-            CacheFile.Write(IconCompressionBuffer.get(), CompressedIconSize);
-        }
+        CacheFile.Write(CurrentTitle.GetIcon()->Get()->pixels, ICON_BUFFER_SIZE);
     }
 }

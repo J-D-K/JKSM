@@ -1,10 +1,12 @@
 #pragma once
 #include "Data/TitleData.hpp"
+#include "System/Task.hpp"
 #include <vector>
 
 namespace Data
 {
-    bool Initialize(void);
+    // This is threaded so we can update the screen with whats going on.
+    void Initialize(System::Task *Task);
     // Checks if a gamecard was inserted or removed. Returns true if one has been.
     bool GameCardUpdateCheck(void);
     // This gets a vector of the titles with the corresponding save type.
