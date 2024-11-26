@@ -1,4 +1,5 @@
 #include "JKSM.hpp"
+#include "AppStates/SettingsState.hpp"
 #include "AppStates/TaskState.hpp"
 #include "AppStates/TextTitleSelect.hpp"
 #include "AppStates/TitleSelectionState.hpp"
@@ -35,12 +36,12 @@ namespace
     int s_TitleTextX = 0;
     // Vector of AppStates
     std::vector<std::shared_ptr<AppState>> s_AppStateVector;
-    // Number of AppStates JKSM has.
-    constexpr size_t APP_STATE_TOTAL = Data::SaveTypeTotal + 1;
+    // Number of AppStates JKSM has. + 1 for settings menu.
+    constexpr int APP_STATE_TOTAL = Data::SaveTypeTotal + 1;
     // Array of appstates we can push from.
-    std::array<std::shared_ptr<AppState>, APP_STATE_TOTAL> s_TitleSelectionStateArray = {nullptr};
+    std::array<std::shared_ptr<AppState>, APP_STATE_TOTAL> s_AppStateArray = {nullptr};
     // Current state we're on
-    size_t s_CurrentState = 1;
+    int s_CurrentState = 0;
 } // namespace
 
 // This function makes it easier to log init errors for services.
@@ -88,11 +89,13 @@ void JKSM::Initialize(void)
     // This will create and push the state for each save type.
     for (size_t i = 0; i < Data::SaveTypeTotal; i++)
     {
-        s_TitleSelectionStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
+        s_AppStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
     }
+    // Settings is last.
+    s_AppStateArray[APP_STATE_TOTAL - 1] = std::make_shared<SettingsState>();
 
-    // We only want to push the first one for now.
-    JKSM::PushState(s_TitleSelectionStateArray[0]);
+    // We only want to push the first one for now. It's blank and will get refreshed after Data::Initialize signals its finished.
+    JKSM::PushState(s_AppStateArray[0]);
 
     // This will spawn the loading thread/state.
     JKSM::PushState(std::make_shared<TaskState>(nullptr, Data::Initialize));
@@ -117,44 +120,72 @@ bool JKSM::IsRunning(void)
 
 void JKSM::Update(void)
 {
+    // This needs to be in this very specific order.
     Input::Update();
 
-    // This is for if Data::Initialize signaled a refresh is required.
-    if (s_RefreshRequired || Data::GameCardUpdateCheck())
+    // Update the back of the vector so tasks can be purged properly.
+    if (!s_AppStateVector.empty())
     {
-        for (size_t i = 0; i < APP_STATE_TOTAL - 1; i++)
-        {
-            std::static_pointer_cast<TitleSelectionState>(s_TitleSelectionStateArray.at(i))->Refresh();
-        }
-        s_RefreshRequired = false;
+        s_AppStateVector.back()->Update();
     }
 
-    if (Input::ButtonPressed(KEY_START))
-    {
-        s_IsRunning = false;
-    }
-    else if (Input::ButtonPressed(KEY_CPAD_LEFT) && s_AppStateVector.size() > 1)
-    {
-        s_AppStateVector.pop_back();
-        s_AppStateVector.back()->GiveFocus();
-        s_CurrentState--;
-    }
-    else if (Input::ButtonPressed(KEY_CPAD_RIGHT) && s_CurrentState < APP_STATE_TOTAL - 1)
-    {
-        s_AppStateVector.back()->TakeFocus();
-        s_AppStateVector.push_back(s_TitleSelectionStateArray[s_CurrentState++]);
-        s_AppStateVector.back()->GiveFocus();
-    }
-
+    // Check the back of the vector to purge deactivated states.
     while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())
     {
         s_AppStateVector.pop_back();
         s_AppStateVector.back()->GiveFocus();
     }
 
-    if (!s_AppStateVector.empty())
+    // If the state in the back is a Task type, don't allow exit or state changing.
+    if (s_AppStateVector.back()->GetType() == AppState::StateTypes::Task)
     {
-        s_AppStateVector.back()->Update();
+        return;
+    }
+
+    // If Data::Initialize signals a refresh or a card is inserted, refresh all save type states.
+    if (s_RefreshRequired || Data::GameCardUpdateCheck())
+    {
+        for (size_t i = 0; i < APP_STATE_TOTAL - 1; i++)
+        {
+            std::static_pointer_cast<TitleSelectionState>(s_AppStateArray.at(i))->Refresh();
+        }
+        s_RefreshRequired = false;
+    }
+
+    // Controls.
+    if (Input::ButtonPressed(KEY_START))
+    {
+        s_IsRunning = false;
+    }
+    else if (Input::ButtonPressed(KEY_L))
+    {
+        if (--s_CurrentState < 0)
+        {
+            s_CurrentState = APP_STATE_TOTAL - 1;
+            for (size_t i = 0; i < APP_STATE_TOTAL; i++)
+            {
+                JKSM::PushState(s_AppStateArray[i]);
+            }
+        }
+        else
+        {
+            s_AppStateVector.pop_back();
+            s_AppStateVector.back()->GiveFocus();
+        }
+    }
+    else if (Input::ButtonPressed(KEY_R))
+    {
+        if (++s_CurrentState == APP_STATE_TOTAL)
+        {
+            s_CurrentState = 0;
+            s_AppStateVector.erase(s_AppStateVector.begin() + 1, s_AppStateVector.end());
+        }
+        else
+        {
+            s_AppStateVector.back()->TakeFocus();
+            s_AppStateVector.push_back(s_AppStateArray[s_CurrentState]);
+            s_AppStateVector.back()->GiveFocus();
+        }
     }
 }
 

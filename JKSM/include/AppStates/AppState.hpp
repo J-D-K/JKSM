@@ -4,7 +4,17 @@
 class AppState
 {
     public:
-        AppState(void) = default;
+        // This is needed so JKSM knows whether or not to allow exiting or state changing.
+        enum class StateTypes
+        {
+            Normal,
+            Task
+        };
+
+        AppState(StateTypes Type = StateTypes::Normal) : m_StateType(Type)
+        {
+        }
+
         virtual ~AppState() {};
 
         virtual void Update(void) = 0;
@@ -37,9 +47,16 @@ class AppState
             m_HasFocus = true;
         }
 
+        AppState::StateTypes GetType(void) const
+        {
+            return m_StateType;
+        }
+
     private:
         // Whether state is active or can be purged.
         bool m_IsActive = true;
         // Whether a state is at the back of the vector and has focus.
         bool m_HasFocus = false;
+        // Stores what type of state
+        AppState::StateTypes m_StateType;
 };

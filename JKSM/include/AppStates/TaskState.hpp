@@ -9,7 +9,8 @@ class TaskState : public AppState
     public:
         template <typename... Args>
         TaskState(AppState *CreatingState, void (*Function)(System::Task *, Args...), Args &&...Arguments)
-            : m_Task(std::make_unique<System::Task>(Function, std::forward<Args>(Arguments)...)), m_CreatingState(CreatingState)
+            : AppState(AppState::StateTypes::Task), m_Task(std::make_unique<System::Task>(Function, std::forward<Args>(Arguments)...)),
+              m_CreatingState(CreatingState)
         {
             // This should almost always be loaded already.
             m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);

@@ -9,7 +9,8 @@ UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength)
 {
 }
 
-UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength, std::string_view *Options, size_t OptionCount) : Menu(X, Y, Width, MaxDrawLength)
+UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength, const std::string_view *Options, size_t OptionCount)
+    : Menu(X, Y, Width, MaxDrawLength)
 {
     for (size_t i = 0; i < OptionCount; i++)
     {
@@ -45,6 +46,16 @@ void UI::Menu::Draw(SDL_Surface *Target)
         return;
     }
 
+    size_t OptionEnd = 0;
+    if (m_OptionStart + m_MaximumDrawLength > m_Options.size())
+    {
+        OptionEnd = m_Options.size();
+    }
+    else
+    {
+        OptionEnd = m_MaximumDrawLength + 1;
+    }
+
     for (int i = m_OptionStart, Y = m_Y; i < m_OptionStart + (m_MaximumDrawLength + 1); i++, Y += (12 + 4))
     {
         if (i == m_Selected)
@@ -53,4 +64,9 @@ void UI::Menu::Draw(SDL_Surface *Target)
         }
         m_Noto->BlitTextAt(Target, m_X, Y, 10, SDL::Font::NO_TEXT_WRAP, m_Options.at(i).c_str());
     }
+}
+
+int UI::Menu::GetSelected(void) const
+{
+    return m_Selected;
 }

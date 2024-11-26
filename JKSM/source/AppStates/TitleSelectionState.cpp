@@ -40,9 +40,10 @@ void TitleSelectionState::DrawBottom(SDL_Surface *Target)
                        18,
                        12,
                        320,
-                       "Title ID: %016llX\nMedia Type: %s",
+                       "Title ID: %016llX\nMedia Type: %s\nProduct Code: %s",
                        SelectedTitleData->GetTitleID(),
-                       SharedText::MediaTypeStrings[SelectedTitleData->GetMediaType()].data());
+                       SharedText::MediaTypeStrings[SelectedTitleData->GetMediaType()].data(),
+                       SelectedTitleData->GetProductCode());
 }
 
 void TitleSelectionState::Refresh(void)

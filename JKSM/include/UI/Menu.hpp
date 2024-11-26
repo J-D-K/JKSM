@@ -2,6 +2,7 @@
 #include "AppStates/AppState.hpp"
 #include "SDL/SDL.hpp"
 #include "UI/Element.hpp"
+#include <array>
 #include <string>
 #include <vector>
 
@@ -13,7 +14,7 @@ namespace UI
             // Creates menu drawn at X and Y. MaxDrawLength is the maximum number of options to display before scrolling.
             Menu(int X, int Y, int Width, int MaxDrawLength);
             // Inits a menu from an array of string_views.
-            Menu(int X, int Y, int Width, int MaxDrawLength, std::string_view *Options, size_t OptionCount);
+            Menu(int X, int Y, int Width, int MaxDrawLength, const std::string_view *Options, size_t OptionCount);
             ~Menu()
             {
             }
@@ -24,6 +25,8 @@ namespace UI
             void Update(void);
             // Draws menu to target.
             void Draw(SDL_Surface *Target);
+            // Returns the selected option.
+            int GetSelected(void) const;
 
         private:
             // Currently selected option
