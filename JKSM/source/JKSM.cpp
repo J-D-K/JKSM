@@ -24,22 +24,30 @@
 
 namespace
 {
-    // This is for whether or not JKSM is running.
-    bool s_IsRunning = false;
-    // Whether or not a refresh of states is required.
-    bool s_RefreshRequired = false;
-    // This is the font most of the app uses.
-    SDL::SharedFont s_Noto = nullptr;
     // This is the title text and its centered X coordinate.
     constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/25/2024";
     // This is to make centering this easier.
     int s_TitleTextX = 0;
-    // Vector of AppStates
-    std::vector<std::shared_ptr<AppState>> s_AppStateVector;
+
+    // This is for whether or not JKSM is running.
+    bool s_IsRunning = false;
+    // Whether or not a refresh of states is required.
+    bool s_RefreshRequired = false;
+
+    /*
+        This is the font JKSM uses for the entire app. It's shared and used among all states.
+        If you would like to replace it, I've include the source to the program to apply a quick
+        zlib compress on TTF fonts. You'll need cmake and zlib installed to do so. Once that is done,
+        replace the file in the romfs folder and update Assets.hpp to reflect your changes.
+    */
+    SDL::SharedFont s_Noto = nullptr;
+
     // Number of AppStates JKSM has. + 1 for settings menu.
     constexpr int APP_STATE_TOTAL = Data::SaveTypeTotal + 1;
     // Array of appstates we can push from.
     std::array<std::shared_ptr<AppState>, APP_STATE_TOTAL> s_AppStateArray = {nullptr};
+    // Vector of AppStates
+    std::vector<std::shared_ptr<AppState>> s_AppStateVector;
     // Current state we're on
     int s_CurrentState = 0;
 } // namespace
