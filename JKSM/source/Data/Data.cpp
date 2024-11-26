@@ -14,14 +14,26 @@
 
 namespace
 {
-    // This is to check the cache for no other reason than to do it.
-    constexpr uint32_t CACHE_MAGIC = 0x4D534B4A;
-    // Buffer size for compressing icon data.
-    constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
-    // The current cache revision required.
-    constexpr uint8_t CURRENT_CACHE_REVISION = 0x08;
     // Path to cache.
     constexpr std::u16string_view CACHE_PATH = u"sdmc:/JKSM/cache.bin";
+    // This is to check the cache for no other reason than to do it.
+    constexpr uint32_t CACHE_MAGIC = 0x4D534B4A;
+    // The current cache revision required.
+    constexpr uint8_t CURRENT_CACHE_REVISION = 0x08;
+    // Buffer size for compressing icon data.
+    constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
+    // This struct is to make reading and writing the cache quicker with fewer read/write calls.
+    typedef struct
+    {
+            uint64_t TitleID;
+            FS_MediaType MediaType;
+            Data::TitleSaveTypes SaveTypes;
+            char ProductCode[0x20];
+            char16_t Title[0x40];
+            char16_t Publisher[0x40];
+            uint32_t Icon[0x900];
+    } CacheEntry;
+
     // Vector instead of map to preserve order and sorting.
     std::vector<Data::TitleData> s_TitleVector;
     // Array of fake title ID's to add shared extdata to the TitleVector.
@@ -32,6 +44,7 @@ namespace
                                                               0x00000000F000000C,
                                                               0x00000000F000000D,
                                                               0x00000000F000000E};
+
     // This is to prevent the main thread from requesting a cart read before data is finished being read.
     bool s_DataInitialized = false;
 } // namespace
@@ -257,33 +270,19 @@ bool LoadCacheFile(System::Task *Task)
         return false;
     }
 
-    std::unique_ptr<unsigned char[]> IconBuffer(new unsigned char[ICON_BUFFER_SIZE]);
+    std::unique_ptr<CacheEntry> CurrentEntry(new CacheEntry);
     for (uint16_t i = 0; i < TitleCount; i++)
     {
-        uint64_t TitleID = 0;
-        CacheFile.Read(&TitleID, sizeof(uint64_t));
+        CacheFile.Read(CurrentEntry.get(), sizeof(CacheEntry));
+        Task->SetStatus("Reading entry for %016llX", CurrentEntry->TitleID);
 
-        Task->SetStatus("Reading data for %016llX", TitleID);
-
-        FS_MediaType MediaType;
-        CacheFile.Read(&MediaType, sizeof(FS_MediaType));
-
-        char ProductCode[0x20] = {0};
-        CacheFile.Read(ProductCode, 0x20);
-
-        Data::TitleSaveTypes SaveTypes;
-        CacheFile.Read(&SaveTypes, sizeof(Data::TitleSaveTypes));
-
-        char16_t Title[0x40] = {0};
-        CacheFile.Read(Title, 0x40 * sizeof(char16_t));
-
-        char16_t Publisher[0x40] = {0};
-        CacheFile.Read(Publisher, 0x40 * sizeof(char16_t));
-
-        // Icon. We always know the end size since it's RAW RGBA8 pixels.
-        CacheFile.Read(IconBuffer.get(), ICON_BUFFER_SIZE);
-
-        s_TitleVector.emplace_back(TitleID, MediaType, ProductCode, Title, Publisher, SaveTypes, IconBuffer.get());
+        s_TitleVector.emplace_back(CurrentEntry->TitleID,
+                                   CurrentEntry->MediaType,
+                                   CurrentEntry->ProductCode,
+                                   CurrentEntry->Title,
+                                   CurrentEntry->Publisher,
+                                   CurrentEntry->SaveTypes,
+                                   CurrentEntry->Icon);
     }
     return true;
 }
@@ -303,22 +302,22 @@ void CreateCacheFile(System::Task *Task)
 
     CacheFile.Write(&CURRENT_CACHE_REVISION, sizeof(uint8_t));
 
+    // Doing this in memory then writing is quicker than writing part by part.
+    std::unique_ptr<CacheEntry> CurrentEntry(new CacheEntry);
     for (Data::TitleData &CurrentTitle : s_TitleVector)
     {
         char UTF8Title[0x80] = {0};
         StringUtil::ToUTF8(CurrentTitle.GetTitle(), UTF8Title, 0x80);
-
         Task->SetStatus("Writing %s's data...", UTF8Title);
-        uint64_t TitleID = CurrentTitle.GetTitleID();
-        FS_MediaType MediaType = CurrentTitle.GetMediaType();
-        Data::TitleSaveTypes SaveTypes = CurrentTitle.GetSaveTypes();
 
-        CacheFile.Write(&TitleID, sizeof(uint64_t));
-        CacheFile.Write(&MediaType, sizeof(FS_MediaType));
-        CacheFile.Write(CurrentTitle.GetProductCode(), 0x20);
-        CacheFile.Write(&SaveTypes, sizeof(Data::TitleSaveTypes));
-        CacheFile.Write(CurrentTitle.GetTitle(), 0x40 * sizeof(char16_t));
-        CacheFile.Write(CurrentTitle.GetPublisher(), 0x40 * sizeof(char16_t));
-        CacheFile.Write(CurrentTitle.GetIcon()->Get()->pixels, ICON_BUFFER_SIZE);
+        CurrentEntry->TitleID = CurrentTitle.GetTitleID();
+        CurrentEntry->MediaType = CurrentTitle.GetMediaType();
+        CurrentEntry->SaveTypes = CurrentTitle.GetSaveTypes();
+        std::memcpy(CurrentEntry->ProductCode, CurrentTitle.GetProductCode(), 0x20);
+        std::memcpy(CurrentEntry->Title, CurrentTitle.GetTitle(), 0x40 * sizeof(char16_t));
+        std::memcpy(CurrentEntry->Publisher, CurrentTitle.GetPublisher(), 0x40 * sizeof(char16_t));
+        std::memcpy(CurrentEntry->Icon, CurrentTitle.GetIcon()->Get()->pixels, ICON_BUFFER_SIZE);
+
+        CacheFile.Write(CurrentEntry.get(), sizeof(CacheEntry));
     }
 }
