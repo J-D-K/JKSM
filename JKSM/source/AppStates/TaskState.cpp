@@ -18,7 +18,7 @@ void TaskState::DrawTop(SDL_Surface *Target)
     {
         m_CreatingState->DrawTop(Target);
     }
-    m_Noto->BlitTextAt(Target, TextX, 114, 12, SDL::Font::NO_TEXT_WRAP, ThreadStatus.c_str());
+    m_Noto->BlitTextAt(Target, TextX, 114, 12, m_Noto->NO_TEXT_WRAP, ThreadStatus.c_str());
 }
 
 void TaskState::DrawBottom(SDL_Surface *Target)

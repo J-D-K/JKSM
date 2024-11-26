@@ -4,14 +4,14 @@
 #include "AppStates/TextTitleSelect.hpp"
 #include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
+#include "Config.hpp"
 #include "Data/Data.hpp"
 #include "FS/FS.hpp"
-#include "FsLib.hpp"
 #include "Input.hpp"
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
+#include "UI/Strings.hpp"
 #include <3ds.h>
-#include <mutex>
 #include <string_view>
 #include <vector>
 
@@ -24,7 +24,7 @@
 
 namespace
 {
-    // This is the title text and its centered X coordinate.
+    // This is the title text and its centered X coordinate. This is untranslatable.
     constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/25/2024";
     // This is to make centering this easier.
     int s_TitleTextX = 0;
@@ -86,6 +86,12 @@ void JKSM::Initialize(void)
     // SDL Stuff
     ABORT_ON_FAILURE(SDL::Initialize());
     ABORT_ON_FAILURE(SDL::FreeType::Initialize());
+
+    // Config
+    Config::Initialize();
+
+    // This loads strings from the json files in romfs.
+    UI::Strings::Intialize();
 
     // Load Font if it wasn't already.
     ABORT_ON_FAILURE(
@@ -206,7 +212,7 @@ void JKSM::Render(void)
     SDL_Surface *TopScreen = SDL::GetCurrentBuffer();
     s_AppStateVector.back()->DrawTop(TopScreen);
     SDL::DrawRect(TopScreen, 0, 0, 400, 16, SDL::Colors::BarColor);
-    s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, SDL::Font::NO_TEXT_WRAP, TITLE_TEXT.data());
+    s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, s_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
 
     SDL::FrameChangeScreens();
 

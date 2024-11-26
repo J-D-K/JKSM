@@ -1,5 +1,6 @@
 #include "Data/TitleData.hpp"
 #include "Assets.hpp"
+#include "Config.hpp"
 #include "Data/SMDH.hpp"
 #include "FsLib.hpp"
 #include "Logger.hpp"
@@ -19,12 +20,14 @@ namespace
         0x32, 0x33, 0x3A, 0x3B, 0x24, 0x25, 0x2C, 0x2D, 0x26, 0x27, 0x2E, 0x2F, 0x34, 0x35, 0x3C, 0x3D, 0x36, 0x37, 0x3E, 0x3F};
     // For being super safe and memcpying the icon data and hoping someone doesn't pull some funny business with the cache :)
     constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
+
     // Mount points for testing save archives.
     constexpr std::u16string_view USER_MOUNT = u"UserSave";
     constexpr std::u16string_view EXTDATA_MOUNT = u"ExtData";
     constexpr std::u16string_view SYS_MOUNT = u"Sys";
     constexpr std::u16string_view BOSS_MOUNT = u"Boss";
     constexpr std::u16string_view SHARED_MOUNT = u"Shared";
+
     // Publisher for blank/unknown.
     constexpr std::u16string_view PUBLISHER_NOT_KNOWN = u"A Company";
 } // namespace
@@ -52,14 +55,6 @@ Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType) : m_TitleID
     {
         // Don't bother continuing.
         return;
-    }
-
-    uint8_t SystemLanguage = 0;
-    Result CFGUError = CFGU_GetSystemLanguage(&SystemLanguage);
-    if (R_FAILED(CFGUError))
-    {
-        Logger::Log("Failed to get system language. Defaulting to English title.");
-        SystemLanguage = CFG_LANGUAGE_EN;
     }
 
     Result AMError = AM_GetTitleProductCode(m_MediaType, m_TitleID, m_ProductCode);
@@ -284,18 +279,12 @@ void Data::TitleData::TitleInitializeDefault(void)
     std::string UniqueString = StringUtil::GetFormattedString("%04X", m_TitleID & 0xFFFF);
 
     int TextX = 24 - (Noto->GetTextWidth(12, UniqueString.c_str()) / 2);
-    Noto->BlitTextAt(m_Icon->Get(), TextX, 18, 12, SDL::Font::NO_TEXT_WRAP, UniqueString.c_str());
+    Noto->BlitTextAt(m_Icon->Get(), TextX, 18, 12, Noto->NO_TEXT_WRAP, UniqueString.c_str());
 }
 
 void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)
 {
-    uint8_t SystemLanguage = 0;
-    Result CfguError = CFGU_GetSystemLanguage(&SystemLanguage);
-    if (R_FAILED(CfguError))
-    {
-        Logger::Log("Error getting system language. Defaulting to English: 0x%08X.", CfguError);
-        SystemLanguage = CFG_LANGUAGE_EN;
-    }
+    uint8_t SystemLanguage = Config::GetSystemLanguage();
 
     Result AmError = AM_GetTitleProductCode(m_MediaType, m_TitleID, m_ProductCode);
     if (R_FAILED(AmError))

@@ -1,7 +1,7 @@
 #include "AppStates/TextTitleSelect.hpp"
 #include "Assets.hpp"
-#include "SharedText.hpp"
 #include "StringUtil.hpp"
+#include "UI/Strings.hpp"
 
 TextTitleSelect::TextTitleSelect(Data::SaveDataType SaveType) : m_TitleMenu(std::make_unique<UI::Menu>(40, 18, 320, 13)), m_SaveType(SaveType)
 {
@@ -10,7 +10,7 @@ TextTitleSelect::TextTitleSelect(Data::SaveDataType SaveType) : m_TitleMenu(std:
     // Make sure we have the font.
     m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
 
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, SharedText::SaveTypeStrings[m_SaveType].data()) / 2);
+    m_TextX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType)) / 2);
 
     // Copy titles of games to menu
     for (auto &CurrentTitle : m_TitleData)
@@ -30,7 +30,7 @@ void TextTitleSelect::DrawTop(SDL_Surface *Target)
 {
     m_TitleMenu->Draw(Target);
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, SDL::Font::NO_TEXT_WRAP, SharedText::SaveTypeStrings[m_SaveType].data());
+    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType));
 }
 
 void TextTitleSelect::DrawBottom(SDL_Surface *Target)

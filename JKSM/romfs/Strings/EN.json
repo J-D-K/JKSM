@@ -1,0 +1,39 @@
+{
+    "DataLoadingText":[
+        "Loading SD title %016llX.",
+        "Loading NAND title %016llX.",
+        "Creating Shared Extra Data titles.",
+        "Opening cache file for reading.",
+        "Reading entry for %016llX.",
+        "Writing %s's data to cache."
+    ],
+    "StateName" : [
+        "User Save Data",
+        "Extra Data",
+        "BOSS Extra Data",
+        "Shared Extra Data",
+        "System Save Data",
+        "Settings"
+    ],
+    "StateInformation" : [
+        "Title ID: %016llX\nMedia Type: %s\nProduct Code: %s"
+    ],
+    "MediaType":[
+        "NAND",
+        "SD Card",
+        "Game Card"
+    ],
+    "SettingsDescription" : [
+        "Description:"
+    ],
+    "SettingsMenu" : [
+        "Refresh Title List",
+        "Text Menus: %s",
+        "Use ZIP: %s"
+    ],
+    "SettingsDescriptions" : [
+        "Rescans system for for new titles and caches them.",
+        "Uses text menus instead of icon grids.",
+        "Exports saves to ZIP files instead of unpacked folders."
+    ]
+}

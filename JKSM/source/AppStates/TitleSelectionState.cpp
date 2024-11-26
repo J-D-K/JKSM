@@ -1,7 +1,7 @@
 #include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
-#include "SharedText.hpp"
 #include "StringUtil.hpp"
+#include "UI/Strings.hpp"
 #include <array>
 
 TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType)
@@ -10,7 +10,7 @@ TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType)
     // This should already be loaded and ready to go from boot. I shouldn't assume that, but I will.
     m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
 
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, SharedText::SaveTypeStrings[SaveType].data()) / 2);
+    m_TextX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType)) / 2);
 }
 
 void TitleSelectionState::Update(void)
@@ -22,7 +22,7 @@ void TitleSelectionState::DrawTop(SDL_Surface *Target)
 {
     m_TitleView->Draw(Target);
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, SDL::Font::NO_TEXT_WRAP, SharedText::SaveTypeStrings[m_SaveType].data());
+    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType));
 }
 
 void TitleSelectionState::DrawBottom(SDL_Surface *Target)
@@ -34,15 +34,15 @@ void TitleSelectionState::DrawBottom(SDL_Surface *Target)
     int TitleX = 160 - (m_Noto->GetTextWidth(12, UTF8Title) / 2);
 
     SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, TitleX, 1, 12, SDL::Font::NO_TEXT_WRAP, UTF8Title);
+    m_Noto->BlitTextAt(Target, TitleX, 1, 12, m_Noto->NO_TEXT_WRAP, UTF8Title);
     m_Noto->BlitTextAt(Target,
                        4,
                        18,
                        12,
                        320,
-                       "Title ID: %016llX\nMedia Type: %s\nProduct Code: %s",
+                       UI::Strings::GetStringByName(UI::Strings::Names::StateInformation, 0),
                        SelectedTitleData->GetTitleID(),
-                       SharedText::MediaTypeStrings[SelectedTitleData->GetMediaType()].data(),
+                       UI::Strings::GetStringByName(UI::Strings::Names::MediaType, SelectedTitleData->GetMediaType()),
                        SelectedTitleData->GetProductCode());
 }
 

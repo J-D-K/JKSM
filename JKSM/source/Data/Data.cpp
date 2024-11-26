@@ -4,6 +4,7 @@
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
+#include "UI/Strings.hpp"
 #include <3ds.h>
 #include <algorithm>
 #include <array>
@@ -20,6 +21,7 @@ namespace
     constexpr uint32_t CACHE_MAGIC = 0x4D534B4A;
     // The current cache revision required.
     constexpr uint8_t CURRENT_CACHE_REVISION = 0x08;
+
     // Buffer size for compressing icon data.
     constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
     // This struct is to make reading and writing the cache quicker with fewer read/write calls.
@@ -88,7 +90,6 @@ void Data::Initialize(System::Task *Task)
         return;
     }
 
-    Task->SetStatus("Retrieving SD title list from system...");
     uint32_t TitleCount = 0;
     Result AmError = AM_GetTitleCount(MEDIATYPE_SD, &TitleCount);
     if (R_FAILED(AmError))
@@ -110,7 +111,7 @@ void Data::Initialize(System::Task *Task)
 
     for (uint32_t i = 0; i < TitleCount; i++)
     {
-        Task->SetStatus("Loading SD title %016llX", TitleIDList[i]);
+        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 0), TitleIDList[i]);
 
         uint32_t UpperID = static_cast<uint32_t>(TitleIDList[i] >> 32);
         if (UpperID != 0x00040000 && UpperID != 0x00040002)
@@ -146,7 +147,7 @@ void Data::Initialize(System::Task *Task)
 
     for (uint32_t i = 0; i < NandTitleCount; i++)
     {
-        Task->SetStatus("Loading NAND title %016llX", TitleIDList[i]);
+        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 1), TitleIDList[i]);
         Data::TitleData NewNANDTitle(TitleIDList[i], MEDIATYPE_NAND);
         if (NewNANDTitle.HasSaveData())
         {
@@ -155,6 +156,7 @@ void Data::Initialize(System::Task *Task)
     }
 
     // Shared Extdata. These are fake and pushed at the end just to have them.
+    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 2));
     for (size_t i = 0; i < 7; i++)
     {
         s_TitleVector.emplace_back(s_FakeSharedTitleIDs.at(i), MEDIATYPE_NAND);
@@ -245,8 +247,7 @@ bool LoadCacheFile(System::Task *Task)
     {
         return false;
     }
-    Task->SetStatus("Reading cache file...");
-
+    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 3));
     FsLib::InputFile CacheFile(CACHE_PATH);
 
     // Test magic for whatever reason. It's all the rage!
@@ -274,7 +275,7 @@ bool LoadCacheFile(System::Task *Task)
     for (uint16_t i = 0; i < TitleCount; i++)
     {
         CacheFile.Read(CurrentEntry.get(), sizeof(CacheEntry));
-        Task->SetStatus("Reading entry for %016llX", CurrentEntry->TitleID);
+        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 4), CurrentEntry->TitleID);
 
         s_TitleVector.emplace_back(CurrentEntry->TitleID,
                                    CurrentEntry->MediaType,
@@ -308,7 +309,7 @@ void CreateCacheFile(System::Task *Task)
     {
         char UTF8Title[0x80] = {0};
         StringUtil::ToUTF8(CurrentTitle.GetTitle(), UTF8Title, 0x80);
-        Task->SetStatus("Writing %s's data...", UTF8Title);
+        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 5), UTF8Title);
 
         CurrentEntry->TitleID = CurrentTitle.GetTitleID();
         CurrentEntry->MediaType = CurrentTitle.GetMediaType();

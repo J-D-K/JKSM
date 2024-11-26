@@ -13,8 +13,6 @@ namespace UI
         public:
             // Creates menu drawn at X and Y. MaxDrawLength is the maximum number of options to display before scrolling.
             Menu(int X, int Y, int Width, int MaxDrawLength);
-            // Inits a menu from an array of string_views.
-            Menu(int X, int Y, int Width, int MaxDrawLength, const std::string_view *Options, size_t OptionCount);
             ~Menu()
             {
             }

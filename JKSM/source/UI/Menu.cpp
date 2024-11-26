@@ -9,15 +9,6 @@ UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength)
 {
 }
 
-UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength, const std::string_view *Options, size_t OptionCount)
-    : Menu(X, Y, Width, MaxDrawLength)
-{
-    for (size_t i = 0; i < OptionCount; i++)
-    {
-        m_Options.push_back(Options[i].data());
-    }
-}
-
 void UI::Menu::AddOption(std::string_view Option)
 {
     m_Options.push_back(Option.data());
@@ -62,7 +53,7 @@ void UI::Menu::Draw(SDL_Surface *Target)
         {
             SDL::DrawRect(Target, m_X - 2, Y - 2, m_Width, 16, {0x00FFFFFF});
         }
-        m_Noto->BlitTextAt(Target, m_X, Y, 10, SDL::Font::NO_TEXT_WRAP, m_Options.at(i).c_str());
+        m_Noto->BlitTextAt(Target, m_X, Y, 10, m_Noto->NO_TEXT_WRAP, m_Options.at(i).c_str());
     }
 }
 
