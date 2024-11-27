@@ -21,15 +21,8 @@ namespace
     // For being super safe and memcpying the icon data and hoping someone doesn't pull some funny business with the cache :)
     constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
 
-    // Mount points for testing save archives.
-    constexpr std::u16string_view USER_MOUNT = u"UserSave";
-    constexpr std::u16string_view EXTDATA_MOUNT = u"ExtData";
-    constexpr std::u16string_view SYS_MOUNT = u"Sys";
-    constexpr std::u16string_view BOSS_MOUNT = u"Boss";
-    constexpr std::u16string_view SHARED_MOUNT = u"Shared";
-
     // Publisher for blank/unknown.
-    constexpr std::u16string_view PUBLISHER_NOT_KNOWN = u"A Company";
+    constexpr std::u16string_view PUBLISHER_NOT_KNOWN = u"A Company?";
 } // namespace
 
 // Same as above, but modified to work with SDL_Surfaces.
@@ -49,18 +42,14 @@ static inline void WritePixelToSurface(SDL_Surface *Surface, int X, int Y, uint1
     SurfacePixels[X + (Y * SurfaceWidth)] = Red << 24 | Green << 16 | Blue << 8 | 0xFF;
 }
 
-Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType) : m_TitleID(TitleID), m_MediaType(MediaType)
+Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType, Data::TitleSaveTypes SaveTypes)
+    : m_TitleID(TitleID), m_MediaType(MediaType), m_TitleSaveTypes(SaveTypes)
 {
-    if (!TitleData::TestArchives())
-    {
-        // Don't bother continuing.
-        return;
-    }
-
     Result AMError = AM_GetTitleProductCode(m_MediaType, m_TitleID, m_ProductCode);
     if (R_FAILED(AMError))
     {
         Logger::Log("Error getting product code for %016llX.", m_TitleID);
+        std::memset(m_ProductCode, 0x00, 0x20);
     }
 
     Data::SMDH TitleSMDH;
@@ -91,15 +80,21 @@ Data::TitleData::TitleData(uint64_t TitleID,
     StringUtil::SanitizeStringForPath(m_Title, m_PathSafeTitle, 0x40);
 
     // Now we allocate and memcpy the icon data.
-    m_Icon = SDL::SurfaceManager::CreateLoadResource(m_ProductCode, 48, 48, false);
+    std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
+    m_Icon = SDL::SurfaceManager::CreateLoadResource(TitleIDString, 48, 48, false);
     std::memcpy(m_Icon->Get()->pixels, IconData, ICON_BUFFER_SIZE);
 }
 
 bool Data::TitleData::HasSaveData(void) const
 {
-    return m_TitleSaveTypes.HasSaveType[SaveTypeUser] || m_TitleSaveTypes.HasSaveType[SaveTypeExtData] ||
-           m_TitleSaveTypes.HasSaveType[SaveTypeSystem] || m_TitleSaveTypes.HasSaveType[SaveTypeBOSS] ||
-           m_TitleSaveTypes.HasSaveType[SaveTypeSharedExtData];
+    for (size_t i = 0; i < Data::SaveTypeTotal; i++)
+    {
+        if (m_TitleSaveTypes.HasSaveType[i])
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 uint64_t Data::TitleData::GetTitleID(void) const
@@ -124,61 +119,7 @@ uint32_t Data::TitleData::GetUniqueID(void) const
 
 uint32_t Data::TitleData::GetExtDataID(void) const
 {
-    switch (TitleData::GetLowerID())
-    {
-        // Pokemon Y
-        case 0x00055E00:
-        {
-            return 0x0000055D;
-        }
-        break;
-
-        // Pokemon OR
-        case 0x0011C400:
-        {
-            return 0x000011C5;
-        }
-        break;
-
-        // Pokemon Moon
-        case 0x001B5100:
-        {
-            return 0x00001B50;
-        }
-        break;
-
-        // Fire Emblem Fates Conquest & Special Edition USA/NA
-        case 0x00179600:
-        case 0x00179800:
-        {
-            return 0x00001794;
-        }
-        break;
-
-        // Fire Emblem Conquest Euro
-        case 0x00179700:
-        case 0x0017A800:
-        {
-            return 0x00001795;
-        }
-        break;
-
-        // Fire Emblem If Japan
-        case 0x0012DD00:
-        case 0x0012DE00:
-        {
-            return 0x000012DC;
-        }
-        break;
-
-        default:
-        {
-            return TitleData::GetLowerID() >> 8;
-        }
-        break;
-    }
-
-    return 0;
+    return Data::ExtDataRedirect(m_TitleID);
 }
 
 FS_MediaType Data::TitleData::GetMediaType(void) const
@@ -216,45 +157,11 @@ SDL::SharedSurface Data::TitleData::GetIcon(void)
     return m_Icon;
 }
 
-bool Data::TitleData::TestArchives(void)
-{
-    if (FsLib::OpenUserSaveData(USER_MOUNT, m_MediaType, TitleData::GetLowerID(), TitleData::GetUpperID()))
-    {
-        FsLib::CloseDevice(USER_MOUNT);
-        m_TitleSaveTypes.HasSaveType[Data::SaveTypeUser] = true;
-    }
-
-    if (FsLib::OpenExtData(EXTDATA_MOUNT, TitleData::GetExtDataID()))
-    {
-        FsLib::CloseDevice(EXTDATA_MOUNT);
-        m_TitleSaveTypes.HasSaveType[Data::SaveTypeExtData] = true;
-    }
-
-    if (FsLib::OpenSystemSaveData(SYS_MOUNT, TitleData::GetUniqueID()))
-    {
-        FsLib::CloseDevice(SYS_MOUNT);
-        m_TitleSaveTypes.HasSaveType[Data::SaveTypeSystem] = true;
-    }
-
-    if (FsLib::OpenBossExtData(BOSS_MOUNT, TitleData::GetExtDataID()))
-    {
-        FsLib::CloseDevice(BOSS_MOUNT);
-        m_TitleSaveTypes.HasSaveType[Data::SaveTypeBOSS] = true;
-    }
-
-    if (FsLib::OpenSharedExtData(SHARED_MOUNT, TitleData::GetLowerID()))
-    {
-        FsLib::CloseDevice(SHARED_MOUNT);
-        m_TitleSaveTypes.HasSaveType[Data::SaveTypeSharedExtData] = true;
-    }
-
-    return TitleData::HasSaveData();
-}
-
 void Data::TitleData::TitleInitializeDefault(void)
 {
-    // Set title to title ID.
+    static size_t NoSMDHCount = 0;
     std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
+
     StringUtil::ToUTF16(TitleIDString.c_str(), m_Title, 0x40);
 
     // Memcpy publisher string
@@ -313,7 +220,8 @@ void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)
     }
 
     // Here comes the icon part. I'm using SDL instead of citro so these need to be untiled. This is from the hbmenu.
-    m_Icon = SDL::SurfaceManager::CreateLoadResource(m_ProductCode, 48, 48, false);
+    std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
+    m_Icon = SDL::SurfaceManager::CreateLoadResource(TitleIDString, 48, 48, false);
     if (!m_Icon)
     {
         Logger::Log("Error creating icon surface for %016llX: %s.", m_TitleID, SDL_GetError());

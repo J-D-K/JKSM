@@ -1,4 +1,6 @@
 #include "Data/Data.hpp"
+#include "Data/ExtData.hpp"
+#include "Data/SaveDataType.hpp"
 #include "FsLib.hpp"
 #include "JKSM.hpp"
 #include "Logger.hpp"
@@ -47,6 +49,9 @@ namespace
                                                               0x00000000F000000D,
                                                               0x00000000F000000E};
 
+    // Mount point for testing save archives.
+    constexpr std::u16string_view TEST_MOUNT = u"TestRoot";
+
     // This is to prevent the main thread from requesting a cart read before data is finished being read.
     bool s_DataInitialized = false;
 } // namespace
@@ -71,6 +76,54 @@ static bool CompareTitles(const Data::TitleData &TitleA, const Data::TitleData &
         if (CharA != CharB)
         {
             return CharA < CharB;
+        }
+    }
+    return false;
+}
+
+// This is to test what archives can be opened with the title id before bothering to allocate a new instance of Data::TitleData
+static bool TestArchivesWithTitleID(uint64_t TitleID, FS_MediaType MediaType, Data::TitleSaveTypes &SaveTypesOut)
+{
+    uint32_t UpperID = TitleID >> 32 & 0xFFFFFFFF;
+    uint32_t LowerID = TitleID & 0xFFFFFFFF;
+    uint32_t ExtDataID = Data::ExtDataRedirect(TitleID);
+
+    if ((MediaType == MEDIATYPE_SD || MediaType == MEDIATYPE_GAME_CARD) && FsLib::OpenUserSaveData(TEST_MOUNT, MediaType, LowerID, UpperID))
+    {
+        FsLib::CloseDevice(TEST_MOUNT);
+        SaveTypesOut.HasSaveType[Data::SaveTypeUser] = true;
+    }
+
+    if ((MediaType == MEDIATYPE_SD || MediaType == MEDIATYPE_GAME_CARD) && FsLib::OpenExtData(TEST_MOUNT, ExtDataID))
+    {
+        FsLib::CloseDevice(TEST_MOUNT);
+        SaveTypesOut.HasSaveType[Data::SaveTypeExtData] = true;
+    }
+
+    if (MediaType == MEDIATYPE_NAND && FsLib::OpenSharedExtData(TEST_MOUNT, LowerID))
+    {
+        FsLib::CloseDevice(TEST_MOUNT);
+        SaveTypesOut.HasSaveType[Data::SaveTypeSharedExtData] = true;
+    }
+
+    if (MediaType == MEDIATYPE_NAND && FsLib::OpenBossExtData(TEST_MOUNT, ExtDataID))
+    {
+        FsLib::CloseDevice(TEST_MOUNT);
+        SaveTypesOut.HasSaveType[Data::SaveTypeBossExtData] = true;
+    }
+
+    if (MediaType == MEDIATYPE_NAND && FsLib::OpenSystemSaveData(TEST_MOUNT, LowerID >> 8))
+    {
+        FsLib::CloseDevice(TEST_MOUNT);
+        SaveTypesOut.HasSaveType[Data::SaveTypeSystem] = true;
+    }
+
+    // I didn't feel like typing this out one by one.
+    for (size_t i = 0; i < Data::SaveTypeTotal; i++)
+    {
+        if (SaveTypesOut.HasSaveType[i])
+        {
+            return true;
         }
     }
     return false;
@@ -119,10 +172,10 @@ void Data::Initialize(System::Task *Task)
             continue;
         }
 
-        Data::TitleData NewTitleData(TitleIDList[i], MEDIATYPE_SD);
-        if (NewTitleData.HasSaveData())
+        Data::TitleSaveTypes SaveTypes = {false};
+        if (TestArchivesWithTitleID(TitleIDList[i], MEDIATYPE_SD, SaveTypes))
         {
-            s_TitleVector.push_back(std::move(NewTitleData));
+            s_TitleVector.emplace_back(TitleIDList[i], MEDIATYPE_SD, SaveTypes);
         }
     }
 
@@ -148,18 +201,22 @@ void Data::Initialize(System::Task *Task)
     for (uint32_t i = 0; i < NandTitleCount; i++)
     {
         Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 1), TitleIDList[i]);
-        Data::TitleData NewNANDTitle(TitleIDList[i], MEDIATYPE_NAND);
-        if (NewNANDTitle.HasSaveData())
+
+        Data::TitleSaveTypes SaveTypes = {false};
+        if (TestArchivesWithTitleID(TitleIDList[i], MEDIATYPE_NAND, SaveTypes))
         {
-            s_TitleVector.push_back(std::move(NewNANDTitle));
+            s_TitleVector.emplace_back(TitleIDList[i], MEDIATYPE_NAND, SaveTypes);
         }
     }
 
     // Shared Extdata. These are fake and pushed at the end just to have them.
     Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 2));
+    // We're gonna skip testing these.
+    Data::TitleSaveTypes SharedType = {false};
+    SharedType.HasSaveType[Data::SaveTypeSharedExtData] = true;
     for (size_t i = 0; i < 7; i++)
     {
-        s_TitleVector.emplace_back(s_FakeSharedTitleIDs.at(i), MEDIATYPE_NAND);
+        s_TitleVector.emplace_back(s_FakeSharedTitleIDs.at(i), MEDIATYPE_NAND, SharedType);
     }
 
     std::sort(s_TitleVector.begin(), s_TitleVector.end(), CompareTitles);
@@ -214,12 +271,11 @@ bool Data::GameCardUpdateCheck(void)
             return false;
         }
 
-        Data::TitleData GameCardData(GameCardTitleID, MEDIATYPE_GAME_CARD);
-        if (!GameCardData.HasSaveData())
+        Data::TitleSaveTypes GameCardTypes = {false};
+        if (TestArchivesWithTitleID(GameCardTitleID, MEDIATYPE_GAME_CARD, GameCardTypes))
         {
-            return false;
+            s_TitleVector.insert(s_TitleVector.begin(), std::move(Data::TitleData(GameCardTitleID, MEDIATYPE_GAME_CARD, GameCardTypes)));
         }
-        s_TitleVector.insert(s_TitleVector.begin(), std::move(GameCardData));
 
         return true;
     }

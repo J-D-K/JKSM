@@ -10,13 +10,13 @@
     "StateName" : [
         "User Save Data",
         "Extra Data",
-        "BOSS Extra Data",
         "Shared Extra Data",
+        "BOSS Extra Data",
         "System Save Data",
         "Settings"
     ],
     "StateInformation" : [
-        "Title ID: %016llX\nMedia Type: %s\nProduct Code: %s"
+        "Title ID: %016llX\nPublisher: %s\nMedia Type: %s\nProduct Code: %s"
     ],
     "MediaType":[
         "NAND",

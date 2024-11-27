@@ -8,17 +8,17 @@ namespace
     /*
         These are the various paths JKSM has used over the years. This source file exists entirely just to convert everything.
     */
-    // When folder was JKSV
+    // When base folder was JKSV. Switching to JKSM and the subfolder names too.
     constexpr std::array<std::u16string_view, 6> s_JKSVFolderLocations =
-        {u"sdmc:/JKSV/Saves", u"sdmc:/JKSV/ExtData", u"sdmc:/JKSV/SysSave", u"sdmc:/JKSV/Boss", u"sdmc:/JKSV/Shared", u"sdmc:/JKSV"};
+        {u"sdmc:/JKSV", u"sdmc:/JKSM/Saves", u"sdmc:/JKSM/ExtData", u"sdmc:/JKSM/SysSave", u"sdmc:/JKSM/Boss", u"sdmc:/JKSM/Shared"};
 
     // These are the new, permanant JKSM folders.
-    constexpr std::array<std::u16string_view, 6> s_JKSMFolderLocations = {u"sdmc:/JKSM/User_Saves",
+    constexpr std::array<std::u16string_view, 6> s_JKSMFolderLocations = {u"sdmc:/JKSM",
+                                                                          u"sdmc:/JKSM/User_Saves",
                                                                           u"sdmc:/JKSM/Extra_Data",
                                                                           u"sdmc:/JKSM/System_Saves",
                                                                           u"sdmc:/JKSM/BOSS_Extra_Data",
-                                                                          u"sdmc:/JKSM/Shared_Extra_Data",
-                                                                          u"sdmc:/JKSM"};
+                                                                          u"sdmc:/JKSM/Shared_Extra_Data"};
 
     // This is new and doesn't need to be converted.
     constexpr std::u16string_view CONFIG_FOLDER = u"sdmc:/config/JKSM";
@@ -35,6 +35,11 @@ void FS::Initialize(void)
         {
             Logger::Log("Error updating folder locations for JKSM update: %s.", FsLib::GetErrorString());
         }
+    }
+
+    if (!FsLib::DirectoryExists(CONFIG_FOLDER) && !FsLib::CreateDirectoriesRecursively(CONFIG_FOLDER))
+    {
+        Logger::Log("Error creating JKSM config folder: %s.", FsLib::GetErrorString());
     }
 
     // This loop will create the others if they don't already exist.

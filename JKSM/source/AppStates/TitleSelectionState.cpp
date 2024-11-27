@@ -30,7 +30,11 @@ void TitleSelectionState::DrawBottom(SDL_Surface *Target)
     Data::TitleData *SelectedTitleData = m_TitleView->GetSelectedTitleData();
 
     char UTF8Title[0x80] = {0};
+    char UTF8Publisher[0x80] = {0};
     StringUtil::ToUTF8(SelectedTitleData->GetTitle(), UTF8Title, 0x80);
+    StringUtil::ToUTF8(SelectedTitleData->GetPublisher(), UTF8Publisher, 0x80);
+
+    // This is to center the title above the information.
     int TitleX = 160 - (m_Noto->GetTextWidth(12, UTF8Title) / 2);
 
     SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
@@ -42,6 +46,7 @@ void TitleSelectionState::DrawBottom(SDL_Surface *Target)
                        320,
                        UI::Strings::GetStringByName(UI::Strings::Names::StateInformation, 0),
                        SelectedTitleData->GetTitleID(),
+                       UTF8Publisher,
                        UI::Strings::GetStringByName(UI::Strings::Names::MediaType, SelectedTitleData->GetMediaType()),
                        SelectedTitleData->GetProductCode());
 }

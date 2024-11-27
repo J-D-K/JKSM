@@ -1,4 +1,5 @@
 #pragma once
+#include "Data/ExtData.hpp"
 #include "Data/SMDH.hpp"
 #include "Data/SaveDataType.hpp"
 #include "SDL/ResourceManager.hpp"
@@ -16,8 +17,8 @@ namespace Data
     {
         public:
             TitleData(void) = default;
-            // Initialize from system.
-            TitleData(uint64_t TitleID, FS_MediaType MediaType);
+            // Initialize from system. The last argument is because there's no point in running another test.
+            TitleData(uint64_t TitleID, FS_MediaType MediaType, Data::TitleSaveTypes TitleSaveTypes);
             // Initialize from cache. Basically just copying this stuff.
             TitleData(uint64_t TitleID,
                       FS_MediaType MediaType,
@@ -73,8 +74,6 @@ namespace Data
             TitleSaveTypes m_TitleSaveTypes;
             // Icon.
             SDL::SharedSurface m_Icon = nullptr;
-            // This function tests what archives can be opened using instance of TitleData
-            bool TestArchives(void);
             // This function loads defaults in case of SDMH loading failure.
             void TitleInitializeDefault(void);
             // This method initializes TitleData using an SMDH
