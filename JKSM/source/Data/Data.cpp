@@ -57,8 +57,8 @@ namespace
 } // namespace
 
 // These are declarations. Defined at end of file.
-static bool LoadCacheFile(System::Task *Task);
-static void CreateCacheFile(System::Task *Task);
+static bool LoadCacheFile(System::ProgressTask *Task);
+static void CreateCacheFile(System::ProgressTask *Task);
 
 // This is for sorting titles pseudo-alphabetically.
 static bool CompareTitles(const Data::TitleData &TitleA, const Data::TitleData &TitleB)
@@ -129,7 +129,7 @@ static bool TestArchivesWithTitleID(uint64_t TitleID, FS_MediaType MediaType, Da
     return false;
 }
 
-void Data::Initialize(System::Task *Task)
+void Data::Initialize(System::ProgressTask *Task)
 {
     s_DataInitialized = false;
     // Just in case.
@@ -143,8 +143,8 @@ void Data::Initialize(System::Task *Task)
         return;
     }
 
-    uint32_t TitleCount = 0;
-    Result AmError = AM_GetTitleCount(MEDIATYPE_SD, &TitleCount);
+    uint32_t SDTitleCount = 0;
+    Result AmError = AM_GetTitleCount(MEDIATYPE_SD, &SDTitleCount);
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title count for SD: 0x%08X.", AmError);
@@ -153,8 +153,8 @@ void Data::Initialize(System::Task *Task)
     }
 
     uint32_t TitlesRead = 0;
-    std::unique_ptr<uint64_t[]> TitleIDList(new uint64_t[TitleCount]);
-    AmError = AM_GetTitleList(&TitlesRead, MEDIATYPE_SD, TitleCount, TitleIDList.get());
+    std::unique_ptr<uint64_t[]> TitleIDList(new uint64_t[SDTitleCount]);
+    AmError = AM_GetTitleList(&TitlesRead, MEDIATYPE_SD, SDTitleCount, TitleIDList.get());
     if (R_FAILED(AmError))
     {
         Logger::Log("Error getting title ID list for SD: 0x%08X.", AmError);
@@ -162,8 +162,10 @@ void Data::Initialize(System::Task *Task)
         return;
     }
 
-    for (uint32_t i = 0; i < TitleCount; i++)
+    Task->Reset(static_cast<double>(SDTitleCount - 1.0f));
+    for (uint32_t i = 0; i < SDTitleCount; i++)
     {
+        // Set status.
         Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 0), TitleIDList[i]);
 
         uint32_t UpperID = static_cast<uint32_t>(TitleIDList[i] >> 32);
@@ -177,6 +179,8 @@ void Data::Initialize(System::Task *Task)
         {
             s_TitleVector.emplace_back(TitleIDList[i], MEDIATYPE_SD, SaveTypes);
         }
+        // Update progress.
+        Task->SetCurrent(static_cast<double>(i));
     }
 
     uint32_t NandTitleCount = 0;
@@ -198,6 +202,7 @@ void Data::Initialize(System::Task *Task)
         return;
     }
 
+    Task->Reset(static_cast<double>(NandTitleCount - 1.0f));
     for (uint32_t i = 0; i < NandTitleCount; i++)
     {
         Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 1), TitleIDList[i]);
@@ -207,16 +212,20 @@ void Data::Initialize(System::Task *Task)
         {
             s_TitleVector.emplace_back(TitleIDList[i], MEDIATYPE_NAND, SaveTypes);
         }
+
+        Task->SetCurrent(static_cast<double>(i));
     }
 
     // Shared Extdata. These are fake and pushed at the end just to have them.
     Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 2));
+    Task->Reset(6.0f);
     // We're gonna skip testing these.
     Data::TitleSaveTypes SharedType = {false};
     SharedType.HasSaveType[Data::SaveTypeSharedExtData] = true;
     for (size_t i = 0; i < 7; i++)
     {
         s_TitleVector.emplace_back(s_FakeSharedTitleIDs.at(i), MEDIATYPE_NAND, SharedType);
+        Task->SetCurrent(static_cast<double>(i));
     }
 
     std::sort(s_TitleVector.begin(), s_TitleVector.end(), CompareTitles);
@@ -297,7 +306,7 @@ void Data::GetTitlesWithType(Data::SaveDataType SaveType, std::vector<Data::Titl
     }
 }
 
-bool LoadCacheFile(System::Task *Task)
+bool LoadCacheFile(System::ProgressTask *Task)
 {
     if (!FsLib::FileExists(CACHE_PATH))
     {
@@ -328,6 +337,7 @@ bool LoadCacheFile(System::Task *Task)
     }
 
     std::unique_ptr<CacheEntry> CurrentEntry(new CacheEntry);
+    Task->Reset(static_cast<double>(TitleCount - 1.0f));
     for (uint16_t i = 0; i < TitleCount; i++)
     {
         CacheFile.Read(CurrentEntry.get(), sizeof(CacheEntry));
@@ -340,11 +350,13 @@ bool LoadCacheFile(System::Task *Task)
                                    CurrentEntry->Publisher,
                                    CurrentEntry->SaveTypes,
                                    CurrentEntry->Icon);
+
+        Task->SetCurrent(static_cast<double>(i));
     }
     return true;
 }
 
-void CreateCacheFile(System::Task *Task)
+void CreateCacheFile(System::ProgressTask *Task)
 {
     FsLib::OutputFile CacheFile(CACHE_PATH, false);
     if (!CacheFile.IsOpen())
@@ -359,7 +371,9 @@ void CreateCacheFile(System::Task *Task)
 
     CacheFile.Write(&CURRENT_CACHE_REVISION, sizeof(uint8_t));
 
-    // Doing this in memory then writing is quicker than writing part by part.
+    Task->Reset(static_cast<double>(TitleCount));
+    // Doing this in memory then writing is quicker than writing part by part directly to file.
+    size_t EntryCount = 0;
     std::unique_ptr<CacheEntry> CurrentEntry(new CacheEntry);
     for (Data::TitleData &CurrentTitle : s_TitleVector)
     {
@@ -376,5 +390,6 @@ void CreateCacheFile(System::Task *Task)
         std::memcpy(CurrentEntry->Icon, CurrentTitle.GetIcon()->Get()->pixels, ICON_BUFFER_SIZE);
 
         CacheFile.Write(CurrentEntry.get(), sizeof(CacheEntry));
+        Task->SetCurrent(++EntryCount);
     }
 }

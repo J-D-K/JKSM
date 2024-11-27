@@ -159,7 +159,6 @@ SDL::SharedSurface Data::TitleData::GetIcon(void)
 
 void Data::TitleData::TitleInitializeDefault(void)
 {
-    static size_t NoSMDHCount = 0;
     std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
 
     StringUtil::ToUTF16(TitleIDString.c_str(), m_Title, 0x40);

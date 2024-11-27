@@ -20,8 +20,14 @@ namespace System
             {
                 m_Thread = std::thread(Function, this, std::forward<Args>(Arguments)...);
             }
+            // This is so derived classes can pass themselves.
+            template <typename TaskType, typename... Args>
+            Task(void (*Function)(TaskType *, Args...), TaskType *Task, Args &&...Arguments)
+            {
+                m_Thread = std::thread(Function, Task, std::forward<Args>(Arguments)...);
+            }
 
-            ~Task()
+            virtual ~Task()
             {
                 m_Thread.join();
             }

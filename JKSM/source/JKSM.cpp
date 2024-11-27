@@ -1,6 +1,6 @@
 #include "JKSM.hpp"
+#include "AppStates/ProgressTaskState.hpp"
 #include "AppStates/SettingsState.hpp"
-#include "AppStates/TaskState.hpp"
 #include "AppStates/TextTitleSelect.hpp"
 #include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
@@ -25,7 +25,7 @@
 namespace
 {
     // This is the title text and its centered X coordinate. This is untranslatable.
-    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/25/2024";
+    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/27/2024";
     // This is to make centering this easier.
     int s_TitleTextX = 0;
 
@@ -112,7 +112,7 @@ void JKSM::Initialize(void)
     JKSM::PushState(s_AppStateArray[0]);
 
     // This will spawn the loading thread/state.
-    JKSM::PushState(std::make_shared<TaskState>(nullptr, Data::Initialize));
+    JKSM::PushState(std::make_shared<ProgressTaskState>(nullptr, Data::Initialize));
 
     s_IsRunning = true;
 }
