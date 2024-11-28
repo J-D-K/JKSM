@@ -21,7 +21,7 @@ int main(int argc, const char *argv[])
 {
     if (argc < 1)
     {
-        printf("Usage: zlibber [file list]");
+        printf("Usage: fontcompressor [file list]");
         return -1;
     }
 

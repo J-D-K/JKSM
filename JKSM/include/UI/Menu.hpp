@@ -37,7 +37,16 @@ namespace UI
             int m_OptionStart = 0, m_MaximumDrawLength = 0;
             // Vector of options.
             std::vector<std::string> m_Options;
+            // This keeps track of the length of the vector.
+            int m_OptionsLength = -1;
             // Font
             SDL::SharedFont m_Noto = nullptr;
+            // These methods aren't needed outside of the class and handle input
+            void HandleUpPress(void);
+            void HandleDownPress(void);
+            void HandleLeftPress(void);
+            void HandleRightPress(void);
+            // This updates the menu position
+            void UpdateOptionStart(void);
     };
 } // namespace UI

@@ -12,21 +12,28 @@ UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength)
 void UI::Menu::AddOption(std::string_view Option)
 {
     m_Options.push_back(Option.data());
+    ++m_OptionsLength;
 }
 
 void UI::Menu::Update(void)
 {
     int OptionEnd = m_Options.size() - 1;
 
-    if (Input::ButtonPressed(KEY_UP) && --m_Selected < m_OptionStart && --m_OptionStart < 0)
+    if (Input::ButtonPressed(KEY_UP))
     {
-        m_Selected = 0;
-        m_OptionStart = 0;
+        Menu::HandleUpPress();
     }
-    else if (Input::ButtonPressed(KEY_DOWN) && ++m_Selected > m_OptionStart + m_MaximumDrawLength &&
-             ++m_OptionStart + m_MaximumDrawLength > OptionEnd)
+    else if (Input::ButtonPressed(KEY_DOWN))
     {
-        m_OptionStart = OptionEnd - m_MaximumDrawLength;
+        Menu::HandleDownPress();
+    }
+    else if (Input::ButtonPressed(KEY_LEFT))
+    {
+        Menu::HandleLeftPress();
+    }
+    else if (Input::ButtonPressed(KEY_RIGHT))
+    {
+        Menu::HandleRightPress();
     }
 }
 
@@ -38,7 +45,7 @@ void UI::Menu::Draw(SDL_Surface *Target)
     }
 
     size_t OptionEnd = 0;
-    if (m_OptionStart + m_MaximumDrawLength > m_Options.size())
+    if (m_OptionStart + m_MaximumDrawLength > m_OptionsLength)
     {
         OptionEnd = m_Options.size();
     }
@@ -47,7 +54,7 @@ void UI::Menu::Draw(SDL_Surface *Target)
         OptionEnd = m_MaximumDrawLength + 1;
     }
 
-    for (int i = m_OptionStart, Y = m_Y; i < m_OptionStart + (m_MaximumDrawLength + 1); i++, Y += (12 + 4))
+    for (int i = m_OptionStart, Y = m_Y; i < m_OptionStart + OptionEnd; i++, Y += 16)
     {
         if (i == m_Selected)
         {
@@ -60,4 +67,55 @@ void UI::Menu::Draw(SDL_Surface *Target)
 int UI::Menu::GetSelected(void) const
 {
     return m_Selected;
+}
+
+void UI::Menu::HandleUpPress(void)
+{
+    if (--m_Selected < 0)
+    {
+        m_Selected = 0;
+    }
+    Menu::UpdateOptionStart();
+}
+
+void UI::Menu::HandleDownPress(void)
+{
+    ++m_Selected;
+    if (m_Selected > m_OptionsLength)
+    {
+        m_Selected = 0;
+    }
+    Menu::UpdateOptionStart();
+}
+
+void UI::Menu::HandleLeftPress(void)
+{
+    m_Selected -= m_MaximumDrawLength / 2;
+    if (m_Selected < 0)
+    {
+        m_Selected = 0;
+    }
+    Menu::UpdateOptionStart();
+}
+
+void UI::Menu::HandleRightPress(void)
+{
+    m_Selected += m_MaximumDrawLength / 2;
+    if (m_Selected > m_OptionsLength)
+    {
+        m_Selected = m_OptionsLength;
+    }
+    Menu::UpdateOptionStart();
+}
+
+void UI::Menu::UpdateOptionStart(void)
+{
+    if (m_OptionStart < m_Selected)
+    {
+        m_OptionStart = m_Selected;
+    }
+    else if (m_OptionStart + m_MaximumDrawLength > m_OptionsLength)
+    {
+        m_OptionStart = m_OptionsLength - m_MaximumDrawLength;
+    }
 }

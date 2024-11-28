@@ -30,6 +30,7 @@ void SettingsState::DrawTop(SDL_Surface *Target)
 {
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
     m_Noto->BlitTextAt(Target, m_SettingsX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, 5));
+    m_SettingsMenu->Draw(Target);
 }
 
 void SettingsState::DrawBottom(SDL_Surface *Target)

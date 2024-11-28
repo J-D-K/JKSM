@@ -358,7 +358,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
 
 void CreateCacheFile(System::ProgressTask *Task)
 {
-    FsLib::OutputFile CacheFile(CACHE_PATH, false);
+    FsLib::OutputFile CacheFile(CACHE_PATH, static_cast<uint64_t>(sizeof(CacheEntry) * s_TitleVector.size()));
     if (!CacheFile.IsOpen())
     {
         return;
