@@ -16,7 +16,7 @@ namespace
 void Logger::Initialize(void)
 {
     // This will just create and empty log on boot.
-    FsLib::OutputFile LogFile(LOG_FILE_PATH, false);
+    FsLib::File LogFile(LOG_FILE_PATH, FS_OPEN_CREATE | FS_OPEN_WRITE);
 }
 
 void Logger::Log(const char *Format, ...)
@@ -29,7 +29,7 @@ void Logger::Log(const char *Format, ...)
     va_end(VaList);
 
     std::scoped_lock LogLock(s_LogLock);
-    FsLib::OutputFile LogFile(LOG_FILE_PATH, true);
+    FsLib::File LogFile(LOG_FILE_PATH, FS_OPEN_WRITE | FS_OPEN_APPEND);
     LogFile << VaBuffer << "\n";
     // This can be error checked but eh.
     LogFile.Flush();

@@ -71,16 +71,13 @@ void Config::Save(void)
         json_object_object_add(ConfigJSON.get(), Key.c_str(), ConfigValue);
     }
 
-    // json-c's length function has been unreliable for me in the past. I do this instead.
-    size_t ConfigLength = std::strlen(json_object_get_string(ConfigJSON.get()));
-
-    FsLib::OutputFile JSONOut(u"sdmc:/config/JKSM/JKSM.json", false);
+    FsLib::File JSONOut(u"sdmc:/config/JKSM/JKSM.json", FS_OPEN_CREATE | FS_OPEN_WRITE);
     if (!JSONOut.IsOpen())
     {
         Logger::Log("Error opening config file for writing: %s", FsLib::GetErrorString());
         return;
     }
-    JSONOut.Write(json_object_get_string(ConfigJSON.get()), ConfigLength);
+    JSONOut << json_object_get_string(ConfigJSON.get());
 }
 
 int8_t Config::GetByKey(std::string_view Key)

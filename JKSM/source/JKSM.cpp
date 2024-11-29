@@ -15,6 +15,8 @@
 #include <string_view>
 #include <vector>
 
+#include <minizip/zip.h>
+
 // This macro cleans stuff up a lot IMO, so I'm going to use it.
 #define ABORT_ON_FAILURE(x)                                                                                                                    \
     if (!x)                                                                                                                                    \
@@ -69,6 +71,9 @@ void JKSM::Initialize(void)
 {
     // FsLib is needed for almost everything, so it's first.
     ABORT_ON_FAILURE(FsLib::Initialize())
+
+    // This bypasses archive_dev and uses Fslib functions to do the same stuff.
+    ABORT_ON_FAILURE(FsLib::Dev::InitializeSDMC());
 
     // All this does is take care of the directories. Everything is all FsLib now.
     FS::Initialize();

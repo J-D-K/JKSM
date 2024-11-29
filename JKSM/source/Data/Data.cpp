@@ -41,13 +41,13 @@ namespace
     // Vector instead of map to preserve order and sorting.
     std::vector<Data::TitleData> s_TitleVector;
     // Array of fake title ID's to add shared extdata to the TitleVector.
-    constexpr std::array<uint64_t, 7> s_FakeSharedTitleIDs = {0x00000000F0000001,
-                                                              0x00000000F0000002,
-                                                              0x00000000F0000009,
-                                                              0x00000000F000000B,
-                                                              0x00000000F000000C,
-                                                              0x00000000F000000D,
-                                                              0x00000000F000000E};
+    constexpr std::array<uint64_t, 7> s_FakeSharedTitleIDs = {0x00048000F0000001,
+                                                              0x00048000F0000002,
+                                                              0x00048000F0000009,
+                                                              0x00048000F000000B,
+                                                              0x00048000F000000C,
+                                                              0x00048000F000000D,
+                                                              0x00048000F000000E};
 
     // Mount point for testing save archives.
     constexpr std::u16string_view TEST_MOUNT = u"TestRoot";
@@ -313,7 +313,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
         return false;
     }
     Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 3));
-    FsLib::InputFile CacheFile(CACHE_PATH);
+    FsLib::File CacheFile(CACHE_PATH, FS_OPEN_READ);
 
     // Test magic for whatever reason. It's all the rage!
     uint32_t Magic = 0;
@@ -358,7 +358,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
 
 void CreateCacheFile(System::ProgressTask *Task)
 {
-    FsLib::OutputFile CacheFile(CACHE_PATH, static_cast<uint64_t>(sizeof(CacheEntry) * s_TitleVector.size()));
+    FsLib::File CacheFile(CACHE_PATH, FS_OPEN_CREATE | FS_OPEN_WRITE, sizeof(CacheEntry) * s_TitleVector.size());
     if (!CacheFile.IsOpen())
     {
         return;
