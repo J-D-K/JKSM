@@ -3,7 +3,8 @@
 
 extern "C"
 {
-    u32 __stacksize__ = 0x300000;
+    // This is needed so minizip can function without crashing 3DS.
+    u32 __stacksize__ = 0x20000;
     /*
         // This is here for the sole purpose of stopping JKSM from initializing and being tainted by the nightmare
         that is ctrulib's archive_dev.c

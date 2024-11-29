@@ -15,8 +15,6 @@
 #include <string_view>
 #include <vector>
 
-#include <minizip/zip.h>
-
 // This macro cleans stuff up a lot IMO, so I'm going to use it.
 #define ABORT_ON_FAILURE(x)                                                                                                                    \
     if (!x)                                                                                                                                    \
