@@ -3,12 +3,21 @@
 
 namespace SDL
 {
+    // This is what I use for colors.
     union Color
     {
             uint32_t RAW;
             uint8_t RGBA[4];
     };
-
+    // This makes pulling individual colors from RGBA easier to read. I don't know what or care about the enum name.
+    typedef enum
+    {
+        Alpha,
+        Blue,
+        Green,
+        Red
+    } SubColor;
+    // These are the colors I actually use frequently in JKSM.
     namespace Colors
     {
         static constexpr SDL::Color White = {0xFFFFFFFF};

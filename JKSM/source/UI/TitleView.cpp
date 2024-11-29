@@ -1,5 +1,6 @@
 #include "UI/TitleView.hpp"
 #include "Input.hpp"
+#include "UI/Draw.hpp"
 #include <cmath>
 
 UI::TitleView::TitleView(Data::SaveDataType SaveType) : m_SaveType(SaveType)
@@ -48,6 +49,15 @@ void UI::TitleView::Draw(SDL_Surface *Target)
         return;
     }
 
+    if (m_ShiftDirection && (m_ColorShift += 6) >= 0x72)
+    {
+        m_ShiftDirection = false;
+    }
+    else if (!m_ShiftDirection && (m_ColorShift -= 3) <= 0)
+    {
+        m_ShiftDirection = true;
+    }
+
     for (int TemporaryY = m_Y, i = 0; i < static_cast<int>(m_TitleTiles.size()); TemporaryY += 56)
     {
         size_t RowEnd = i + 7;
@@ -57,7 +67,7 @@ void UI::TitleView::Draw(SDL_Surface *Target)
             {
                 m_SelectionX = TemporaryX - 4;
                 m_SelectionY = TemporaryY - 4;
-                SDL::DrawRect(Target, m_SelectionX, m_SelectionY, 56, 56, {0x00FFFFFF});
+                UI::DrawBoundingBox(Target, m_SelectionX, m_SelectionY, 56, 56, m_ColorShift);
             }
 
             // Don't bother wasting time processing or bliting stuff we can't see anyway.

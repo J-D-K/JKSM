@@ -276,8 +276,8 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     size_t BitmapSize = GlyphBitmap.width * GlyphBitmap.rows;
     unsigned char *BitmapBuffer = GlyphBitmap.buffer;
     uint32_t *SurfacePixels = reinterpret_cast<uint32_t *>(GlyphSurface->Get()->pixels);
-    // Loop through and fill out the pixels in surface.
 
+    // Loop through and fill out the pixels in surface.
     for (size_t i = 0; i < BitmapSize; i++)
     {
         SurfacePixels[i] = ((m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i]);

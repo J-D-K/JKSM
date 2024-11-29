@@ -1,4 +1,5 @@
 #pragma once
+#include "SDL/Color.hpp"
 #include <SDL/SDL.h>
 #include <string_view>
 
@@ -22,6 +23,8 @@ namespace SDL
             void BlitAt(SDL_Surface *Target, int X, int Y);
             // Blits part of the surface at X, Y.
             void BlitPartAt(SDL_Surface *Target, int X, int Y, int SourceX, int SourceY, int SourceWidth, int SourceHeight);
+            // This is kind of dangerous and is only used for one thing in JKSM that is one color.
+            void ChangePixelsToColor(SDL::Color Color);
 
         private:
             // Underlying SDL_Surface

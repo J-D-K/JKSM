@@ -92,6 +92,15 @@ void SDL::Surface::BlitPartAt(SDL_Surface *Target, int X, int Y, int SourceX, in
     SDL_BlitSurface(m_Surface, &SourceRect, Target, &DestinationRect);
 }
 
+void SDL::Surface::ChangePixelsToColor(SDL::Color Color)
+{
+    uint32_t *PixelData = reinterpret_cast<uint32_t *>(m_Surface->pixels);
+    for (int i = 0; i < m_Surface->w * m_Surface->h; i++)
+    {
+        PixelData[i] = (PixelData[i] >> 24 & 0xFF) << 24 | Color.RGBA[SDL::Blue] << 16 | Color.RGBA[SDL::Green] << 8 | Color.RGBA[SDL::Red];
+    }
+}
+
 void SDL::Surface::DisableAlphaBlending(void)
 {
     if (SDL_SetAlpha(m_Surface, 0, 0xFF) != 0)

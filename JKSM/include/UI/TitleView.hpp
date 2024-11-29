@@ -32,6 +32,10 @@ namespace UI
             int m_X = 14, m_Y = 22;
             // X and Y coordinates of selection bounding box.
             int m_SelectionX = 0, m_SelectionY = 18;
+            // For color shifting direction. True = add, false = subtract
+            bool m_ShiftDirection = true;
+            // Color shifting for bounding box.
+            uint8_t m_ColorShift = 0;
             // Vector of pointers to title data. I don't want to make copies.
             std::vector<Data::TitleData *> m_TitleData;
             // Tile vector.
