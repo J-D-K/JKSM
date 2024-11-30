@@ -1,5 +1,6 @@
 #include "AppStates/TextTitleSelect.hpp"
 #include "Assets.hpp"
+#include "Input.hpp"
 #include "StringUtil.hpp"
 #include "UI/Strings.hpp"
 
@@ -14,6 +15,11 @@ TextTitleSelect::TextTitleSelect(Data::SaveDataType SaveType)
 void TextTitleSelect::Update(void)
 {
     m_TitleMenu->Update();
+
+    if (Input::ButtonPressed(KEY_A))
+    {
+        BaseSelectionState::CreateBackupStateWithData(m_TitleData.at(m_TitleMenu->GetSelected()));
+    }
 }
 
 void TextTitleSelect::DrawTop(SDL_Surface *Target)

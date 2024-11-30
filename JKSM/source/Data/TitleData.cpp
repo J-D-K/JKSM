@@ -142,6 +142,11 @@ const char16_t *Data::TitleData::GetTitle(void) const
     return m_Title;
 }
 
+const char16_t *Data::TitleData::GetPathSafeTitle(void) const
+{
+    return m_PathSafeTitle;
+}
+
 const char16_t *Data::TitleData::GetPublisher(void) const
 {
     return m_Publisher;

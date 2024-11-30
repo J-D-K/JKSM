@@ -48,6 +48,8 @@ namespace Data
             const char *GetProductCode(void) const;
             // Returns Title
             const char16_t *GetTitle(void) const;
+            // Returns scrubbed title
+            const char16_t *GetPathSafeTitle(void) const;
             // Returns Publisher
             const char16_t *GetPublisher(void) const;
             // Returns types of saves title has.

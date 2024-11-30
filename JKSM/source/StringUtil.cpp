@@ -20,7 +20,7 @@ void StringUtil::SanitizeStringForPath(const char16_t *StringIn, char16_t *Strin
 
     while (*StringOut)
     {
-        if (std::find(s_ForbiddenChars.begin(), s_ForbiddenChars.end(), *StringOut))
+        if (std::find(s_ForbiddenChars.begin(), s_ForbiddenChars.end(), *StringOut) != s_ForbiddenChars.end())
         {
             *StringOut = u' ';
         }

@@ -1,5 +1,6 @@
 #include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
+#include "Input.hpp"
 #include "StringUtil.hpp"
 #include "UI/Strings.hpp"
 #include <array>
@@ -13,6 +14,11 @@ TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType)
 void TitleSelectionState::Update(void)
 {
     m_TitleView->Update();
+
+    if (Input::ButtonPressed(KEY_A))
+    {
+        BaseSelectionState::CreateBackupStateWithData(m_TitleView->GetSelectedTitleData());
+    }
 }
 
 void TitleSelectionState::DrawTop(SDL_Surface *Target)

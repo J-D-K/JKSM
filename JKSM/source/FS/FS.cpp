@@ -10,20 +10,18 @@ namespace
     */
     // When base folder was JKSV. Switching to JKSM and the subfolder names too.
     constexpr std::array<std::u16string_view, 6> s_JKSVFolderLocations =
-        {u"sdmc:/JKSV", u"sdmc:/JKSM/Saves", u"sdmc:/JKSM/ExtData", u"sdmc:/JKSM/SysSave", u"sdmc:/JKSM/Boss", u"sdmc:/JKSM/Shared"};
+        {u"sdmc:/JKSV", u"sdmc:/JKSM/Saves", u"sdmc:/JKSM/ExtData", u"sdmc:/JKSM/Shared", u"sdmc:/JKSM/Boss", u"sdmc:/JKSM/SysSave"};
 
     // These are the new, permanant JKSM folders.
     constexpr std::array<std::u16string_view, 6> s_JKSMFolderLocations = {u"sdmc:/JKSM",
                                                                           u"sdmc:/JKSM/User_Saves",
                                                                           u"sdmc:/JKSM/Extra_Data",
-                                                                          u"sdmc:/JKSM/System_Saves",
+                                                                          u"sdmc:/JKSM/Shared_Extra_Data",
                                                                           u"sdmc:/JKSM/BOSS_Extra_Data",
-                                                                          u"sdmc:/JKSM/Shared_Extra_Data"};
+                                                                          u"sdmc:/JKSM/System_Saves"};
 
     // This is new and doesn't need to be converted.
     constexpr std::u16string_view CONFIG_FOLDER = u"sdmc:/config/JKSM";
-
-
 } // namespace
 
 void FS::Initialize(void)
@@ -61,5 +59,5 @@ FsLib::Path FS::GetBasePath(Data::SaveDataType SaveType)
     }
 
     // This needs to be offset by one tp account for the root path in the array.
-    return FsLib::Path(s_JKSMFolderLocations[SaveType]);
+    return FsLib::Path(s_JKSMFolderLocations[SaveType + 1]);
 }

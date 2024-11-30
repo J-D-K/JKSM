@@ -1,6 +1,12 @@
 #include "AppStates/BaseSelectionState.hpp"
+#include "AppStates/BackupMenuState.hpp"
+#include "FS/SaveMount.hpp"
+#include "FsLib.hpp"
+#include "JKSM.hpp"
+#include "Logger.hpp"
 #include "StringUtil.hpp"
 #include "UI/Strings.hpp"
+#include <memory>
 
 void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::TitleData *Data)
 {
@@ -24,4 +30,69 @@ void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::T
                        UTF8Publisher,
                        UI::Strings::GetStringByName(UI::Strings::Names::MediaType, Data->GetMediaType()),
                        Data->GetProductCode());
+}
+
+void BaseSelectionState::CreateBackupStateWithData(const Data::TitleData *Data)
+{
+    if (!MountSaveData(Data))
+    {
+        return;
+    }
+
+    std::shared_ptr<AppState> BackupState = std::make_shared<BackupMenuState>(this, Data, m_SaveType);
+    if (!BackupState)
+    {
+        return;
+    }
+
+    JKSM::PushState(BackupState);
+}
+
+bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
+{
+    bool Mounted = false;
+    switch (m_SaveType)
+    {
+        case Data::SaveTypeUser:
+        {
+            Mounted = FsLib::OpenUserSaveData(SAVE_MOUNT, Data->GetMediaType(), Data->GetLowerID(), Data->GetUpperID());
+        }
+        break;
+
+        case Data::SaveTypeExtData:
+        {
+            Mounted = FsLib::OpenExtData(SAVE_MOUNT, Data->GetExtDataID());
+        }
+        break;
+
+        case Data::SaveTypeSharedExtData:
+        {
+            Mounted = FsLib::OpenSharedExtData(SAVE_MOUNT, Data->GetExtDataID());
+        }
+        break;
+
+        case Data::SaveTypeBossExtData:
+        {
+            Mounted = FsLib::OpenBossExtData(SAVE_MOUNT, Data->GetExtDataID());
+        }
+        break;
+
+        case Data::SaveTypeSystem:
+        {
+            Mounted = FsLib::OpenSystemSaveData(SAVE_MOUNT, Data->GetUniqueID());
+        }
+        break;
+
+        default:
+        {
+        }
+        break;
+    }
+
+    if (!Mounted)
+    {
+        Logger::Log("Error mounting save for %016llX: %s", FsLib::GetErrorString());
+    }
+
+    return Mounted;
 }

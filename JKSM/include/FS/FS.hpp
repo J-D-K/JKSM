@@ -1,6 +1,8 @@
 #pragma once
 #include "Data/SaveDataType.hpp"
 #include "FsLib.hpp"
+#include <array>
+#include <string_view>
 
 namespace FS
 {

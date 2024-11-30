@@ -37,5 +37,11 @@
         "Uses text menus instead of icon grids.",
         "Exports saves to ZIP files instead of unpacked folders.",
         "Forces JKSM to use English instead of the system's detected language."
+    ],
+    "FolderMenuNew" : [
+        "New Backup"
+    ],
+    "BackupMenuCurrentBackups" :[
+        "Current Backups"
     ]
 }
