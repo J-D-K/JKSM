@@ -82,7 +82,7 @@ const char *UI::Strings::GetStringByName(std::string_view StringName, uint8_t In
     auto FindString = s_StringMap.find(std::make_pair(StringName.data(), Index));
     if (FindString == s_StringMap.end())
     {
-        return NULL;
+        return nullptr;
     }
     return FindString->second.c_str();
 }

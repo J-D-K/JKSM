@@ -10,8 +10,7 @@ class TaskState : public AppState
         template <typename... Args>
         TaskState(AppState *CreatingState, void (*Function)(System::Task *, Args...), Args &&...Arguments)
             : AppState(AppState::StateTypes::Task), m_CreatingState(CreatingState),
-              m_Task(std::make_unique<System::Task>(Function, std::forward<Args>(Arguments)...)),
-              m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White))
+              m_Task(std::make_unique<System::Task>(Function, std::forward<Args>(Arguments)...))
         {
         }
         ~TaskState() {};
@@ -25,6 +24,4 @@ class TaskState : public AppState
         AppState *m_CreatingState = nullptr;
         // Underlying task.
         std::unique_ptr<System::Task> m_Task;
-        // Noto
-        SDL::SharedFont m_Noto = nullptr;
 };

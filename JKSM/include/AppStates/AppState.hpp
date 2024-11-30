@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets.hpp"
 #include "SDL/SDL.hpp"
 
 class AppState
@@ -13,10 +14,10 @@ class AppState
 
         AppState(StateTypes Type = StateTypes::Normal) : m_StateType(Type)
         {
+            m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
         }
 
         virtual ~AppState() {};
-
         virtual void Update(void) = 0;
         virtual void DrawTop(SDL_Surface *Target) = 0;
         virtual void DrawBottom(SDL_Surface *Target) = 0;
@@ -51,6 +52,10 @@ class AppState
         {
             return m_StateType;
         }
+
+        // Pretty much every state needs this so
+    protected:
+        SDL::SharedFont m_Noto = nullptr;
 
     private:
         // Whether state is active or can be purged.

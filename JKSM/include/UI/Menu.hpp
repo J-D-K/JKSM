@@ -19,12 +19,18 @@ namespace UI
 
             // Adds an option to the menu
             void AddOption(std::string_view Option);
+            // Edits the option at index.
+            void EditOption(int Index, std::string_view Option);
+            // Clears the option vector
+            void Reset(void);
             // Handles input
             void Update(void);
             // Draws menu to target.
             void Draw(SDL_Surface *Target);
             // Returns the selected option.
             int GetSelected(void) const;
+            // Returns the number of options
+            size_t GetSize(void) const;
 
         private:
             // Currently selected option
@@ -41,12 +47,14 @@ namespace UI
             int m_OptionsLength = -1;
             // Font
             SDL::SharedFont m_Noto = nullptr;
+            // Color shift for bounding box.
+            uint8_t m_ColorShift = 0;
+            // Bool to control color shifting.
+            bool m_ShiftDirection = true;
             // These methods aren't needed outside of the class and handle input
             void HandleUpPress(void);
             void HandleDownPress(void);
             void HandleLeftPress(void);
             void HandleRightPress(void);
-            // This updates the menu position
-            void UpdateOptionStart(void);
     };
 } // namespace UI

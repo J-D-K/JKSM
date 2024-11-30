@@ -280,7 +280,7 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     // Loop through and fill out the pixels in surface.
     for (size_t i = 0; i < BitmapSize; i++)
     {
-        SurfacePixels[i] = ((m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i]);
+        SurfacePixels[i] = (m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i];
     }
 
     m_GlyphCacheMap[std::make_pair(Codepoint, FontSize)] = {.AdvanceX = static_cast<int16_t>(m_FTFace->glyph->advance.x >> 6),

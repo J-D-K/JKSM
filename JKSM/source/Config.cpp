@@ -89,6 +89,15 @@ int8_t Config::GetByKey(std::string_view Key)
     return s_ConfigMap.at(Key.data());
 }
 
+void Config::SetByKey(std::string_view Key, uint8_t Value)
+{
+    if (s_ConfigMap.find(Key.data()) == s_ConfigMap.end())
+    {
+        return;
+    }
+    s_ConfigMap[Key.data()] = Value;
+}
+
 uint8_t Config::GetSystemLanguage(void)
 {
     if (Config::GetByKey(Config::Keys::ForceEnglish))

@@ -18,4 +18,6 @@ namespace JKSM
     void PushState(std::shared_ptr<AppState> NewState);
     // Signals that JKSM should refresh the save title views the next time Update() is called.
     void RefreshSaveTypeStates(void);
+    // Forces JKSM to completely reinitialize the save view states.
+    void InitializeTitleViewStates(void);
 } // namespace JKSM

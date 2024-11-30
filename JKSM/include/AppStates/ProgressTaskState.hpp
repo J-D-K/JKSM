@@ -12,8 +12,7 @@ class ProgressTaskState : public AppState
         template <typename... Args>
         ProgressTaskState(AppState *CreatingState, void (*Function)(System::ProgressTask *, Args...), Args &&...Arguments)
             : AppState(AppState::StateTypes::Task), m_CreatingState(CreatingState),
-              m_Task(std::make_unique<System::ProgressTask>(Function, std::forward<Args>(Arguments)...)),
-              m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White))
+              m_Task(std::make_unique<System::ProgressTask>(Function, std::forward<Args>(Arguments)...))
         {
         }
         ~ProgressTaskState() {};
@@ -27,8 +26,6 @@ class ProgressTaskState : public AppState
         AppState *m_CreatingState = nullptr;
         // This is the underlying task.
         std::unique_ptr<System::ProgressTask> m_Task;
-        // Font
-        SDL::SharedFont m_Noto;
         // This is the percentage that is grabbed during update.
         size_t m_CurrentPercentage = 0;
         // This is the width of the green bar to show progress.

@@ -5,11 +5,8 @@
 #include <array>
 
 TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType)
-    : m_TitleView(std::make_unique<UI::TitleView>(SaveType)), m_SaveType(SaveType)
+    : BaseSelectionState(SaveType), m_TitleView(std::make_unique<UI::TitleView>(SaveType))
 {
-    // This should already be loaded and ready to go from boot. I shouldn't assume that, but I will.
-    m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
-
     m_TextX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType)) / 2);
 }
 
@@ -27,28 +24,7 @@ void TitleSelectionState::DrawTop(SDL_Surface *Target)
 
 void TitleSelectionState::DrawBottom(SDL_Surface *Target)
 {
-    Data::TitleData *SelectedTitleData = m_TitleView->GetSelectedTitleData();
-
-    char UTF8Title[0x80] = {0};
-    char UTF8Publisher[0x80] = {0};
-    StringUtil::ToUTF8(SelectedTitleData->GetTitle(), UTF8Title, 0x80);
-    StringUtil::ToUTF8(SelectedTitleData->GetPublisher(), UTF8Publisher, 0x80);
-
-    // This is to center the title above the information.
-    int TitleX = 160 - (m_Noto->GetTextWidth(12, UTF8Title) / 2);
-
-    SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, TitleX, 1, 12, m_Noto->NO_TEXT_WRAP, UTF8Title);
-    m_Noto->BlitTextAt(Target,
-                       4,
-                       18,
-                       12,
-                       320,
-                       UI::Strings::GetStringByName(UI::Strings::Names::StateInformation, 0),
-                       SelectedTitleData->GetTitleID(),
-                       UTF8Publisher,
-                       UI::Strings::GetStringByName(UI::Strings::Names::MediaType, SelectedTitleData->GetMediaType()),
-                       SelectedTitleData->GetProductCode());
+    BaseSelectionState::DrawTitleInformation(Target, m_TitleView->GetSelectedTitleData());
 }
 
 void TitleSelectionState::Refresh(void)

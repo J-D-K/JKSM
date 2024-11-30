@@ -19,6 +19,8 @@ class SettingsState : public AppState
         int m_DescriptionX = 0;
         // Menu containing settings
         std::unique_ptr<UI::Menu> m_SettingsMenu;
-        // Noto to draw text with
-        SDL::SharedFont m_Noto;
+        // This updates all of the needed settings menu strings.
+        void UpdateMenuStrings(void);
+        // This is called when A is pressed and toggles or changes config options.
+        void UpdateConfig(void);
 };

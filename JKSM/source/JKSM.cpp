@@ -25,7 +25,7 @@
 namespace
 {
     // This is the title text and its centered X coordinate. This is untranslatable.
-    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/27/2024";
+    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/29/2024";
     // This is to make centering this easier.
     int s_TitleTextX = 0;
 
@@ -103,16 +103,11 @@ void JKSM::Initialize(void)
     // Center the title title
     s_TitleTextX = 200 - (s_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
 
-    // This will create and push the state for each save type.
-    for (size_t i = 0; i < Data::SaveTypeTotal; i++)
-    {
-        s_AppStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
-    }
+    // Init title select views.
+    InitializeTitleViewStates();
+
     // Settings is last.
     s_AppStateArray[APP_STATE_TOTAL - 1] = std::make_shared<SettingsState>();
-
-    // We only want to push the first one for now. It's blank and will get refreshed after Data::Initialize signals its finished.
-    JKSM::PushState(s_AppStateArray[0]);
 
     // This will spawn the loading thread/state.
     JKSM::PushState(std::make_shared<ProgressTaskState>(nullptr, Data::Initialize));
@@ -241,4 +236,27 @@ void JKSM::PushState(std::shared_ptr<AppState> NewState)
 void JKSM::RefreshSaveTypeStates(void)
 {
     s_RefreshRequired = true;
+}
+
+void JKSM::InitializeTitleViewStates(void)
+{
+    // This will create and push the state for each save type.
+    for (size_t i = 0; i < Data::SaveTypeTotal; i++)
+    {
+        if (Config::GetByKey(Config::Keys::TextMode))
+        {
+            s_AppStateArray[i] = std::make_shared<TextTitleSelect>(static_cast<Data::SaveDataType>(i));
+        }
+        else
+        {
+            s_AppStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
+        }
+    }
+
+    s_AppStateVector.clear();
+
+    for (int i = 0; i <= s_CurrentState; i++)
+    {
+        s_AppStateVector.push_back(s_AppStateArray[i]);
+    }
 }

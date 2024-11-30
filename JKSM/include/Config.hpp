@@ -12,6 +12,8 @@ namespace Config
     void Save(void);
     // Returns the value of Key. -1 is returned if the key isn't found.
     int8_t GetByKey(std::string_view Key);
+    // Sets the value associated with Key
+    void SetByKey(std::string_view Key, uint8_t Value);
     // Returns the language of the system.
     uint8_t GetSystemLanguage(void);
     // These are defined keys to make sure no typos can happen.

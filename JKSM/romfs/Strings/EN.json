@@ -29,11 +29,13 @@
     "SettingsMenu" : [
         "Refresh Title List",
         "Text Menus: %s",
-        "Use ZIP: %s"
+        "Use ZIP: %s",
+        "Force English: %s"
     ],
     "SettingsDescriptions" : [
         "Rescans system for for new titles and caches them.",
         "Uses text menus instead of icon grids.",
-        "Exports saves to ZIP files instead of unpacked folders."
+        "Exports saves to ZIP files instead of unpacked folders.",
+        "Forces JKSM to use English instead of the system's detected language."
     ]
 }
