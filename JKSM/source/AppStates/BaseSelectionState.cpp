@@ -67,7 +67,7 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
 
         case Data::SaveTypeSharedExtData:
         {
-            Mounted = FsLib::OpenSharedExtData(SAVE_MOUNT, Data->GetExtDataID());
+            Mounted = FsLib::OpenSharedExtData(SAVE_MOUNT, Data->GetLowerID());
         }
         break;
 

@@ -25,11 +25,8 @@ void ProgressTaskState::DrawTop(SDL_Surface *Target)
 
 void ProgressTaskState::DrawBottom(SDL_Surface *Target)
 {
-    if (m_CreatingState)
-    {
-        m_CreatingState->DrawBottom(Target);
-    }
-
+    // Bar at top. Just blank.
+    SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
     // Dialog box and status
     UI::DrawDialogBox(Target, 8, 18, 304, 204);
     m_Noto->BlitTextAt(Target, 30, 30, 12, 268, "%s", m_Task->GetStatus().c_str());

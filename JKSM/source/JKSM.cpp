@@ -149,7 +149,7 @@ void JKSM::Update(void)
     }
 
     // If the state in the back is a Task type, don't allow exit or state changing.
-    if (s_AppStateVector.back()->GetType() == AppState::StateTypes::Task)
+    if (s_AppStateVector.back()->GetType() == AppState::StateFlags::Lock)
     {
         return;
     }

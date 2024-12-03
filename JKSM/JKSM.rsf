@@ -4,7 +4,7 @@ BasicInfo:
   Logo                    : Nintendo
 
 RomFs:
-  #RootPath                : romfs
+  RootPath                : romfs
 
 TitleInfo:
   Category                : Application

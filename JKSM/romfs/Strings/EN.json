@@ -3,8 +3,7 @@
         "Loading SD title %016llX.",
         "Loading NAND title %016llX.",
         "Creating Shared Extra Data titles.",
-        "Opening cache file for reading.",
-        "Reading entry for %016llX.",
+        "Reading cache entries...",
         "Writing %s's data to cache."
     ],
     "StateName" : [
@@ -41,7 +40,17 @@
     "FolderMenuNew" : [
         "New Backup"
     ],
-    "BackupMenuCurrentBackups" :[
+    "BackupMenuCurrentBackups" : [
         "Current Backups"
+    ],
+    "CopyingFile" : [
+        "Copying [%s]"
+    ],
+    "AddingToZip" : [
+        "Adding [%s] to ZIP."
+    ],
+    "KeyboardButtons" : [
+        "Cancel",
+        "Finished"
     ]
 }

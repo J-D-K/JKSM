@@ -16,7 +16,7 @@ namespace System
     {
         public:
             template <typename... Args>
-            Task(void (*Function)(System::Task *, Args...), Args &&...Arguments)
+            Task(void (*Function)(System::Task *, Args...), Args... Arguments)
             {
                 m_Thread = std::thread(Function, this, std::forward<Args>(Arguments)...);
             }

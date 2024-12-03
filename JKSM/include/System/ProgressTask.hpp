@@ -9,7 +9,7 @@ namespace System
     {
         public:
             template <typename... Args>
-            ProgressTask(void (*Function)(System::ProgressTask *, Args...), Args &&...Arguments)
+            ProgressTask(void (*Function)(System::ProgressTask *, Args...), Args... Arguments)
                 : Task(Function, this, std::forward<Args>(Arguments)...)
             {
             }

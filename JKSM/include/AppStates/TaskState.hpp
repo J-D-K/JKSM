@@ -8,8 +8,8 @@ class TaskState : public AppState
 {
     public:
         template <typename... Args>
-        TaskState(AppState *CreatingState, void (*Function)(System::Task *, Args...), Args &&...Arguments)
-            : AppState(AppState::StateTypes::Task), m_CreatingState(CreatingState),
+        TaskState(AppState *CreatingState, void (*Function)(System::Task *, Args...), Args... Arguments)
+            : AppState(AppState::StateFlags::Lock), m_CreatingState(CreatingState),
               m_Task(std::make_unique<System::Task>(Function, std::forward<Args>(Arguments)...))
         {
         }

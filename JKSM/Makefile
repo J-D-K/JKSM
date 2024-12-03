@@ -61,8 +61,8 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= 	../../FsLib/3DS/FsLib/lib/libFsLib.a -lSDL_image `sdl-config --libs` \
-			`freetype-config --libs` -ljson-c -lcurl -lmbedtls -lmbedcrypto \
-			-lmbedx509 -lminizip -ljpeg -lpng -lctru -lz -lm
+			`freetype-config --libs` -ljson-c -lcurl -lmbedtls -lmbedcrypto 	 \
+			-lmbedx509 -lminizip -ljpeg -lpng -lctru -lz -lzstd -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -169,6 +169,11 @@ endif
 all: $(BUILD) $(GFXBUILD) $(DEPSDIR) $(ROMFS_T3XFILES) $(T3XHFILES)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
+#---------------------------------------------------------------------------------
+
+$(TARGET)-strip.elf: all
+	@$(STRIP) $(TARGET).elf -o $(TARGET)-strip.elf
+
 $(BUILD):
 	@mkdir -p $@
 
@@ -184,13 +189,19 @@ endif
 
 #---------------------------------------------------------------------------------
 
+cia: $(TARGET)-strip.elf
+	@makerom -f cia -o $(TARGET).cia -elf $(TARGET)-strip.elf -rsf $(TARGET).rsf -exefslogo -target t -icon icon -banner banner
+	@echo Built JKSM.cia
+
+#---------------------------------------------------------------------------------
+
 send: all
 	@3dslink $(TARGET).3dsx
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
+	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(TARGET)-strip.elf $(TARGET).cia $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s

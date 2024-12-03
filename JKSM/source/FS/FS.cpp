@@ -14,11 +14,11 @@ namespace
 
     // These are the new, permanant JKSM folders.
     constexpr std::array<std::u16string_view, 6> s_JKSMFolderLocations = {u"sdmc:/JKSM",
-                                                                          u"sdmc:/JKSM/User_Saves",
-                                                                          u"sdmc:/JKSM/Extra_Data",
-                                                                          u"sdmc:/JKSM/Shared_Extra_Data",
-                                                                          u"sdmc:/JKSM/BOSS_Extra_Data",
-                                                                          u"sdmc:/JKSM/System_Saves"};
+                                                                          u"sdmc:/JKSM/User Saves",
+                                                                          u"sdmc:/JKSM/Extra Data",
+                                                                          u"sdmc:/JKSM/Shared Extra Data",
+                                                                          u"sdmc:/JKSM/BOSS Extra Data",
+                                                                          u"sdmc:/JKSM/System Saves"};
 
     // This is new and doesn't need to be converted.
     constexpr std::u16string_view CONFIG_FOLDER = u"sdmc:/config/JKSM";
@@ -53,8 +53,9 @@ void FS::Initialize(void)
 FsLib::Path FS::GetBasePath(Data::SaveDataType SaveType)
 {
     // Make sure it's not out of bounds.
-    if (SaveType + 1 >= Data::SaveTypeTotal)
+    if (SaveType + 1 > Data::SaveTypeTotal)
     {
+        Logger::Log("Empty return");
         return FsLib::Path(u"");
     }
 

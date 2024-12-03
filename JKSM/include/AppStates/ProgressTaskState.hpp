@@ -10,9 +10,9 @@ class ProgressTaskState : public AppState
 {
     public:
         template <typename... Args>
-        ProgressTaskState(AppState *CreatingState, void (*Function)(System::ProgressTask *, Args...), Args &&...Arguments)
-            : AppState(AppState::StateTypes::Task), m_CreatingState(CreatingState),
-              m_Task(std::make_unique<System::ProgressTask>(Function, std::forward<Args>(Arguments)...))
+        ProgressTaskState(AppState *CreatingState, void (*Function)(System::ProgressTask *, Args...), Args... Arguments)
+            : AppState(AppState::StateFlags::Lock), m_CreatingState(CreatingState),
+              m_Task(std::make_unique<System::ProgressTask>(Function, std::forward<Args>(Arguments)...)), m_PercentageX(160)
         {
         }
         ~ProgressTaskState() {};

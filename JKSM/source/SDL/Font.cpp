@@ -8,7 +8,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <zlib.h>
+#include <zstd.h>
 
 namespace
 {
@@ -72,41 +72,33 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({
     }
 
     // These are needed for decompressing the font.
-    uLongf UncompressedFontsize = 0;
-    uLongf CompressedFontSize = 0;
-    fread(&UncompressedFontsize, sizeof(uLongf), 1, FontFile);
-    fread(&CompressedFontSize, sizeof(uLongf), 1, FontFile);
+    uint32_t UncompressedSize = 0;
+    uint32_t CompressedSize = 0;
+    fread(&UncompressedSize, sizeof(uint32_t), 1, FontFile);
+    fread(&CompressedSize, sizeof(uint32_t), 1, FontFile);
 
     {
         // Allocate buffer to read compressed data.
-        std::unique_ptr<FT_Byte[]> CompressedBuffer(new FT_Byte[CompressedFontSize]);
+        std::unique_ptr<char[]> CompressedBuffer(new char[CompressedSize]);
         if (!CompressedBuffer)
         {
             Logger::Log("Error allocating CompressedBuffer");
             return;
         }
         // Read it.
-        size_t ReadSize = std::fread(CompressedBuffer.get(), 1, CompressedFontSize, FontFile);
-        if (ReadSize != CompressedFontSize)
+        size_t ReadSize = std::fread(CompressedBuffer.get(), 1, CompressedSize, FontFile);
+        if (ReadSize != CompressedSize)
         {
             Logger::Log("Error reading full compresed size font.");
             return;
         }
 
         // This is the buffer the font actually keeps.
-        m_FontBuffer = std::make_unique<FT_Byte[]>(UncompressedFontsize);
-        int ZlibError = uncompress(m_FontBuffer.get(),
-                                   reinterpret_cast<uLongf *>(&UncompressedFontsize),
-                                   CompressedBuffer.get(),
-                                   static_cast<uLongf>(CompressedFontSize));
-        if (ZlibError != Z_OK)
-        {
-            Logger::Log("Error decompressing font: %i.", ZlibError);
-            return;
-        }
+        m_FontBuffer = std::make_unique<FT_Byte[]>(UncompressedSize);
+        ZSTD_decompress(m_FontBuffer.get(), UncompressedSize, CompressedBuffer.get(), CompressedSize);
     }
 
-    FT_Error FTError = FT_New_Memory_Face(s_FTLib, m_FontBuffer.get(), UncompressedFontsize, 0, &m_FTFace);
+    FT_Error FTError = FT_New_Memory_Face(s_FTLib, m_FontBuffer.get(), UncompressedSize, 0, &m_FTFace);
     if (FTError != 0)
     {
         Logger::Log("Error creating new FreeType face: %i.", FTError);

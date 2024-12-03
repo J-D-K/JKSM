@@ -167,6 +167,7 @@ void Data::TitleData::TitleInitializeDefault(void)
     std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
 
     StringUtil::ToUTF16(TitleIDString.c_str(), m_Title, 0x40);
+    StringUtil::ToUTF16(TitleIDString.c_str(), m_PathSafeTitle, 0x40);
 
     // Memcpy publisher string
     std::memcpy(m_Publisher, PUBLISHER_NOT_KNOWN.data(), PUBLISHER_NOT_KNOWN.length() * sizeof(char16_t));
@@ -176,7 +177,6 @@ void Data::TitleData::TitleInitializeDefault(void)
     m_Icon = SDL::SurfaceManager::CreateLoadResource(TitleIDString, 48, 48, false);
     if (!Noto || !m_Icon)
     {
-        Logger::Log("One of these?");
         return;
     }
 

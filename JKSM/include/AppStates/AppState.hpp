@@ -6,16 +6,15 @@ class AppState
 {
     public:
         // This is needed so JKSM knows whether or not to allow exiting or state changing.
-        enum class StateTypes
+        enum class StateFlags
         {
             Normal,
-            Task
+            Lock
         };
 
-        AppState(StateTypes Type = StateTypes::Normal) : m_StateType(Type)
-        {
-            m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
-        }
+        AppState(StateFlags Type = StateFlags::Normal)
+            : m_StateType(Type),
+              m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White)) {};
 
         virtual ~AppState() {};
         virtual void Update(void) = 0;
@@ -48,14 +47,10 @@ class AppState
             m_HasFocus = true;
         }
 
-        AppState::StateTypes GetType(void) const
+        AppState::StateFlags GetType(void) const
         {
             return m_StateType;
         }
-
-        // Pretty much every state needs this so
-    protected:
-        SDL::SharedFont m_Noto = nullptr;
 
     private:
         // Whether state is active or can be purged.
@@ -63,5 +58,10 @@ class AppState
         // Whether a state is at the back of the vector and has focus.
         bool m_HasFocus = false;
         // Stores what type of state
-        AppState::StateTypes m_StateType;
+        AppState::StateFlags m_StateType;
+
+
+    protected:
+        // Pretty much every state needs this so.
+        SDL::SharedFont m_Noto = nullptr;
 };

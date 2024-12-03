@@ -20,6 +20,9 @@ namespace UI
             static constexpr std::string_view SettingsDecriptions = "SettingsDescriptions";
             static constexpr std::string_view FolderMenuNew = "FolderMenuNew";
             static constexpr std::string_view BackupMenuCurrentBackups = "BackupMenuCurrentBackups";
+            static constexpr std::string_view CopyingFile = "CopyingFile";
+            static constexpr std::string_view AddingToZip = "AddingToZip";
+            static constexpr std::string_view KeyboardButtons = "KeyboardButtons";
         } // namespace Names
     } // namespace Strings
 } // namespace UI
