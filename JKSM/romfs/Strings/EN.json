@@ -32,9 +32,9 @@
         "Force English: %s"
     ],
     "SettingsDescriptions" : [
-        "Rescans system for for new titles and caches them.",
+        "Reloads titles and caches them to make future boots instantaneous.",
         "Uses text menus instead of icon grids.",
-        "Exports saves to ZIP files instead of unpacked folders.",
+        "Exports saves to ZIP files instead of unpacked folders. This is only recommended if you own a New 3DS.",
         "Forces JKSM to use English instead of the system's detected language."
     ],
     "FolderMenuNew" : [
@@ -44,10 +44,13 @@
         "Current Backups"
     ],
     "CopyingFile" : [
-        "Copying [%s]"
+        "Copying [%s]."
     ],
     "AddingToZip" : [
         "Adding [%s] to ZIP."
+    ],
+    "DeletingBackup" : [
+        "Deleting %s."
     ],
     "KeyboardButtons" : [
         "Cancel",

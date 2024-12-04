@@ -5,6 +5,7 @@
 #include "System/ProgressTask.hpp"
 #include "UI/Menu.hpp"
 #include <memory>
+#include <mutex>
 
 class BackupMenuState : public AppState
 {
@@ -24,6 +25,8 @@ class BackupMenuState : public AppState
         AppState *m_CreatingState = nullptr;
         // Keep the pointer just in case.
         const Data::TitleData *m_Data = nullptr;
+        // Save data type we're working with.
+        Data::SaveDataType m_SaveType;
         // Backup menu.
         std::unique_ptr<UI::Menu> m_BackupMenu = nullptr;
         // Directory Path
@@ -32,4 +35,6 @@ class BackupMenuState : public AppState
         FsLib::Directory m_DirectoryListing;
         // X coordinate for centering bottom text header thingy.
         int m_TextX = 0;
+        // Mutex to prevent corruption.
+        std::mutex m_ListingMutex;
 };

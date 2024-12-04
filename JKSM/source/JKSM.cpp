@@ -86,6 +86,14 @@ void JKSM::Initialize(void)
     ABORT_ON_FAILURE(IntializeService(hidInit, "HID"));
     ABORT_ON_FAILURE(IntializeService(romfsInit, "RomFs"));
 
+    // Check for New 3DS and use it.
+    bool New3DS = false;
+    Result AptError = APT_CheckNew3DS(&New3DS);
+    if (R_SUCCEEDED(AptError) && New3DS)
+    {
+        osSetSpeedupEnable(true);
+    }
+
     // SDL Stuff
     ABORT_ON_FAILURE(SDL::Initialize());
     ABORT_ON_FAILURE(SDL::FreeType::Initialize());

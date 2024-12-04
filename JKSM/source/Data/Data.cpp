@@ -25,6 +25,14 @@ namespace
     constexpr uint8_t CURRENT_CACHE_REVISION = 0x09;
     // Buffer size for compressing icon data.
     constexpr size_t ICON_BUFFER_SIZE = sizeof(uint32_t) * 48 * 48;
+    // Cache header
+    typedef struct
+    {
+            uint32_t Magic;
+            uint16_t TitleCount;
+            uint8_t Revision;
+    } __attribute__((packed)) CacheHeader;
+
     // This struct is to make reading and writing the cache quicker with fewer read/write calls.
     typedef struct
     {
@@ -312,33 +320,22 @@ bool LoadCacheFile(System::ProgressTask *Task)
         return false;
     }
 
-    uint32_t Magic = 0;
-    CacheFile.Read(&Magic, sizeof(uint32_t));
-    if (Magic != CACHE_MAGIC)
+    CacheHeader Header = {0};
+    CacheFile.Read(&Header, sizeof(CacheHeader));
+    if (Header.Magic != CACHE_MAGIC || Header.Revision != CURRENT_CACHE_REVISION)
     {
-        Logger::Log("Error reading cache: Invalid cache file.");
-        return false;
-    }
-
-    uint16_t TitleCount = 0;
-    CacheFile.Read(&TitleCount, sizeof(uint16_t));
-
-    uint8_t Revision = 0;
-    CacheFile.Read(&Revision, sizeof(uint8_t));
-    if (Revision != CURRENT_CACHE_REVISION)
-    {
-        Logger::Log("Old cache revision found. Forcing rescan.");
+        Logger::Log("Invalid or old cache revision. Forcing reload.");
         return false;
     }
 
     Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 3));
     // This was special for 3DS so loading wouldn't be so long. I didn't know it was going to be literally instantaneous...
     // Buffer for storing all entries at once.
-    std::unique_ptr<CacheEntry[]> CacheBuffer(new CacheEntry[TitleCount]);
-    CacheFile.Read(CacheBuffer.get(), sizeof(CacheEntry) * TitleCount);
+    std::unique_ptr<CacheEntry[]> CacheBuffer(new CacheEntry[Header.TitleCount]);
+    CacheFile.Read(CacheBuffer.get(), sizeof(CacheEntry) * Header.TitleCount);
 
-    Task->Reset(static_cast<double>(TitleCount));
-    for (uint16_t i = 0; i < TitleCount; i++)
+    Task->Reset(static_cast<double>(Header.TitleCount));
+    for (uint16_t i = 0; i < Header.TitleCount; i++)
     {
         CacheEntry *EntryData = &CacheBuffer[i];
         s_TitleVector.emplace_back(EntryData->TitleID,
@@ -355,19 +352,18 @@ bool LoadCacheFile(System::ProgressTask *Task)
 
 void CreateCacheFile(System::ProgressTask *Task)
 {
-    FsLib::File CacheFile(CACHE_PATH, FS_OPEN_CREATE | FS_OPEN_WRITE);
+    // Writing to the SD card is way faster when you don't need to resize on every write.
+    uint64_t CacheSize = sizeof(CacheHeader) + (sizeof(CacheEntry) * s_TitleVector.size());
+    FsLib::File CacheFile(CACHE_PATH, FS_OPEN_CREATE | FS_OPEN_WRITE, CacheSize);
     if (!CacheFile.IsOpen())
     {
         Logger::Log("Error opening cache file for writing: %s", FsLib::GetErrorString());
         return;
     }
 
-    uint16_t TitleCount = s_TitleVector.size();
-
-    // Magic, titlecount revision
-    CacheFile.Write(&CACHE_MAGIC, sizeof(uint32_t));
-    CacheFile.Write(&TitleCount, sizeof(uint16_t));
-    CacheFile.Write(&CURRENT_CACHE_REVISION, sizeof(uint8_t));
+    // Header.
+    CacheHeader Header = {.Magic = CACHE_MAGIC, .TitleCount = static_cast<uint16_t>(s_TitleVector.size()), .Revision = CURRENT_CACHE_REVISION};
+    CacheFile.Write(&Header, sizeof(CacheHeader));
 
     Task->Reset(static_cast<double>(s_TitleVector.size()));
     // This is the entry we write to.

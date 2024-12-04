@@ -12,16 +12,10 @@ extern "C"
     void __appInit()
     {
         srvInit();
-        aptInit();
-        fsInit();
-        hidInit();
     }
 
     void __appExit()
     {
-        hidExit();
-        fsExit();
-        aptExit();
         srvExit();
     }
 }

@@ -89,7 +89,7 @@ void SettingsState::DrawBottom(SDL_Surface *Target)
                        18,
                        12,
                        312,
-                       UI::Strings::GetStringByName(UI::Strings::Names::SettingsDecriptions, m_SettingsMenu->GetSelected()));
+                       UI::Strings::GetStringByName(UI::Strings::Names::SettingsDescriptions, m_SettingsMenu->GetSelected()));
 }
 
 void SettingsState::UpdateMenuStrings(void)
