@@ -317,6 +317,7 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         while ((ReadCount = unzReadCurrentFile(Source, ReadBuffer.get(), FILE_BUFFER_SIZE)) > 0)
         {
             DestinationFile.Write(ReadBuffer.get(), static_cast<size_t>(ReadCount));
+            Task->SetCurrent((TotalCount += ReadCount));
         }
 
         if (Commit)

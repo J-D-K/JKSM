@@ -56,24 +56,9 @@ static void OverwriteBackup(System::ProgressTask *Task, FsLib::Path BackupPath)
 
 static void RestoreBackup(System::ProgressTask *Task, FsLib::Path BackupPath, Data::SaveDataType SaveType)
 {
-    // To do: Figure out why this isn't working right, but only here.
-    /*if (!FsLib::DeleteDirectoryRecursively(SAVE_ROOT))
+    if (!FsLib::DeleteDirectoryRecursively(SAVE_ROOT))
     {
         Logger::Log("Error occurred resetting save data: %s", FsLib::GetErrorString());
-        Task->Finish();
-        return;
-    }*/
-
-    FS_Archive Archive;
-    if (!FsLib::GetArchiveByDeviceName(SAVE_MOUNT, &Archive))
-    {
-        Logger::Log("Error getting archive: %s", FsLib::GetErrorString());
-    }
-
-    Result FsError = FSUSER_DeleteDirectoryRecursively(Archive, fsMakePath(PATH_ASCII, "/"));
-    if (R_FAILED(FsError))
-    {
-        Logger::Log("Failed this way too!");
         Task->Finish();
         return;
     }
@@ -100,19 +85,23 @@ static void RestoreBackup(System::ProgressTask *Task, FsLib::Path BackupPath, Da
     Task->Finish();
 }
 
-// This doesn't really need to be threaded, but whatever. At least it won't look like JKSM just froze for certain games.
-static void DeleteBackup(System::Task *Task, FsLib::Path BackupPath, BackupMenuState *CreatingState)
+// There's no reason to thread this.
+void DeleteBackup(const FsLib::Path &TargetPath)
 {
-    if (FsLib::DirectoryExists(BackupPath) && !FsLib::DeleteDirectoryRecursively(BackupPath))
+    bool Error = false;
+    if (FsLib::DirectoryExists(TargetPath) && !FsLib::DeleteDirectoryRecursively(TargetPath))
+    {
+        Error = true;
+    }
+    else if (!FsLib::DeleteFile(TargetPath))
+    {
+        Error = true;
+    }
+
+    if (Error)
     {
         Logger::Log("Error deleting backup: %s", FsLib::GetErrorString());
     }
-    else if (FsLib::FileExists(BackupPath) && !FsLib::DeleteFile(BackupPath))
-    {
-        Logger::Log("Error deleting backup: %s", FsLib::GetErrorString());
-    }
-    CreatingState->Refresh();
-    Task->Finish();
 }
 
 // We're going to mark this as a task even though it isn't so JKSM doesn't let users shift from it.
@@ -176,8 +165,7 @@ void BackupMenuState::Update(void)
     else if (Input::ButtonPressed(KEY_X) && m_BackupMenu->GetSelected() > 0)
     {
         FsLib::Path TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu->GetSelected() - 1];
-
-        JKSM::PushState(std::make_shared<TaskState>(this, DeleteBackup, TargetPath, this));
+        DeleteBackup(TargetPath);
     }
     else if (Input::ButtonPressed(KEY_B))
     {

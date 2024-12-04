@@ -12,6 +12,7 @@
 #include "SDL/SDL.hpp"
 #include "UI/Strings.hpp"
 #include <3ds.h>
+#include <mutex>
 #include <string_view>
 #include <vector>
 
@@ -48,6 +49,7 @@ namespace
     std::array<std::shared_ptr<AppState>, APP_STATE_TOTAL> s_AppStateArray = {nullptr};
     // Vector of AppStates
     std::vector<std::shared_ptr<AppState>> s_AppStateVector;
+
     // Current state we're on
     int s_CurrentState = 0;
 } // namespace
@@ -150,6 +152,7 @@ void JKSM::Update(void)
     }
 
     // Check the back of the vector to purge deactivated states.
+
     while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())
     {
         s_AppStateVector.pop_back();
@@ -216,7 +219,10 @@ void JKSM::Render(void)
 
     // Top screen
     SDL_Surface *TopScreen = SDL::GetCurrentBuffer();
-    s_AppStateVector.back()->DrawTop(TopScreen);
+    if (!s_AppStateVector.empty())
+    {
+        s_AppStateVector.back()->DrawTop(TopScreen);
+    }
     SDL::DrawRect(TopScreen, 0, 0, 400, 16, SDL::Colors::BarColor);
     s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, s_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
 
@@ -224,7 +230,10 @@ void JKSM::Render(void)
 
     // Bottom screen.
     SDL_Surface *BottomScreen = SDL::GetCurrentBuffer();
-    s_AppStateVector.back()->DrawBottom(BottomScreen);
+    if (!s_AppStateVector.empty())
+    {
+        s_AppStateVector.back()->DrawBottom(BottomScreen);
+    }
     SDL::DrawRect(BottomScreen, 0, 224, 320, 16, SDL::Colors::BarColor);
 
     // Present to screen.
