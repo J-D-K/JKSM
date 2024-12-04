@@ -11,6 +11,7 @@ namespace UI
         // This is to ensure no typos and make stuff easier.
         namespace Names
         {
+            static constexpr std::string_view LR = "LR";
             static constexpr std::string_view DataLoadingText = "DataLoadingText";
             static constexpr std::string_view StateName = "StateName";
             static constexpr std::string_view StateInformation = "StateInformation";

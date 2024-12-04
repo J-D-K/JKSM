@@ -1,4 +1,8 @@
 {
+    "LR" : [
+        "◁ L",
+        "R ▷"
+    ],
     "DataLoadingText":[
         "Loading SD title %016llX.",
         "Loading NAND title %016llX.",

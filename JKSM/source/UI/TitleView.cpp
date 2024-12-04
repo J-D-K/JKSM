@@ -8,6 +8,12 @@ UI::TitleView::TitleView(Data::SaveDataType SaveType) : m_SaveType(SaveType)
     TitleView::Refresh();
 }
 
+void UI::TitleView::Initialize(Data::SaveDataType SaveType)
+{
+    m_SaveType = SaveType;
+    TitleView::Refresh();
+}
+
 void UI::TitleView::Update(void)
 {
     int TileTotal = m_TitleTiles.size() - 1;

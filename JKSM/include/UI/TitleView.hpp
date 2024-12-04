@@ -9,9 +9,13 @@ namespace UI
     class TitleView : public UI::Element
     {
         public:
+            // Default
+            TitleView(void) = default;
+            // Constructor version of Initialize.
             TitleView(Data::SaveDataType SaveType);
             ~TitleView() {};
-
+            // Initializes TitleView using SaveType.
+            void Initialize(Data::SaveDataType SaveType);
             void Update(void);
             void Draw(SDL_Surface *Target);
             // Forces a complete refresh of view

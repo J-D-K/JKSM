@@ -19,8 +19,7 @@ class TitleSelectionState : public BaseSelectionState
         void Refresh(void);
 
     private:
-        // To do: Maybe not a pointer...
-        std::unique_ptr<UI::TitleView> m_TitleView;
+        UI::TitleView m_TitleView;
         // X coordinate for bottom text.
         int m_TextX = 0;
 };

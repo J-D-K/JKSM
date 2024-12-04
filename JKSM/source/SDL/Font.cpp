@@ -89,7 +89,7 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({
         size_t ReadSize = std::fread(CompressedBuffer.get(), 1, CompressedSize, FontFile);
         if (ReadSize != CompressedSize)
         {
-            Logger::Log("Error reading full compresed size font.");
+            Logger::Log("Error reading full compressed size font.");
             return;
         }
 
@@ -249,7 +249,6 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     FT_Error FTError = FT_Load_Glyph(m_FTFace, CodepointIndex, FreeTypeLoadFlags);
     if (CodepointIndex == 0 || FTError != 0 || m_FTFace->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY)
     {
-        Logger::Log("Glyph could not be loaded.");
         return nullptr;
     }
     // Pointer to bitmap in FTFace

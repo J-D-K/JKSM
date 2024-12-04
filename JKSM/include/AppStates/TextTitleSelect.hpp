@@ -20,7 +20,7 @@ class TextTitleSelect : public BaseSelectionState
 
     private:
         // Menu with game titles
-        std::unique_ptr<UI::Menu> m_TitleMenu;
+        UI::Menu m_TitleMenu;
         // Vector of pointers to title data.
         std::vector<Data::TitleData *> m_TitleData;
         // Coordinate to center text.

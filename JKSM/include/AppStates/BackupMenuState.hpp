@@ -28,7 +28,7 @@ class BackupMenuState : public AppState
         // Save data type we're working with.
         Data::SaveDataType m_SaveType;
         // Backup menu.
-        std::unique_ptr<UI::Menu> m_BackupMenu = nullptr;
+        UI::Menu m_BackupMenu;
         // Directory Path
         FsLib::Path m_DirectoryPath;
         // Directory Listing.

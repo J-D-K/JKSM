@@ -6,9 +6,12 @@ class AppState
 {
     public:
         // This is needed so JKSM knows whether or not to allow exiting or state changing.
+        // Semi-lock allows closing JKSM, but not state changing.
+        // Full lock means neither.
         enum class StateFlags
         {
             Normal,
+            SemiLock,
             Lock
         };
 

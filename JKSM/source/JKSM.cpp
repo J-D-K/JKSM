@@ -26,9 +26,12 @@
 namespace
 {
     // This is the title text and its centered X coordinate. This is untranslatable.
-    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 11/29/2024";
+    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 12/04/2024";
     // This is to make centering this easier.
     int s_TitleTextX = 0;
+    // These are to align the L and R
+    int s_LX = 0;
+    int s_RX = 0;
 
     // This is for whether or not JKSM is running.
     bool s_IsRunning = false;
@@ -113,6 +116,11 @@ void JKSM::Initialize(void)
     // Center the title title
     s_TitleTextX = 200 - (s_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
 
+    // Align L and R
+    // There's something really off about the left glyph...
+    s_LX = s_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0)) / 3;
+    s_RX = 392 - s_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
+
     // Init title select views.
     InitializeTitleViewStates();
 
@@ -180,7 +188,7 @@ void JKSM::Update(void)
     {
         s_IsRunning = false;
     }
-    else if (Input::ButtonPressed(KEY_L))
+    else if (Input::ButtonPressed(KEY_L) && s_AppStateVector.back()->GetType() != AppState::StateFlags::SemiLock)
     {
         if (--s_CurrentState < 0)
         {
@@ -196,7 +204,7 @@ void JKSM::Update(void)
             s_AppStateVector.back()->GiveFocus();
         }
     }
-    else if (Input::ButtonPressed(KEY_R))
+    else if (Input::ButtonPressed(KEY_R) && s_AppStateVector.back()->GetType() != AppState::StateFlags::SemiLock)
     {
         if (++s_CurrentState == APP_STATE_TOTAL)
         {
@@ -225,6 +233,8 @@ void JKSM::Render(void)
     }
     SDL::DrawRect(TopScreen, 0, 0, 400, 16, SDL::Colors::BarColor);
     s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, s_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
+    s_Noto->BlitTextAt(TopScreen, s_LX, 225, 12, s_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0));
+    s_Noto->BlitTextAt(TopScreen, s_RX, 225, 12, s_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
 
     SDL::FrameChangeScreens();
 

@@ -11,12 +11,11 @@ namespace UI
     class Menu : public UI::Element
     {
         public:
-            // Creates menu drawn at X and Y. MaxDrawLength is the maximum number of options to display before scrolling.
+            // Default.
+            Menu(void) = default;
+            // Calls Initialize for you.
             Menu(int X, int Y, int Width, int MaxDrawLength);
-            ~Menu()
-            {
-            }
-
+            ~Menu() {};
             // Adds an option to the menu
             void AddOption(std::string_view Option);
             // Edits the option at index.

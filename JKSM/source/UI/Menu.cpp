@@ -35,6 +35,11 @@ void UI::Menu::Reset(void)
 
 void UI::Menu::Update(void)
 {
+    if (m_Selected > m_OptionsLength)
+    {
+        m_Selected = m_OptionsLength;
+    }
+
     if (Input::ButtonPressed(KEY_UP))
     {
         Menu::HandleUpPress();
