@@ -1,5 +1,6 @@
 #include "AppStates/BaseSelectionState.hpp"
 #include "AppStates/BackupMenuState.hpp"
+#include "AppStates/TitleOptionState.hpp"
 #include "FS/SaveMount.hpp"
 #include "FsLib.hpp"
 #include "JKSM.hpp"
@@ -39,13 +40,12 @@ void BaseSelectionState::CreateBackupStateWithData(const Data::TitleData *Data)
         return;
     }
 
-    std::shared_ptr<AppState> BackupState = std::make_shared<BackupMenuState>(this, Data, m_SaveType);
-    if (!BackupState)
-    {
-        return;
-    }
+    JKSM::PushState(std::make_shared<BackupMenuState>(this, Data, m_SaveType));
+}
 
-    JKSM::PushState(BackupState);
+void BaseSelectionState::CreateOptionStateWithData(const Data::TitleData *Data)
+{
+    JKSM::PushState(std::make_shared<TitleOptionState>(this, Data));
 }
 
 bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)

@@ -20,6 +20,7 @@ enum
     TEXT_MODE,
     EXPORT_TO_ZIP,
     FORCE_ENGLISH,
+    PRESERVE_SECURE_VALUE,
     HOLD_FOR_OVERWRITE,
     HOLD_FOR_RESTORE,
     HOLD_FOR_DELETION
@@ -109,12 +110,15 @@ void SettingsState::UpdateMenuStrings(void)
                                                              GetValueText(Config::GetByKey(Config::Keys::ForceEnglish))));
     m_SettingsMenu.EditOption(4,
                               StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 4),
-                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToOverwrite))));
+                                                             GetValueText(Config::GetByKey(Config::Keys::PreserveSecureValues))));
     m_SettingsMenu.EditOption(5,
                               StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 5),
-                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToRestore))));
+                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToOverwrite))));
     m_SettingsMenu.EditOption(6,
                               StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 6),
+                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToRestore))));
+    m_SettingsMenu.EditOption(7,
+                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 7),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToDelete))));
 }
 
@@ -150,6 +154,12 @@ void SettingsState::UpdateConfig(void)
         case FORCE_ENGLISH:
         {
             Config::SetByKey(Config::Keys::ForceEnglish, Config::GetByKey(Config::Keys::ForceEnglish) ? 0 : 1);
+        }
+        break;
+
+        case PRESERVE_SECURE_VALUE:
+        {
+            Config::SetByKey(Config::Keys::PreserveSecureValues, Config::GetByKey(Config::Keys::PreserveSecureValues) ? 0 : 1);
         }
         break;
 

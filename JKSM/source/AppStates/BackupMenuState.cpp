@@ -26,6 +26,7 @@ typedef struct
         FsLib::Path TargetPath;
         Data::SaveDataType SaveType;
         BackupMenuState *CallingState = nullptr;
+        uint32_t UniqueID = 0;
 } TargetStruct;
 
 // Declarations. Definitions after class members.
@@ -79,9 +80,6 @@ void BackupMenuState::Update(void)
     }
     else if (Input::ButtonPressed(KEY_A) && m_BackupMenu.GetSelected() > 0)
     {
-        // Selected needs to be offset by 1 to account for New
-        FsLib::Path BackupPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
-
         // Confirm struct
         std::shared_ptr<TargetStruct> DataStruct(new TargetStruct);
         DataStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
@@ -95,8 +93,8 @@ void BackupMenuState::Update(void)
 
         JKSM::PushState(std::make_shared<ConfirmState<System::ProgressTask, ProgressTaskState, TargetStruct>>(
             this,
-            ConfirmOverwrite.c_str(),
-            static_cast<bool>(Config::GetByKey(Config::Keys::HoldToOverwrite)),
+            ConfirmOverwrite,
+            Config::GetByKey(Config::Keys::HoldToOverwrite),
             OverwriteBackup,
             DataStruct));
     }
@@ -105,6 +103,7 @@ void BackupMenuState::Update(void)
         // Create confirmation struct.
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
         ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
+        ConfirmStruct->UniqueID = m_Data->GetUniqueID();
 
         // Query string
         char TargetName[FsLib::MAX_PATH] = {0};
@@ -125,6 +124,7 @@ void BackupMenuState::Update(void)
         // Confirm struct
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
         ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
+        ConfirmStruct->CallingState = this;
 
         // String
         char TargetName[FsLib::MAX_PATH] = {0};
@@ -227,6 +227,12 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
         return;
     }
 
+    if (!Config::GetByKey(Config::Keys::PreserveSecureValues) && !FS::DeleteSecureValue(DataStruct->UniqueID))
+    {
+        Task->Finish();
+        return;
+    }
+
     // Whether or not committing data is needed.
     bool CommitData =
         (DataStruct->SaveType == Data::SaveDataType::SaveTypeUser || DataStruct->SaveType == Data::SaveDataType::SaveTypeSystem) ? true : false;
@@ -271,5 +277,8 @@ static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataS
     {
         Logger::Log("Error deleting backup: %s", FsLib::GetErrorString());
     }
+
+    DataStruct->CallingState->Refresh();
+
     Task->Finish();
 }

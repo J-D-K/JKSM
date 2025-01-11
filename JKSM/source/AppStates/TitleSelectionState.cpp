@@ -18,6 +18,10 @@ void TitleSelectionState::Update(void)
     {
         BaseSelectionState::CreateBackupStateWithData(m_TitleView.GetSelectedTitleData());
     }
+    else if (Input::ButtonPressed(KEY_X))
+    {
+        BaseSelectionState::CreateOptionStateWithData(m_TitleView.GetSelectedTitleData());
+    }
 }
 
 void TitleSelectionState::DrawTop(SDL_Surface *Target)

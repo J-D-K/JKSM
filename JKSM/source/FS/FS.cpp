@@ -1,5 +1,6 @@
 #include "FS/FS.hpp"
 #include "Logger.hpp"
+#include <3ds.h>
 #include <array>
 #include <string_view>
 
@@ -59,6 +60,21 @@ FsLib::Path FS::GetBasePath(Data::SaveDataType SaveType)
         return FsLib::Path(u"");
     }
 
-    // This needs to be offset by one tp account for the root path in the array.
+    // This needs to be offset by one to account for the root path in the array.
     return FsLib::Path(s_JKSMFolderLocations[SaveType + 1]);
+}
+
+bool FS::DeleteSecureValue(uint32_t UniqueID)
+{
+    // Input
+    uint64_t Input = static_cast<uint64_t>(SECUREVALUE_SLOT_SD) << 32 | UniqueID << 8;
+    uint8_t Output = 0;
+
+    Result FsError = FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &Input, sizeof(uint64_t), &Output, sizeof(uint8_t));
+    if (R_FAILED(FsError))
+    {
+        Logger::Log("Error deleting secure value for %08X: 0x%08X.", UniqueID, FsError);
+        return false;
+    }
+    return true;
 }

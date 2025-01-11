@@ -23,7 +23,7 @@ class ConfirmState : public AppState
                      bool HoldToConfirm,
                      ConfirmFunction OnConfirmation,
                      std::shared_ptr<StructType> DataStruct)
-            : m_CreatingState(CreatingState), m_QueryString(QueryString), m_Hold(HoldToConfirm),
+            : AppState(AppState::StateFlags::SemiLock), m_CreatingState(CreatingState), m_QueryString(QueryString), m_Hold(HoldToConfirm),
               m_YesString(UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 0)), m_OnConfirmation(OnConfirmation),
               m_DataStruct(DataStruct)
         {
@@ -93,8 +93,8 @@ class ConfirmState : public AppState
             SDL::DrawRect(Target, 8, 190, 304, 1, SDL::Colors::White);
             SDL::DrawRect(Target, 160, 190, 1, 32, SDL::Colors::White);
             // Yes and no
-            m_Noto->BlitTextAt(Target, m_YesX, 192, 22, m_Noto->NO_TEXT_WRAP, m_YesString.c_str());
-            m_Noto->BlitTextAt(Target, m_NoX, 192, 22, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1));
+            m_Noto->BlitTextAt(Target, m_YesX, 192, 12, m_Noto->NO_TEXT_WRAP, m_YesString.c_str());
+            m_Noto->BlitTextAt(Target, m_NoX, 192, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1));
         }
 
     private:

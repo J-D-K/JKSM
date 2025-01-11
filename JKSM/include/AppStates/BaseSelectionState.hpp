@@ -18,6 +18,8 @@ class BaseSelectionState : public AppState
         virtual void Refresh(void) = 0;
         // Creates and pushes a backup state with data pointer passed.
         void CreateBackupStateWithData(const Data::TitleData *Data);
+        // Creates and pushes a title option state with pointer passed.
+        void CreateOptionStateWithData(const Data::TitleData *Data);
 
     protected:
         // Save data type

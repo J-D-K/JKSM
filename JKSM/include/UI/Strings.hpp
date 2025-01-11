@@ -27,7 +27,9 @@ namespace UI
             static constexpr std::string_view KeyboardButtons = "KeyboardButtons";
             static constexpr std::string_view YesNo = "YesNo";
             static constexpr std::string_view HoldingText = "HoldingText";
+            static constexpr std::string_view OK = "OK";
             static constexpr std::string_view BackupMenuConfirmations = "BackupMenuConfirmations";
+            static constexpr std::string_view TitleOptions = "TitleOptions";
         } // namespace Names
     } // namespace Strings
 } // namespace UI

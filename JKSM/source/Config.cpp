@@ -51,6 +51,7 @@ void Config::ResetToDefault(void)
 {
     s_ConfigMap[Config::Keys::TextMode.data()] = 0;
     s_ConfigMap[Config::Keys::ForceEnglish.data()] = 0;
+    s_ConfigMap[Config::Keys::PreserveSecureValues.data()] = 0;
     s_ConfigMap[Config::Keys::HoldToOverwrite.data()] = 1;
     s_ConfigMap[Config::Keys::HoldToRestore.data()] = 1;
     s_ConfigMap[Config::Keys::HoldToDelete.data()] = 1;

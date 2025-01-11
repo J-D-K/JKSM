@@ -10,4 +10,6 @@ namespace FS
     void Initialize(void);
     // This will return the base path depending on save type passed.
     FsLib::Path GetBasePath(Data::SaveDataType SaveType);
+    // Attempts to delete secure value for unique ID passed.
+    bool DeleteSecureValue(uint32_t UniqueID);
 } // namespace FS
