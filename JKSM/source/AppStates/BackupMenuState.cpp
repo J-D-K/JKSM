@@ -1,4 +1,5 @@
 #include "AppStates/BackupMenuState.hpp"
+#include "AppStates/ConfirmState.hpp"
 #include "AppStates/ProgressTaskState.hpp"
 #include "AppStates/TaskState.hpp"
 #include "Config.hpp"
@@ -10,6 +11,8 @@
 #include "Keyboard.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
+#include "System/ProgressTask.hpp"
+#include "System/Task.hpp"
 #include "UI/Strings.hpp"
 
 namespace
@@ -17,11 +20,19 @@ namespace
     constexpr std::u16string_view SAVE_ROOT = u"save:/";
 }
 
+// Struct used for confirming actions. This is a general struct and not everything is used by every action/function
+typedef struct
+{
+        FsLib::Path TargetPath;
+        Data::SaveDataType SaveType;
+        BackupMenuState *CallingState = nullptr;
+} TargetStruct;
+
 // Declarations. Definitions after class members.
 static void CreateNewBackup(System::ProgressTask *Task, FsLib::Path BackupPath, BackupMenuState *CreatingState);
-static void OverwriteBackup(System::ProgressTask *Task, FsLib::Path BackupPath);
-static void RestoreBackup(System::ProgressTask *Task, FsLib::Path BackupPath, Data::SaveDataType SaveType);
-static void DeleteBackup(const FsLib::Path &TargetPath, BackupMenuState *CallingState);
+static void OverwriteBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct);
+static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct);
+static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct);
 
 // We're going to mark this as a task even though it isn't so JKSM doesn't let users shift from it.
 BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData *Data, Data::SaveDataType SaveType)
@@ -71,19 +82,61 @@ void BackupMenuState::Update(void)
         // Selected needs to be offset by 1 to account for New
         FsLib::Path BackupPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
 
-        // To do: Confirm
-        JKSM::PushState(std::make_shared<ProgressTaskState>(this, OverwriteBackup, BackupPath));
+        // Confirm struct
+        std::shared_ptr<TargetStruct> DataStruct(new TargetStruct);
+        DataStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
+
+        // Query string
+        char TargetName[FsLib::MAX_PATH] = {0};
+        StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
+        std::string ConfirmOverwrite =
+            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 0), TargetName);
+
+
+        JKSM::PushState(std::make_shared<ConfirmState<System::ProgressTask, ProgressTaskState, TargetStruct>>(
+            this,
+            ConfirmOverwrite.c_str(),
+            static_cast<bool>(Config::GetByKey(Config::Keys::HoldToOverwrite)),
+            OverwriteBackup,
+            DataStruct));
     }
     else if (Input::ButtonPressed(KEY_Y) && m_BackupMenu.GetSelected() > 0)
     {
-        FsLib::Path BackupPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
+        // Create confirmation struct.
+        std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
+        ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
 
-        JKSM::PushState(std::make_shared<ProgressTaskState>(this, RestoreBackup, BackupPath, m_SaveType));
+        // Query string
+        char TargetName[FsLib::MAX_PATH] = {0};
+        StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
+        std::string RestoreString =
+            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 1), TargetName);
+
+        // Create  & push new confirmation.
+        JKSM::PushState(
+            std::make_shared<ConfirmState<System::ProgressTask, ProgressTaskState, TargetStruct>>(this,
+                                                                                                  RestoreString,
+                                                                                                  Config::GetByKey(Config::Keys::HoldToRestore),
+                                                                                                  RestoreBackup,
+                                                                                                  ConfirmStruct));
     }
     else if (Input::ButtonPressed(KEY_X) && m_BackupMenu.GetSelected() > 0)
     {
-        FsLib::Path TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
-        DeleteBackup(TargetPath, this);
+        // Confirm struct
+        std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
+        ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
+
+        // String
+        char TargetName[FsLib::MAX_PATH] = {0};
+        StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
+        std::string DeleteString =
+            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 2), TargetName);
+
+        JKSM::PushState(std::make_shared<ConfirmState<System::Task, TaskState, TargetStruct>>(this,
+                                                                                              DeleteString,
+                                                                                              Config::GetByKey(Config::Keys::HoldToDelete),
+                                                                                              DeleteBackup,
+                                                                                              ConfirmStruct));
     }
     else if (Input::ButtonPressed(KEY_B))
     {
@@ -146,25 +199,26 @@ static void CreateNewBackup(System::ProgressTask *Task, FsLib::Path BackupPath, 
     Task->Finish();
 }
 
-static void OverwriteBackup(System::ProgressTask *Task, FsLib::Path BackupPath)
+static void OverwriteBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct)
 {
-    // This should only be triggered if the backup is a directory to begin with. DirectoryExists should return false if it's a file.
-    if (FsLib::DirectoryExists(BackupPath) && FsLib::DeleteDirectoryRecursively(BackupPath) && FsLib::CreateDirectory(BackupPath))
+    // FsLib::DirectoryExists can also be used to test if the target is a directory.
+    if (FsLib::DirectoryExists(DataStruct->TargetPath) && FsLib::DeleteDirectoryRecursively(DataStruct->TargetPath) &&
+        FsLib::CreateDirectory(DataStruct->TargetPath))
     {
-        FS::CopyDirectoryToDirectory(Task, SAVE_ROOT, BackupPath, false);
+        FS::CopyDirectoryToDirectory(Task, SAVE_ROOT, DataStruct->TargetPath, false);
     }
-    else if (FsLib::FileExists(BackupPath) && FsLib::DeleteFile(BackupPath))
+    else if (FsLib::FileExists(DataStruct->TargetPath) && FsLib::DeleteFile(DataStruct->TargetPath))
     {
-        // We're going to assume this is a zip.
+        // Assuming this is a zip.
         zipFile Backup = zipOpen("sdmc:/Temp.zip", APPEND_STATUS_CREATE);
         FS::CopyDirectoryToZip(Task, SAVE_ROOT, Backup);
         zipClose(Backup, NULL);
-        FsLib::RenameFile(u"sdmc:/Temp.zip", BackupPath);
+        FsLib::RenameFile(u"sdmc:/Temp.zip", DataStruct->TargetPath);
     }
     Task->Finish();
 }
 
-static void RestoreBackup(System::ProgressTask *Task, FsLib::Path BackupPath, Data::SaveDataType SaveType)
+static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct)
 {
     if (!FsLib::DeleteDirectoryRecursively(SAVE_ROOT))
     {
@@ -173,35 +227,49 @@ static void RestoreBackup(System::ProgressTask *Task, FsLib::Path BackupPath, Da
         return;
     }
 
-    bool CommitData = (SaveType == Data::SaveDataType::SaveTypeUser || SaveType == Data::SaveDataType::SaveTypeSystem) ? true : false;
+    // Whether or not committing data is needed.
+    bool CommitData =
+        (DataStruct->SaveType == Data::SaveDataType::SaveTypeUser || DataStruct->SaveType == Data::SaveDataType::SaveTypeSystem) ? true : false;
 
-    // This should be able to tell whether or not the backup is a directory
-    if (FsLib::DirectoryExists(BackupPath))
+    // This can also be used to test if the target is a directory. Not just if it exists.
+    if (FsLib::DirectoryExists(DataStruct->TargetPath))
     {
-        FS::CopyDirectoryToDirectory(Task, BackupPath, SAVE_ROOT, CommitData);
+        FS::CopyDirectoryToDirectory(Task, DataStruct->TargetPath, SAVE_ROOT, CommitData);
     }
     else
     {
-        // This isn't really needed, but I don't feel like converting path formats over and over. This is easier.
-        FsLib::RenameFile(BackupPath, u"sdmc:/Temp.zip");
+        // This is just assuming the file is a zip file. This probably isn't the greatest idea.
+        FsLib::RenameFile(DataStruct->TargetPath, u"sdmc:/Temp.zip");
 
+        // Open file for *unzips* and extract it to save archive.
         unzFile UnZip = unzOpen("sdmc:/Temp.zip");
-        // This is always assumed to be to save data,
         FS::CopyZipToDirectory(Task, UnZip, SAVE_ROOT, CommitData);
         unzClose(UnZip);
-        FsLib::RenameFile(u"sdmc:/Temp.zip", BackupPath);
+
+        // Rename file back to original.
+        FsLib::RenameFile(u"sdmc:/Temp.zip", DataStruct->TargetPath);
     }
     Task->Finish();
 }
 
-static void DeleteBackup(const FsLib::Path &TargetPath, BackupMenuState *CallingState)
+static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct)
 {
-    if (FsLib::DirectoryExists(TargetPath) && FsLib::DeleteDirectoryRecursively(TargetPath))
+    // Set status just in case deletion takes a little while.
+    char TargetName[FsLib::MAX_PATH] = {0};
+    StringUtil::ToUTF8(DataStruct->TargetPath.CString(), TargetName, FsLib::MAX_PATH);
+    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DeletingBackup, 0), TargetName);
+
+    if (FsLib::DirectoryExists(DataStruct->TargetPath) && FsLib::DeleteDirectoryRecursively(DataStruct->TargetPath))
     {
-        CallingState->Refresh();
+        DataStruct->CallingState->Refresh();
     }
-    else if (!FsLib::DirectoryExists(TargetPath) && FsLib::DeleteFile(TargetPath))
+    else if (FsLib::FileExists(DataStruct->TargetPath) && FsLib::DeleteFile(DataStruct->TargetPath))
     {
-        CallingState->Refresh();
+        DataStruct->CallingState->Refresh();
     }
+    else
+    {
+        Logger::Log("Error deleting backup: %s", FsLib::GetErrorString());
+    }
+    Task->Finish();
 }

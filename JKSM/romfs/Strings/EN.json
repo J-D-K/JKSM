@@ -1,16 +1,16 @@
 {
-    "LR" : [
+    "LR": [
         "◁ L",
         "R ▷"
     ],
-    "DataLoadingText":[
+    "DataLoadingText": [
         "Loading SD title %016llX.",
         "Loading NAND title %016llX.",
         "Creating Shared Extra Data titles.",
         "Reading cache entries...",
         "Writing %s's data to cache."
     ],
-    "StateName" : [
+    "StateName": [
         "User Save Data",
         "Extra Data",
         "Shared Extra Data",
@@ -18,46 +18,66 @@
         "System Save Data",
         "Settings"
     ],
-    "StateInformation" : [
+    "StateInformation": [
         "Title ID: %016llX\nPublisher: %s\nMedia Type: %s\nProduct Code: %s"
     ],
-    "MediaType":[
+    "MediaType": [
         "NAND",
         "SD Card",
         "Game Card"
     ],
-    "SettingsDescription" : [
+    "SettingsDescription": [
         "Description:"
     ],
-    "SettingsMenu" : [
+    "SettingsMenu": [
         "Refresh Title List",
         "Text Menus: %s",
         "Use ZIP: %s",
-        "Force English: %s"
+        "Force English: %s",
+        "Hold to confirm overwrite: %s",
+        "Hold to confirm restore: %s",
+        "Hold to confirm deletion: %s"
     ],
-    "SettingsDescriptions" : [
+    "SettingsDescriptions": [
         "Reloads titles and caches them to make future boots instantaneous.",
         "Uses text menus instead of icon grids.",
         "Exports saves to ZIP files instead of unpacked folders. This is only recommended if you own a New 3DS.",
-        "Forces JKSM to use English instead of the system's detected language."
+        "Forces JKSM to use English instead of the system's detected language.",
+        "Whether or not holding A for three seconds is required to overwrite a save backup.",
+        "Whether or not holding A for three seconds is required to restore a save backup.",
+        "Whether or not holding A for three seconds is required to delete a save backup."
     ],
-    "FolderMenuNew" : [
+    "FolderMenuNew": [
         "New Backup"
     ],
-    "BackupMenuCurrentBackups" : [
+    "BackupMenuCurrentBackups": [
         "Current Backups"
     ],
-    "CopyingFile" : [
+    "CopyingFile": [
         "Copying [%s]."
     ],
-    "AddingToZip" : [
+    "AddingToZip": [
         "Adding [%s] to ZIP."
     ],
-    "DeletingBackup" : [
-        "Deleting %s."
+    "DeletingBackup": [
+        "Deleting [%s]."
     ],
-    "KeyboardButtons" : [
+    "KeyboardButtons": [
         "Cancel",
         "Finished"
+    ],
+    "YesNo": [
+        "Yes [A]",
+        "No [B]"
+    ],
+    "HoldingText": [
+        "Hold [A]",
+        "Keep Holding [A]",
+        "Almost there! [A]"
+    ],
+    "BackupMenuConfirmations": [
+        "Are you sure you want to overwrite %s?",
+        "Are you sure you want to restore %s?",
+        "Are you sure you want to delete %s?"
     ]
 }

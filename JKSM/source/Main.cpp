@@ -22,12 +22,11 @@ extern "C"
 
 int main(void)
 {
-    JKSM::Initialize();
-    while (JKSM::IsRunning() && aptMainLoop())
+    JKSM Jksm{};
+    while (aptMainLoop() && Jksm.IsRunning())
     {
-        JKSM::Update();
-        JKSM::Render();
+        Jksm.Update();
+        Jksm.Draw();
     }
-    JKSM::Exit();
     return 0;
 }

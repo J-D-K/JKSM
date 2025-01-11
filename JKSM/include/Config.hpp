@@ -22,5 +22,8 @@ namespace Config
         constexpr std::string_view TextMode = "TextMode";
         constexpr std::string_view ExportToZip = "ExportToZip";
         constexpr std::string_view ForceEnglish = "ForceEnglish";
+        constexpr std::string_view HoldToOverwrite = "HoldToOverwrite";
+        constexpr std::string_view HoldToRestore = "HoldToRestore";
+        constexpr std::string_view HoldToDelete = "HoldToDelete";
     } // namespace Keys
 } // namespace Config

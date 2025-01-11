@@ -25,36 +25,8 @@
 
 namespace
 {
-    // This is the title text and its centered X coordinate. This is untranslatable.
-    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 12/04/2024";
-    // This is to make centering this easier.
-    int s_TitleTextX = 0;
-    // These are to align the L and R
-    int s_LX = 0;
-    int s_RX = 0;
-
-    // This is for whether or not JKSM is running.
-    bool s_IsRunning = false;
-    // Whether or not a refresh of states is required.
-    bool s_RefreshRequired = false;
-
-    /*
-        This is the font JKSM uses for the entire app. It's shared and used among all states.
-        If you would like to replace it, I've include the source to the program to apply a quick
-        zlib compress on TTF fonts. You'll need cmake and zlib installed to do so. Once that is done,
-        replace the file in the romfs folder and update Assets.hpp to reflect your changes.
-    */
-    SDL::SharedFont s_Noto = nullptr;
-
-    // Number of AppStates JKSM has. + 1 for settings menu.
-    constexpr int APP_STATE_TOTAL = Data::SaveTypeTotal + 1;
-    // Array of appstates we can push from.
-    std::array<std::shared_ptr<AppState>, APP_STATE_TOTAL> s_AppStateArray = {nullptr};
-    // Vector of AppStates
-    std::vector<std::shared_ptr<AppState>> s_AppStateVector;
-
-    // Current state we're on
-    int s_CurrentState = 0;
+    // This is the title text.
+    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 01/10/2025";
 } // namespace
 
 // This function makes it easier to log init errors for services.
@@ -70,28 +42,28 @@ bool IntializeService(Result (*Function)(Args...), const char *ServiceName, Args
     return true;
 }
 
-void JKSM::Initialize(void)
+JKSM::JKSM(void)
 {
-    // FsLib is needed for almost everything, so it's first.
-    ABORT_ON_FAILURE(FsLib::Initialize())
+    // FsLib is needed the most, so it's first.
+    ABORT_ON_FAILURE(FsLib::Initialize());
 
-    // This bypasses archive_dev and uses Fslib functions to do the same stuff.
+    // Bypass archive_dev.
     ABORT_ON_FAILURE(FsLib::Dev::InitializeSDMC());
 
-    // All this does is take care of the directories. Everything is all FsLib now.
+    // This takes care of making sure needed directories exist.
     FS::Initialize();
 
-    // This will create the log since FsLib init'd
+    // Creates and clears log
     Logger::Initialize();
 
-    // These are the services JKSM needs
+    // Services JKSM  needs.
     ABORT_ON_FAILURE(IntializeService(amInit, "AM"));
     ABORT_ON_FAILURE(IntializeService(aptInit, "APT"));
     ABORT_ON_FAILURE(IntializeService(cfguInit, "CFGU"));
     ABORT_ON_FAILURE(IntializeService(hidInit, "HID"));
     ABORT_ON_FAILURE(IntializeService(romfsInit, "RomFs"));
 
-    // Check for New 3DS and use it.
+    // Check for New 3DS and enable clock & L2
     bool New3DS = false;
     Result AptError = APT_CheckNew3DS(&New3DS);
     if (R_SUCCEEDED(AptError) && New3DS)
@@ -99,191 +71,211 @@ void JKSM::Initialize(void)
         osSetSpeedupEnable(true);
     }
 
-    // SDL Stuff
+    // SDL & Freetype.
     ABORT_ON_FAILURE(SDL::Initialize());
     ABORT_ON_FAILURE(SDL::FreeType::Initialize());
 
     // Config
     Config::Initialize();
 
-    // This loads strings from the json files in romfs.
+    // Loads UI strings from json in RomFs.
     UI::Strings::Intialize();
 
-    // Load Font if it wasn't already.
-    ABORT_ON_FAILURE(
-        (s_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White)));
+    // Load and decompress font and use white as the default color.
+    // JKSM can't change colors like JKSV can on Switch unfortunately. SDL 3DS is a CPU/soft rendered with surfaces and the working needed and extra processing power isn't worth it.
+    m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
+    ABORT_ON_FAILURE(m_Noto);
 
-    // Center the title title
-    s_TitleTextX = 200 - (s_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
+    // Center the title text.
+    m_TitleTextX = 200 - (m_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
 
-    // Align L and R
-    // There's something really off about the left glyph...
-    s_LX = s_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0)) / 3;
-    s_RX = 392 - s_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
+    // Align L and R. There's something off about the left arrow glyph in the Noto Sans font...
+    m_LX = m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0)) / 3;
+    m_RX = 392 - m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
 
     // Init title select views.
-    InitializeTitleViewStates();
+    JKSM::InitializeViews();
 
-    // Settings is last.
-    s_AppStateArray[APP_STATE_TOTAL - 1] = std::make_shared<SettingsState>();
+    // Create settings in final array index.
+    m_StateArray[m_StateTotal - 1] = std::make_shared<SettingsState>();
 
-    // This will spawn the loading thread/state.
+    // Push the data loading state.
     JKSM::PushState(std::make_shared<ProgressTaskState>(nullptr, Data::Initialize));
 
-    s_IsRunning = true;
+    // Should be good to go assuming data loading thread doesn't explode.
+    m_IsRunning = true;
 }
 
-void JKSM::Exit(void)
+JKSM::~JKSM()
 {
     SDL::Exit();
-    amExit();
-    aptExit();
-    cfguExit();
-    hidExit();
+    SDL::FreeType::Exit();
     romfsExit();
+    hidExit();
+    cfguExit();
+    aptExit();
+    amExit();
 }
 
-bool JKSM::IsRunning(void)
+bool JKSM::IsRunning(void) const
 {
-    return s_IsRunning;
+    return m_IsRunning;
 }
 
 void JKSM::Update(void)
 {
-    // This needs to be in this very specific order.
     Input::Update();
 
-    // Update the back of the vector so tasks can be purged properly.
-    if (!s_AppStateVector.empty())
+    // This needs to be done here so the purging loop works correctly.
+    if (!m_StateStack.empty())
     {
-        s_AppStateVector.back()->Update();
+        m_StateStack.top()->Update();
     }
 
-    // Check the back of the vector to purge deactivated states.
-
-    while (!s_AppStateVector.empty() && !s_AppStateVector.back()->IsActive())
+    // Pop from stack until active state is hit. Make sure it has focus.
+    while (!m_StateStack.empty() && !m_StateStack.top()->IsActive())
     {
-        s_AppStateVector.pop_back();
-        s_AppStateVector.back()->GiveFocus();
+        m_StateStack.pop();
+        m_StateStack.top()->GiveFocus();
     }
 
-    // If the state in the back is a Task type, don't allow exit or state changing.
-    if (s_AppStateVector.back()->GetType() == AppState::StateFlags::Lock)
+    // If the back is a locking type state, bail and don't allow exiting with start.
+    if (m_StateStack.top()->GetType() == AppState::StateFlags::Lock)
     {
         return;
     }
 
-    // If Data::Initialize signals a refresh or a card is inserted, refresh all save type states.
-    if (s_RefreshRequired || Data::GameCardUpdateCheck())
+    // If a refresh is signaled or a cart is inserted.
+    if (m_RefreshRequired || Data::GameCardUpdateCheck())
     {
-        for (size_t i = 0; i < APP_STATE_TOTAL - 1; i++)
+        // Loop and refresh all view states in array.
+        for (size_t i = 0; i < m_StateTotal - 1; i++)
         {
-            std::static_pointer_cast<TitleSelectionState>(s_AppStateArray.at(i))->Refresh();
+            std::static_pointer_cast<TitleSelectionState>(m_StateArray.at(i))->Refresh();
         }
-        s_RefreshRequired = false;
+        m_RefreshRequired = false;
     }
 
-    // Controls.
+    // Global JKSM controls.
     if (Input::ButtonPressed(KEY_START))
     {
-        s_IsRunning = false;
-    }
-    else if (Input::ButtonPressed(KEY_L) && s_AppStateVector.back()->GetType() != AppState::StateFlags::SemiLock)
+        m_IsRunning = false;
+    } // Only allow state switching if the top isn't a semi-lock
+    else if (Input::ButtonPressed(KEY_L) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
     {
-        if (--s_CurrentState < 0)
+        if (--m_CurrentState < 0)
         {
-            s_CurrentState = APP_STATE_TOTAL - 1;
-            for (size_t i = 0; i < APP_STATE_TOTAL; i++)
+            // Set current state to max
+            m_CurrentState = m_StateTotal - 1;
+            // Loop and push entire array to stack,
+            for (size_t i = 0; i < m_StateTotal; i++)
             {
-                JKSM::PushState(s_AppStateArray[i]);
+                JKSM::PushState(m_StateArray.at(i));
             }
         }
         else
         {
-            s_AppStateVector.pop_back();
-            s_AppStateVector.back()->GiveFocus();
+            m_StateStack.pop();
+            m_StateStack.top()->GiveFocus();
         }
     }
-    else if (Input::ButtonPressed(KEY_R) && s_AppStateVector.back()->GetType() != AppState::StateFlags::SemiLock)
+    else if (Input::ButtonPressed(KEY_R) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
     {
-        if (++s_CurrentState == APP_STATE_TOTAL)
+        if (++m_CurrentState == m_StateTotal)
         {
-            s_CurrentState = 0;
-            s_AppStateVector.erase(s_AppStateVector.begin() + 1, s_AppStateVector.end());
+            m_CurrentState = 0;
+            // Pop all states except the first.
+            for (size_t i = m_StateTotal; i > 1; i--)
+            {
+                m_StateStack.pop();
+            }
+            m_StateStack.top()->GiveFocus();
         }
         else
         {
-            s_AppStateVector.back()->TakeFocus();
-            s_AppStateVector.push_back(s_AppStateArray[s_CurrentState]);
-            s_AppStateVector.back()->GiveFocus();
+            m_StateStack.top()->TakeFocus();
+            m_StateStack.push(m_StateArray[m_CurrentState]);
+            m_StateStack.top()->GiveFocus();
         }
     }
 }
 
-// This needs to be thread safe. That's why it looks like this.
-void JKSM::Render(void)
+void JKSM::Draw(void)
 {
     SDL::FrameBegin();
 
-    // Top screen
-    SDL_Surface *TopScreen = SDL::GetCurrentBuffer();
-    if (!s_AppStateVector.empty())
+    // Get top screen surface
+    SDL_Surface *Top = SDL::GetCurrentBuffer();
+    // Draw the top of the stack
+    if (!m_StateStack.empty())
     {
-        s_AppStateVector.back()->DrawTop(TopScreen);
+        m_StateStack.top()->DrawTop(Top);
     }
-    SDL::DrawRect(TopScreen, 0, 0, 400, 16, SDL::Colors::BarColor);
-    s_Noto->BlitTextAt(TopScreen, s_TitleTextX, 1, 12, s_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
-    s_Noto->BlitTextAt(TopScreen, s_LX, 225, 12, s_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0));
-    s_Noto->BlitTextAt(TopScreen, s_RX, 225, 12, s_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
+    // Draw the top bar, title and <L R>
+    SDL::DrawRect(Top, 0, 0, 400, 16, SDL::Colors::BarColor);
+    m_Noto->BlitTextAt(Top, m_TitleTextX, 1, 12, m_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
+    m_Noto->BlitTextAt(Top, m_LX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0));
+    m_Noto->BlitTextAt(Top, m_RX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
 
     SDL::FrameChangeScreens();
 
-    // Bottom screen.
-    SDL_Surface *BottomScreen = SDL::GetCurrentBuffer();
-    if (!s_AppStateVector.empty())
+    // Get bottom screen surface.
+    SDL_Surface *Bottom = SDL::GetCurrentBuffer();
+    if (!m_StateStack.empty())
     {
-        s_AppStateVector.back()->DrawBottom(BottomScreen);
+        m_StateStack.top()->DrawBottom(Bottom);
     }
-    SDL::DrawRect(BottomScreen, 0, 224, 320, 16, SDL::Colors::BarColor);
+    // Just draw the bottom bar here.
+    SDL::DrawRect(Bottom, 0, 224, 320, 16, SDL::Colors::BarColor);
 
-    // Present to screen.
     SDL::FrameEnd();
 }
 
 void JKSM::PushState(std::shared_ptr<AppState> NewState)
 {
-    if (!s_AppStateVector.empty())
+    if (!m_StateStack.empty())
     {
-        s_AppStateVector.back()->TakeFocus();
+        m_StateStack.top()->TakeFocus();
     }
+
+    // Give focus to incoming state.
     NewState->GiveFocus();
-    s_AppStateVector.push_back(NewState);
+    // Push it to stack
+    m_StateStack.push(NewState);
 }
 
-void JKSM::RefreshSaveTypeStates(void)
+void JKSM::RefreshViews(void)
 {
-    s_RefreshRequired = true;
+    m_RefreshRequired = true;
 }
 
-void JKSM::InitializeTitleViewStates(void)
+void JKSM::InitializeViews(void)
 {
-    // This will create and push the state for each save type.
-    for (size_t i = 0; i < Data::SaveTypeTotal; i++)
+    // Whether or not we're using text mode.
+    bool TextMode = Config::GetByKey(Config::Keys::TextMode);
+
+    // Loop and create the states.
+    for (size_t i = 0; i < m_StateTotal - 1; i++)
     {
-        if (Config::GetByKey(Config::Keys::TextMode))
+        if (TextMode)
         {
-            s_AppStateArray[i] = std::make_shared<TextTitleSelect>(static_cast<Data::SaveDataType>(i));
+            m_StateArray[i] = std::make_shared<TextTitleSelect>(static_cast<Data::SaveDataType>(i));
         }
         else
         {
-            s_AppStateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
+            m_StateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
         }
     }
 
-    s_AppStateVector.clear();
-
-    for (int i = 0; i <= s_CurrentState; i++)
+    // Clear stack.
+    for (size_t i = 0; i < m_StateStack.size(); i++)
     {
-        s_AppStateVector.push_back(s_AppStateArray[i]);
+        m_StateStack.pop();
+    }
+
+    // Push states until the current is hit again.
+    for (int i = 0; i <= m_CurrentState; i++)
+    {
+        m_StateStack.push(m_StateArray.at(i));
     }
 }

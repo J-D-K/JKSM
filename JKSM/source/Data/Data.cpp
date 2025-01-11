@@ -144,7 +144,7 @@ void Data::Initialize(System::ProgressTask *Task)
 
     if (FsLib::FileExists(CACHE_PATH) && LoadCacheFile(Task))
     {
-        JKSM::RefreshSaveTypeStates();
+        JKSM::RefreshViews();
         s_DataInitialized = true;
         Task->Finish();
         return;
@@ -237,7 +237,7 @@ void Data::Initialize(System::ProgressTask *Task)
 
     CreateCacheFile(Task);
 
-    JKSM::RefreshSaveTypeStates();
+    JKSM::RefreshViews();
     s_DataInitialized = true;
     Task->Finish();
 }

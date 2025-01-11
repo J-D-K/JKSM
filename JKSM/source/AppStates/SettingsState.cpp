@@ -19,7 +19,10 @@ enum
     REFRESH_TITLES,
     TEXT_MODE,
     EXPORT_TO_ZIP,
-    FORCE_ENGLISH
+    FORCE_ENGLISH,
+    HOLD_FOR_OVERWRITE,
+    HOLD_FOR_RESTORE,
+    HOLD_FOR_DELETION
 };
 
 // This doesn't really convert bools, but tha
@@ -104,6 +107,15 @@ void SettingsState::UpdateMenuStrings(void)
     m_SettingsMenu.EditOption(3,
                               StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 3),
                                                              GetValueText(Config::GetByKey(Config::Keys::ForceEnglish))));
+    m_SettingsMenu.EditOption(4,
+                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 4),
+                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToOverwrite))));
+    m_SettingsMenu.EditOption(5,
+                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 5),
+                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToRestore))));
+    m_SettingsMenu.EditOption(6,
+                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 6),
+                                                             GetValueText(Config::GetByKey(Config::Keys::HoldToDelete))));
 }
 
 void SettingsState::UpdateConfig(void)
@@ -125,7 +137,7 @@ void SettingsState::UpdateConfig(void)
         case TEXT_MODE:
         {
             Config::SetByKey(Config::Keys::TextMode, Config::GetByKey(Config::Keys::TextMode) ? 0 : 1);
-            JKSM::InitializeTitleViewStates();
+            JKSM::InitializeViews();
         }
         break;
 
@@ -138,6 +150,24 @@ void SettingsState::UpdateConfig(void)
         case FORCE_ENGLISH:
         {
             Config::SetByKey(Config::Keys::ForceEnglish, Config::GetByKey(Config::Keys::ForceEnglish) ? 0 : 1);
+        }
+        break;
+
+        case HOLD_FOR_OVERWRITE:
+        {
+            Config::SetByKey(Config::Keys::HoldToOverwrite, Config::GetByKey(Config::Keys::HoldToOverwrite) ? 0 : 1);
+        }
+        break;
+
+        case HOLD_FOR_RESTORE:
+        {
+            Config::SetByKey(Config::Keys::HoldToRestore, Config::GetByKey(Config::Keys::HoldToRestore) ? 0 : 1);
+        }
+        break;
+
+        case HOLD_FOR_DELETION:
+        {
+            Config::SetByKey(Config::Keys::HoldToDelete, Config::GetByKey(Config::Keys::HoldToDelete) ? 0 : 1);
         }
         break;
     }

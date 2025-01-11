@@ -25,6 +25,9 @@ namespace UI
             static constexpr std::string_view AddingToZip = "AddingToZip";
             static constexpr std::string_view DeletingBackup = "DeletingBackup";
             static constexpr std::string_view KeyboardButtons = "KeyboardButtons";
+            static constexpr std::string_view YesNo = "YesNo";
+            static constexpr std::string_view HoldingText = "HoldingText";
+            static constexpr std::string_view BackupMenuConfirmations = "BackupMenuConfirmations";
         } // namespace Names
     } // namespace Strings
 } // namespace UI
