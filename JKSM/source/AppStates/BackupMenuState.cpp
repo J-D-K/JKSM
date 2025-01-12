@@ -54,7 +54,7 @@ BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData 
 
 BackupMenuState::~BackupMenuState()
 {
-    FsLib::CloseDevice(SAVE_MOUNT);
+    FsLib::CloseDevice(FS::SAVE_MOUNT);
 }
 
 void BackupMenuState::Update(void)

@@ -41,5 +41,5 @@ void MessageState::DrawBottom(SDL_Surface *Target)
     // Fake ok button thingy.
     SDL::DrawRect(Target, 8, 190, 304, 1, SDL::Colors::White);
     // OK text
-    m_Noto->BlitTextAt(Target, m_OKX, 192, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::OK, 0));
+    m_Noto->BlitTextAt(Target, m_OKX, 200, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::OK, 0));
 }

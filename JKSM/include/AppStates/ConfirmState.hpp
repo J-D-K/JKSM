@@ -93,8 +93,8 @@ class ConfirmState : public AppState
             SDL::DrawRect(Target, 8, 190, 304, 1, SDL::Colors::White);
             SDL::DrawRect(Target, 160, 190, 1, 32, SDL::Colors::White);
             // Yes and no
-            m_Noto->BlitTextAt(Target, m_YesX, 192, 12, m_Noto->NO_TEXT_WRAP, m_YesString.c_str());
-            m_Noto->BlitTextAt(Target, m_NoX, 192, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1));
+            m_Noto->BlitTextAt(Target, m_YesX, 200, 12, m_Noto->NO_TEXT_WRAP, m_YesString.c_str());
+            m_Noto->BlitTextAt(Target, m_NoX, 200, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1));
         }
 
     private:

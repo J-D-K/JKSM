@@ -30,6 +30,9 @@ namespace UI
             static constexpr std::string_view OK = "OK";
             static constexpr std::string_view BackupMenuConfirmations = "BackupMenuConfirmations";
             static constexpr std::string_view TitleOptions = "TitleOptions";
+            static constexpr std::string_view TitleOptionConfirmations = "TitleOptionConfirmations";
+            static constexpr std::string_view TitleOptionTaskStatus = "TitleOptionTaskStatus";
+            static constexpr std::string_view TitleOptionMessages = "TitleOptionMessages";
         } // namespace Names
     } // namespace Strings
 } // namespace UI

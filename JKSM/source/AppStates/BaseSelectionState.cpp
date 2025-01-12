@@ -55,31 +55,31 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
     {
         case Data::SaveTypeUser:
         {
-            Mounted = FsLib::OpenUserSaveData(SAVE_MOUNT, Data->GetMediaType(), Data->GetLowerID(), Data->GetUpperID());
+            Mounted = FsLib::OpenUserSaveData(FS::SAVE_MOUNT, Data->GetMediaType(), Data->GetLowerID(), Data->GetUpperID());
         }
         break;
 
         case Data::SaveTypeExtData:
         {
-            Mounted = FsLib::OpenExtData(SAVE_MOUNT, Data->GetExtDataID());
+            Mounted = FsLib::OpenExtData(FS::SAVE_MOUNT, Data->GetExtDataID());
         }
         break;
 
         case Data::SaveTypeSharedExtData:
         {
-            Mounted = FsLib::OpenSharedExtData(SAVE_MOUNT, Data->GetLowerID());
+            Mounted = FsLib::OpenSharedExtData(FS::SAVE_MOUNT, Data->GetLowerID());
         }
         break;
 
         case Data::SaveTypeBossExtData:
         {
-            Mounted = FsLib::OpenBossExtData(SAVE_MOUNT, Data->GetExtDataID());
+            Mounted = FsLib::OpenBossExtData(FS::SAVE_MOUNT, Data->GetExtDataID());
         }
         break;
 
         case Data::SaveTypeSystem:
         {
-            Mounted = FsLib::OpenSystemSaveData(SAVE_MOUNT, Data->GetUniqueID());
+            Mounted = FsLib::OpenSystemSaveData(FS::SAVE_MOUNT, Data->GetUniqueID());
         }
         break;
 

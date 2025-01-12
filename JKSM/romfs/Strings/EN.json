@@ -79,7 +79,7 @@
     ],
     "OK": [
         "OK [A]"
-    ]
+    ],
     "BackupMenuConfirmations": [
         "Are you sure you want to overwrite [%s]?",
         "Are you sure you want to restore [%s]?",
@@ -88,6 +88,18 @@
     "TitleOptions": [
         "Delete Secure Value",
         "Erase Save Data",
-        "Format Save Data"
+        "Export Secure Value",
+        "Import Secure Value"
+    ],
+    "TitleOptionConfirmations": [
+        "Are you sure you want to permanently erase your current save data for [%s]?",
+        "Are you sure you want to format and reset your current save data for [%s]?"
+    ],
+    "TitleOptionTaskStatus": [
+        "Erasing save data for [%s]."
+    ],
+    "TitleOptionMessages": [
+        "Secure value exported to [%s].",
+        "Secure value imported from [%s]!"
     ]
 }
