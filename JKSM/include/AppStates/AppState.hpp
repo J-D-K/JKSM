@@ -63,7 +63,6 @@ class AppState
         // Stores what type of state
         AppState::StateFlags m_StateType;
 
-
     protected:
         // Pretty much every state needs this so.
         SDL::SharedFont m_Noto = nullptr;

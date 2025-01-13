@@ -30,30 +30,32 @@ namespace
     } SharedThreadData;
 } // namespace
 
-void ReadThreadFunction(FsLib::File &SourceFile, SharedThreadData *Data)
+void ReadThreadFunction(FsLib::File &SourceFile, SharedThreadData &Data)
 {
+    // Record file size for loop.
     uint64_t FileSize = SourceFile.GetSize();
-    uint64_t TotalBytesRead = 0;
-    while (TotalBytesRead < FileSize)
+
+    // Loop until entire file is read.
+    for (uint64_t TotalRead = 0; TotalRead < FileSize;)
     {
-        // Read data from source file.
-        Data->BytesRead = SourceFile.Read(Data->SharedBuffer.get(), FILE_BUFFER_SIZE);
-        // Check and log.
-        if (Data->BytesRead == 0)
+        // Read from source
+        Data.BytesRead = SourceFile.Read(Data.SharedBuffer.get(), FILE_BUFFER_SIZE);
+        if (Data.BytesRead == 0)
         {
             Logger::Log("Error reading from file: %s", FsLib::GetErrorString());
+            // To do: Handle this better if it occurs.
         }
 
-        // Update total byte count
-        TotalBytesRead += Data->BytesRead;
+        // Update loop count
+        TotalRead += Data.BytesRead;
 
-        // Signal to other thread it can start a copy and write.
-        Data->BufferIsFull = true;
-        Data->BufferCondition.notify_one();
+        // Signal to other thread it can copy and write the buffer.
+        Data.BufferIsFull = true;
+        Data.BufferCondition.notify_one();
 
-        // Wait until buffer is full is false. This will release the mutex right away, but since the main/write thread copies the buffer, it doesn't matter if we read to it right away.
-        std::unique_lock<std::mutex> BufferLock(Data->BufferMutex);
-        Data->BufferCondition.wait(BufferLock, [Data]() { return Data->BufferIsFull == false; });
+        // Wait until buffer is "empty" again.
+        std::unique_lock<std::mutex> BufferLock(Data.BufferMutex);
+        Data.BufferCondition.wait(BufferLock, [&Data]() { return Data.BufferIsFull == false; });
     }
 }
 
@@ -112,50 +114,58 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
 
             // Grab file size quick.
             uint64_t FileSize = SourceFile.GetSize();
-
             // Spawn read thread early.
-            std::thread ReadThread(ReadThreadFunction, std::ref(SourceFile), &Data);
+            std::thread ReadThread(ReadThreadFunction, std::ref(SourceFile), std::ref(Data));
 
-            // Total bytes written and localbuffer to copy to. This is scoped so the buffer frees itself earlier.
-            uint64_t TotalBytesWritten = 0;
+            // LocalBuffer to copy bytes read to so we don't hold up the read thread.
             std::unique_ptr<unsigned char[]> LocalBuffer(new unsigned char[FILE_BUFFER_SIZE]);
-            while (TotalBytesWritten < FileSize)
+            for (uint64_t BytesWritten = 0; BytesWritten < FileSize;)
             {
+                // Need to save this for the end of the loop.
                 uint32_t BytesRead = 0;
-                // Wait for buffer to be filled.
-                {
-                    std::unique_lock<std::mutex> BufferLock(Data.BufferMutex);
-                    Data.BufferCondition.wait(BufferLock, [&Data]() { return Data.BufferIsFull == true; });
 
-                    // Copy from shared to local.
+                // Scoped so the lock is released earlier.
+                {
+                    // Wait for signal buffer is full.
+                    std::unique_lock<std::mutex> BufferLock(Data.BufferMutex);
+                    Data.BufferCondition.wait(BufferLock, [&Data]() { return Data.BufferIsFull; });
+
+                    // Record number of bytes read thread read and copy sharedbuffer contents to localbuffer.
                     BytesRead = Data.BytesRead;
                     std::memcpy(LocalBuffer.get(), Data.SharedBuffer.get(), BytesRead);
 
-                    // Signal to other thread to continue reading.
+                    // Signal to other thread it can continue reading
                     Data.BufferIsFull = false;
                     Data.BufferCondition.notify_one();
                 }
-                // Write data.
-                DestinationFile.Write(LocalBuffer.get(), BytesRead);
+
+                // Write data to destination
+                size_t WriteCount = DestinationFile.Write(LocalBuffer.get(), BytesRead);
+                if (WriteCount <= 0)
+                {
+                    Logger::Log("Error writing to file: %s", FsLib::GetErrorString());
+                    // To do: Handle this somehow.
+                }
 
                 // Update count
-                TotalBytesWritten += BytesRead;
+                BytesWritten += WriteCount;
 
-                // Update progress
+                // Update progress.
                 if (Task)
                 {
-                    Task->SetCurrent(static_cast<double>(TotalBytesWritten));
+                    Task->SetCurrent(static_cast<double>(BytesWritten));
                 }
             }
 
             // Join read thread
             ReadThread.join();
 
-            // Need to close destination to commit. FsLib::File automatically closes its handle when out of scope, so normally this isn't needed.
-            if (Commit)
+            // Close the destination file early just incase commit is required.
+            DestinationFile.Close();
+
+            if (Commit && !FsLib::ControlDevice(FS::SAVE_MOUNT))
             {
-                DestinationFile.Close();
-                FsLib::ControlDevice(SAVE_MOUNT);
+                Logger::Log("Error committing save to device: %s", FsLib::GetErrorString());
             }
         }
     }
@@ -323,7 +333,7 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         if (Commit)
         {
             DestinationFile.Close();
-            FsLib::ControlDevice(SAVE_MOUNT);
+            FsLib::ControlDevice(FS::SAVE_MOUNT);
         }
     } while (unzGoToNextFile(Source) != UNZ_END_OF_LIST_OF_FILE);
 }

@@ -28,8 +28,8 @@ class ConfirmState : public AppState
               m_DataStruct(DataStruct)
         {
             m_YesString = UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 0);
-            m_YesX = 80 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
-            m_NoX = 220 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1)) / 2);
+            m_YesX = 88 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
+            m_NoX = 232 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 1)) / 2);
         }
 
         void Update(void)
@@ -39,12 +39,17 @@ class ConfirmState : public AppState
                 AppState::Deactivate();
                 JKSM::PushState(std::make_shared<StateType>(m_CreatingState, m_OnConfirmation, m_DataStruct));
             }
-            else if (Input::ButtonPressed(KEY_A) && m_Hold)
+            else if (Input::ButtonPressed(KEY_A) && m_Hold && !m_APressed)
             {
+                // Record starting ticks and set APressed.
                 m_StartingTicks = SDL_GetTicks();
+                m_APressed = true;
+
+                // Set yes string to hold and realign it
                 m_YesString = UI::Strings::GetStringByName(UI::Strings::Names::HoldingText, 0);
+                m_YesX = 88 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
             }
-            else if (Input::ButtonHeld(KEY_A) && m_Hold)
+            else if (Input::ButtonHeld(KEY_A) && m_Hold && m_APressed)
             {
                 int CurrentTicks = SDL_GetTicks() - m_StartingTicks;
 
@@ -57,11 +62,24 @@ class ConfirmState : public AppState
                 else if (CurrentTicks >= 2000)
                 {
                     m_YesString = UI::Strings::GetStringByName(UI::Strings::Names::HoldingText, 2);
+                    // Realign Yes string
+                    m_YesX = 88 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
                 }
                 else if (CurrentTicks >= 1000)
                 {
                     m_YesString = UI::Strings::GetStringByName(UI::Strings::Names::HoldingText, 1);
+                    // Realign Yes string
+                    m_YesX = 88 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
                 }
+            }
+            else if (Input::ButtonReleased(KEY_A) && m_Hold && m_APressed)
+            {
+                // Reset press
+                m_APressed = false;
+
+                // Reset YesString.
+                m_YesString = UI::Strings::GetStringByName(UI::Strings::Names::YesNo, 0);
+                m_YesX = 88 - (m_Noto->GetTextWidth(12, m_YesString.c_str()) / 2);
             }
             else if (Input::ButtonPressed(KEY_B))
             {
@@ -104,6 +122,8 @@ class ConfirmState : public AppState
         std::string m_QueryString;
         // Whether or not A should be held to confirm the action.
         bool m_Hold = false;
+        // Whether or not A was pressed to prevent auto confirming.
+        bool m_APressed = false;
         // String to display for yes/holding
         std::string m_YesString;
         // X coordinates for Yes and No.

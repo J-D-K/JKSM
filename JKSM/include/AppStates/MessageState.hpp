@@ -1,5 +1,7 @@
 #pragma once
 #include "AppStates/AppState.hpp"
+#include "JKSM.hpp"
+#include <memory>
 #include <string>
 
 class MessageState : public AppState
@@ -20,3 +22,9 @@ class MessageState : public AppState
         // X coordinate of OK text.
         int m_OKX = 0;
 };
+
+// This is a shortcut function so I don't have to constantly type std::make_shared<ETC>(ETC, ETC);
+static inline void ShowMessage(AppState *CreatingState, std::string_view MessageString)
+{
+    JKSM::PushState(std::make_shared<MessageState>(CreatingState, MessageString));
+}

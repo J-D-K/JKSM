@@ -54,15 +54,20 @@ BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData 
 
 BackupMenuState::~BackupMenuState()
 {
-    FsLib::CloseDevice(FS::SAVE_MOUNT);
+    if (!FsLib::CloseDevice(FS::SAVE_MOUNT))
+    {
+        Logger::Log("Error closing save archive: %s", FsLib::GetErrorString());
+    }
 }
 
 void BackupMenuState::Update(void)
 {
+    // Scoped lock for updating the actual menu.
     {
         std::scoped_lock<std::mutex> ListingLock(m_ListingMutex);
         m_BackupMenu.Update();
     }
+
     // New Backup
     if (Input::ButtonPressed(KEY_A) && m_BackupMenu.GetSelected() == 0)
     {
@@ -104,6 +109,7 @@ void BackupMenuState::Update(void)
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
         ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
         ConfirmStruct->UniqueID = m_Data->GetUniqueID();
+        ConfirmStruct->SaveType = m_SaveType;
 
         // Query string
         char TargetName[FsLib::MAX_PATH] = {0};
@@ -234,8 +240,7 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
     }
 
     // Whether or not committing data is needed.
-    bool CommitData =
-        (DataStruct->SaveType == Data::SaveDataType::SaveTypeUser || DataStruct->SaveType == Data::SaveDataType::SaveTypeSystem) ? true : false;
+    bool CommitData = (DataStruct->SaveType == Data::SaveDataType::SaveTypeUser || DataStruct->SaveType == Data::SaveDataType::SaveTypeSystem);
 
     // This can also be used to test if the target is a directory. Not just if it exists.
     if (FsLib::DirectoryExists(DataStruct->TargetPath))

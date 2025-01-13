@@ -12,6 +12,7 @@
 
 namespace
 {
+    // Enums for menu
     enum
     {
         DELETE_SECURE_VALUE,
@@ -19,7 +20,9 @@ namespace
         EXPORT_SECURE_VALUE,
         IMPORT_SECURE_VALUE
     };
-}
+    // String used for errors when erasing.
+    constexpr std::string_view ERROR_ERASING_SAVE = "Error erasing save data: %s";
+} // namespace
 
 // Struct to pass data to functions after confirmation.
 typedef struct
@@ -107,7 +110,7 @@ void TitleOptionState::Update(void)
                 std::string Message =
                     StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::TitleOptionMessages, 0), UTF8Path);
 
-                JKSM::PushState(std::make_shared<MessageState>(this, Message));
+                ShowMessage(this, Message);
             }
             break;
 
@@ -150,7 +153,7 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
                                  DataStruct->TargetTitle->GetLowerID(),
                                  DataStruct->TargetTitle->GetUpperID()))
     {
-        Logger::Log("Error erasing save data: %s", FsLib::GetErrorString());
+        Logger::Log(ERROR_ERASING_SAVE.data(), FsLib::GetErrorString());
         Task->Finish();
         return;
     }
@@ -162,17 +165,20 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
 
     if (!FsLib::DeleteDirectoryRecursively(FS::SAVE_ROOT))
     {
-        Logger::Log("Error erasing save data: %s", FsLib::GetErrorString());
+        Logger::Log(ERROR_ERASING_SAVE.data(), FsLib::GetErrorString());
     }
 
     // Commit changes.
     if (!FsLib::ControlDevice(FS::SAVE_MOUNT))
     {
-        Logger::Log("Error erasing save data: %s", FsLib::GetErrorString());
+        Logger::Log(ERROR_ERASING_SAVE.data(), FsLib::GetErrorString());
     }
 
     // Close
-    FsLib::CloseDevice(FS::SAVE_MOUNT);
+    if (!FsLib::CloseDevice(FS::SAVE_MOUNT))
+    {
+        Logger::Log(ERROR_ERASING_SAVE.data(), FsLib::GetErrorString());
+    }
 
     Task->Finish();
 }

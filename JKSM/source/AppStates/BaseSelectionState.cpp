@@ -91,7 +91,7 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
 
     if (!Mounted)
     {
-        Logger::Log("Error mounting save for %016llX: %s", FsLib::GetErrorString());
+        Logger::Log("Error mounting save for %016llX: %s", Data->GetTitleID(), FsLib::GetErrorString());
     }
 
     return Mounted;
