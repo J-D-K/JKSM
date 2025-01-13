@@ -71,9 +71,12 @@ void BackupMenuState::Update(void)
     // New Backup
     if (Input::ButtonPressed(KEY_A) && m_BackupMenu.GetSelected() == 0)
     {
-        // Get name
+        // Default backup name
+        char Default[0x40] = {0};
+        StringUtil::GetDateTimeString(Default, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
+        // Get input.
         char16_t BackupName[0x40] = {0};
-        if (!Keyboard::GetStringWithKeyboard("Default Text", BackupName, 0x40))
+        if (!Keyboard::GetStringWithKeyboard(Default, BackupName, 0x40))
         {
             return;
         }

@@ -214,6 +214,9 @@ void Data::Initialize(System::ProgressTask *Task)
         Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 1), TitleIDList[i]);
         Task->SetCurrent(static_cast<double>(i));
 
+        // This makes face raiders and some other interesting stuff show up on New 3DS...
+        TitleIDList[i] &= ~0x20000000;
+
         Data::TitleSaveTypes SaveTypes = {false};
         if (TestArchivesWithTitleID(TitleIDList[i], MEDIATYPE_NAND, SaveTypes))
         {

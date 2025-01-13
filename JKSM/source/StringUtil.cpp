@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdarg>
 #include <cstring>
+#include <ctime>
 #include <string>
 
 namespace
@@ -45,6 +46,38 @@ std::string StringUtil::GetFormattedString(const char *Format, ...)
     va_end(VaList);
 
     return std::string(VaBuffer);
+}
+
+void StringUtil::GetDateTimeString(char *StringOut, size_t StringLength, StringUtil::DateFormats DateFormat)
+{
+    std::time_t Timer;
+    std::time(&Timer);
+    std::tm *LocalTime = std::localtime(&Timer);
+
+    switch (DateFormat)
+    {
+        case StringUtil::DateFormats::DATE_FMT_YMD:
+        {
+            std::strftime(StringOut, StringLength, "%Y-%m-%d_%H-%M-%S", LocalTime);
+        }
+        break;
+
+        case StringUtil::DateFormats::DATE_FMT_YDM:
+        {
+            std::strftime(StringOut, StringLength, "%Y-%d-%m_%H-%M-%S", LocalTime);
+        }
+        break;
+    }
+}
+
+void StringUtil::GetDateTimeString(char16_t *StringOut, size_t StringLength, StringUtil::DateFormats DateFormat)
+{
+    // This one just calls the other and runs it through the conversion function in ctrulib
+    char AsciiBuffer[StringLength] = {0};
+    GetDateTimeString(AsciiBuffer, StringLength, DateFormat);
+
+    // Convert
+    utf8_to_utf16(reinterpret_cast<uint16_t *>(StringOut), reinterpret_cast<uint8_t *>(AsciiBuffer), StringLength);
 }
 
 void StringUtil::ToUTF8(const char16_t *String, char *StringOut, size_t StringOutSize)
