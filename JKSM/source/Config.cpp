@@ -55,7 +55,9 @@ void Config::ResetToDefault(void)
     s_ConfigMap[Config::Keys::HoldToOverwrite.data()] = 1;
     s_ConfigMap[Config::Keys::HoldToRestore.data()] = 1;
     s_ConfigMap[Config::Keys::HoldToDelete.data()] = 1;
+    s_ConfigMap[Config::Keys::ExportToZip.data()] = 0;
 
+    /*
     // Zip is only enabled by default if on New 3DS. It's too slow on original.
     bool New3DS = false;
     Result AptError = APT_CheckNew3DS(&New3DS);
@@ -67,7 +69,7 @@ void Config::ResetToDefault(void)
     {
         s_ConfigMap[Config::Keys::ExportToZip.data()] = 0;
     }
-    Config::Save();
+    Config::Save();*/
 }
 
 void Config::Save(void)

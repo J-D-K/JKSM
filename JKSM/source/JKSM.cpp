@@ -26,7 +26,7 @@
 namespace
 {
     // This is the title text.
-    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 01/10/2025";
+    constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 01/13/2025";
 } // namespace
 
 // This function makes it easier to log init errors for services.
