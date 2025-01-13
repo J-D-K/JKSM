@@ -69,7 +69,8 @@ void Config::ResetToDefault(void)
     {
         s_ConfigMap[Config::Keys::ExportToZip.data()] = 0;
     }
-    Config::Save();*/
+    */
+    Config::Save();
 }
 
 void Config::Save(void)

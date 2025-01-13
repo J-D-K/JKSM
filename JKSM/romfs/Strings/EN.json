@@ -101,5 +101,10 @@
     "TitleOptionMessages": [
         "Secure value exported to [%s].",
         "Secure value imported from [%s]!"
+    ],
+    "PlayCoinsMessages": [
+        "Error setting play coins: Failed to open shared archive.",
+        "Error opening [gamecoin.dat].",
+        "Play coins set to %u!"
     ]
 }

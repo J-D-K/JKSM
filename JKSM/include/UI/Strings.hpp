@@ -33,6 +33,7 @@ namespace UI
             static constexpr std::string_view TitleOptionConfirmations = "TitleOptionConfirmations";
             static constexpr std::string_view TitleOptionTaskStatus = "TitleOptionTaskStatus";
             static constexpr std::string_view TitleOptionMessages = "TitleOptionMessages";
+            static constexpr std::string_view PlayCoinsMessages = "PlayCoinsMessages";
         } // namespace Names
     } // namespace Strings
 } // namespace UI

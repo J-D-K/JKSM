@@ -1,4 +1,5 @@
 #include "JKSM.hpp"
+#include "AppStates/MessageState.hpp"
 #include "AppStates/ProgressTaskState.hpp"
 #include "AppStates/SettingsState.hpp"
 #include "AppStates/TextTitleSelect.hpp"
@@ -8,8 +9,10 @@
 #include "Data/Data.hpp"
 #include "FS/FS.hpp"
 #include "Input.hpp"
+#include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
+#include "StringUtil.hpp"
 #include "UI/Strings.hpp"
 #include <3ds.h>
 #include <mutex>
@@ -27,6 +30,9 @@ namespace
 {
     // This is the title text.
     constexpr std::string_view TITLE_TEXT = "JK's Save Manager - 01/13/2025";
+
+    // This is the device name used to set play coins.
+    constexpr std::u16string_view SHARED_DEVICE = u"shared";
 } // namespace
 
 // This function makes it easier to log init errors for services.
@@ -198,6 +204,10 @@ void JKSM::Update(void)
             m_StateStack.top()->GiveFocus();
         }
     }
+    else if (Input::ButtonPressed(KEY_SELECT) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
+    {
+        JKSM::SetPlayCoins();
+    }
 }
 
 void JKSM::Draw(void)
@@ -278,4 +288,48 @@ void JKSM::InitializeViews(void)
     {
         m_StateStack.push(m_StateArray.at(i));
     }
+}
+
+void JKSM::SetPlayCoins(void)
+{
+    if (!FsLib::OpenSharedExtData(SHARED_DEVICE, 0xF000000B))
+    {
+        ShowMessage(m_StateStack.top().get(), UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 0));
+        return;
+    }
+
+    // Open target file.
+    FsLib::File GameCoin(u"shared:/gamecoin.dat", FS_OPEN_READ | FS_OPEN_WRITE);
+    if (!GameCoin.IsOpen())
+    {
+        FsLib::CloseDevice(SHARED_DEVICE);
+        ShowMessage(m_StateStack.top().get(), UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 1));
+        return;
+    }
+
+    // Seek to position and read the current play coin amount.
+    uint16_t CurrentPlayCoins = 0, DesiredPlayCoins = 0;
+    GameCoin.Seek(0x4, GameCoin.Beginning);
+    GameCoin.Read(&CurrentPlayCoins, sizeof(uint16_t));
+
+    if (!Keyboard::GetUnsignedIntWithKeyboard(CurrentPlayCoins, reinterpret_cast<unsigned int *>(&DesiredPlayCoins)))
+    {
+        // Just cleanup and return on cancel.
+        FsLib::CloseDevice(SHARED_DEVICE);
+        return;
+    }
+
+    // Seek to same position as before.
+    GameCoin.Seek(0x4, GameCoin.Beginning);
+
+    // Write desired amount.
+    GameCoin.Write(&DesiredPlayCoins, sizeof(uint16_t));
+
+    // Cleanup
+    FsLib::CloseDevice(SHARED_DEVICE);
+
+    // Show message
+    std::string CoinSuccess =
+        StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
+    ShowMessage(m_StateStack.top().get(), CoinSuccess);
 }

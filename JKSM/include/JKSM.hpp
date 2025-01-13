@@ -49,4 +49,6 @@ class JKSM
         static inline std::array<std::shared_ptr<AppState>, m_StateTotal> m_StateArray = {nullptr};
         // Stack of states we push and pop from.
         static inline std::stack<std::shared_ptr<AppState>> m_StateStack;
+        // This function isn't needed outside this class anyway.
+        void SetPlayCoins(void);
 };

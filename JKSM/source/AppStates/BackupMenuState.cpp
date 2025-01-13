@@ -73,7 +73,7 @@ void BackupMenuState::Update(void)
     {
         // Get name
         char16_t BackupName[0x40] = {0};
-        if (!GetStringWithKeyboard(BackupName, 0x40))
+        if (!Keyboard::GetStringWithKeyboard("Default Text", BackupName, 0x40))
         {
             return;
         }
