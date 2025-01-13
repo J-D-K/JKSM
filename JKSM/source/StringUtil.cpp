@@ -23,7 +23,15 @@ void StringUtil::SanitizeStringForPath(const char16_t *StringIn, char16_t *Strin
     {
         if (std::find(s_ForbiddenChars.begin(), s_ForbiddenChars.end(), *StringOut) != s_ForbiddenChars.end())
         {
-            *StringOut = u' ';
+            // This is a fix for something very specific.
+            if (*StringOut == u'?')
+            {
+                *StringOut = u'_';
+            }
+            else
+            {
+                *StringOut = u' ';
+            }
         }
         ++StringOut;
     }
