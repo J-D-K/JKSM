@@ -36,7 +36,7 @@ bool SDL::Initialize(void)
         return false;
     }
 
-    // All of these buffers are set to not use alh
+    // All of these buffers are set to not use alpha to make blits faster.
     // Top screen buffer
     s_TopScreen = SDL::SurfaceManager::CreateLoadResource(TOP_SCREEN_NAME, 400, 240, false);
     if (!s_TopScreen)
@@ -45,6 +45,7 @@ bool SDL::Initialize(void)
         return false;
     }
 
+    // Bottom screen buffer.
     s_BottomScreen = SDL::SurfaceManager::CreateLoadResource(BOTTOM_SCREEN_NAME, 320, 240, false);
     if (!s_BottomScreen)
     {
@@ -73,9 +74,10 @@ void SDL::Exit(void)
 
 void SDL::FrameBegin(void)
 {
-    // Clear both screen buffers.
+    // Clear both screen buffers to the default Switch UI color.
     std::memset(s_TopScreen->Get()->pixels, 0x2D, 400 * 240 * sizeof(uint32_t));
     std::memset(s_BottomScreen->Get()->pixels, 0x2D, 320 * 240 * sizeof(uint32_t));
+
     // Set buffer to top
     s_CurrentBuffer = s_TopScreen->Get();
 }
@@ -89,7 +91,12 @@ void SDL::FrameEnd(void)
 {
     SDL_BlitSurface(s_TopScreen->Get(), NULL, s_FrameBuffer->Get(), &s_TopCoords);
     SDL_BlitSurface(s_BottomScreen->Get(), NULL, s_FrameBuffer->Get(), &s_BottomCoords);
-    SDL_Flip(s_FrameBuffer->Get());
+
+    int FlipError = SDL_Flip(s_FrameBuffer->Get());
+    if (FlipError != 0)
+    {
+        Logger::Log("Error flipping buffer to screen: %s", SDL_GetError());
+    }
 }
 
 SDL_Surface *SDL::GetCurrentBuffer(void)

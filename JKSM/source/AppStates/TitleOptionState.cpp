@@ -28,13 +28,14 @@ namespace
 typedef struct
 {
         const Data::TitleData *TargetTitle;
+        Data::SaveDataType SaveType;
 } TargetStruct;
 
 // Declarations for functions.
 static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct);
 
-TitleOptionState::TitleOptionState(AppState *CreatingState, const Data::TitleData *TargetTitle)
-    : m_CreatingState(CreatingState), m_TargetTitle(TargetTitle), m_OptionsMenu(70, 30, 258, 11)
+TitleOptionState::TitleOptionState(AppState *CreatingState, const Data::TitleData *TargetTitle, Data::SaveDataType SaveType)
+    : m_CreatingState(CreatingState), m_TargetTitle(TargetTitle), m_SaveType(SaveType), m_OptionsMenu(70, 30, 258, 11)
 {
     int CurrentString = 0;
     const char *MenuString = nullptr;
@@ -63,6 +64,7 @@ void TitleOptionState::Update(void)
                 // Data to pass.
                 std::shared_ptr<TargetStruct> DataStruct(new TargetStruct);
                 DataStruct->TargetTitle = m_TargetTitle;
+                DataStruct->SaveType = m_SaveType;
 
                 // Warning/confirmation string.
                 char UTF8Title[0x40] = {0};

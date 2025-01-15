@@ -10,4 +10,4 @@ set(SOURCE_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-target_link_libraries(${PROJECT_NAME} -lz)
+target_link_libraries(${PROJECT_NAME} -lzstd)

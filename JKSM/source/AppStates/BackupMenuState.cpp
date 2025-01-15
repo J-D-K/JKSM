@@ -71,13 +71,25 @@ void BackupMenuState::Update(void)
     // New Backup
     if (Input::ButtonPressed(KEY_A) && m_BackupMenu.GetSelected() == 0)
     {
-        // Default backup name
-        char Default[0x40] = {0};
-        StringUtil::GetDateTimeString(Default, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
-        // Get input.
+        // Buffer for actual backup name.
         char16_t BackupName[0x40] = {0};
-        if (!Keyboard::GetStringWithKeyboard(Default, BackupName, 0x40))
+
+        // Default text for keyboard. To do: This is kind of pointless if a shortcut is used, but I don't like nested ifs to begin with.
+        char DefaultText[0x40] = {0};
+        StringUtil::GetDateTimeString(DefaultText, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
+
+        // Shortcut checks
+        if (Input::ButtonHeld(KEY_R))
         {
+            StringUtil::GetDateTimeString(BackupName, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
+        }
+        else if (Input::ButtonHeld(KEY_L))
+        {
+            StringUtil::GetDateTimeString(BackupName, 0x40, StringUtil::DateFormats::DATE_FMT_YDM);
+        }
+        else if (!Keyboard::GetStringWithKeyboard(DefaultText, BackupName, 0x40))
+        {
+            // If this fails, bail from this function before continuing.
             return;
         }
 

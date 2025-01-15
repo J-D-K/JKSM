@@ -1,6 +1,9 @@
 #include <malloc.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <zlib.h>
+#include <zstd.h>
+
+typedef unsigned char byte;
 
 static size_t GetFileSize(const char *FilePath)
 {
@@ -27,51 +30,87 @@ int main(int argc, const char *argv[])
 
     for (int i = 1; i < argc; i++)
     {
-        size_t FileSize = GetFileSize(argv[i]);
+        // Just print something.
+        printf("Processing %s... ", argv[i]);
+
+        // Get starting, uncompressed size.
+        uint32_t FileSize = GetFileSize(argv[i]);
+
+        // Don't bother if file is empty.
         if (FileSize == 0)
         {
+            printf("\nFile is empty. Skipping.\n");
             continue;
         }
-        printf("File size: %X\n", FileSize);
 
+        // Open file for reading.
         FILE *Target = fopen(argv[i], "rb");
         if (!Target)
         {
+            printf("\nError opening file \"%s\". Skipping.\n", argv[i]);
             continue;
         }
 
-        Bytef *FileBuffer = malloc(FileSize);
-        Bytef *CompressionBuffer = malloc(FileSize);
-        size_t CompressionBufferSize = FileSize;
-        if (fread(FileBuffer, 1, FileSize, Target) != FileSize)
+        // Allocate buffers for reading and compressing.
+        byte *ReadBuffer = malloc(FileSize);
+        byte *CompressBuffer = malloc(FileSize);
+        if (!ReadBuffer || !CompressBuffer)
         {
+            // Jump to cleanup and abort mission.
+            printf("\nError allocating buffers.\n");
             goto Cleanup;
         }
+
+        // Try to read entire file into RAM at once.
+        if (fread(ReadBuffer, 1, FileSize, Target) != FileSize)
+        {
+            printf("\nError reading file to RAM.\n");
+            goto Cleanup;
+        }
+
+        // Close the file.
         fclose(Target);
-        printf("File read to RAM.\n");
 
-        int ZError = compress2(CompressionBuffer, (uLongf *)&CompressionBufferSize, FileBuffer, FileSize, 9);
-        if (ZError != Z_OK)
+        // This is the simple way to compress things with ZSTD.
+        // Using uint32_t instead of size_t so everything is consistent with 3DS.
+        uint32_t CompressedSize = ZSTD_compress(CompressBuffer, FileSize, ReadBuffer, FileSize, 22);
+        if (ZSTD_isError(CompressedSize))
         {
+            printf("\nError compressing font.\n");
             goto Cleanup;
         }
-        printf("Compressed\n");
 
+        // Reopen file for writing.
         Target = fopen(argv[i], "wb");
         if (!Target)
         {
+            printf("\nError opening file for writing.\n");
             goto Cleanup;
         }
-        printf("Reopened for writing.\n");
 
-        fwrite(&FileSize, 1, sizeof(uLongf), Target);
-        fwrite(&CompressionBufferSize, 1, sizeof(uLongf), Target);
-        fwrite(CompressionBuffer, 1, CompressionBufferSize, Target);
-        printf("Written.\n");
+        // Write the uncompressed size
+        fwrite(&FileSize, sizeof(uint32_t), 1, Target);
+        fwrite(&CompressedSize, sizeof(uint32_t), 1, Target);
+        // Write the compressed data
+        fwrite(CompressBuffer, 1, CompressedSize, Target);
+
+        // This should only get printed if everything succeeded.
+        printf("Done!\n");
 
     Cleanup:
-        free(FileBuffer);
-        free(CompressionBuffer);
-        fclose(Target);
+        if (Target)
+        {
+            fclose(Target);
+        }
+
+        if (ReadBuffer)
+        {
+            free(ReadBuffer);
+        }
+
+        if (CompressBuffer)
+        {
+            free(CompressBuffer);
+        }
     }
 }

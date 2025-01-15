@@ -45,7 +45,7 @@ void BaseSelectionState::CreateBackupStateWithData(const Data::TitleData *Data)
 
 void BaseSelectionState::CreateOptionStateWithData(const Data::TitleData *Data)
 {
-    JKSM::PushState(std::make_shared<TitleOptionState>(this, Data));
+    JKSM::PushState(std::make_shared<TitleOptionState>(this, Data, m_SaveType));
 }
 
 bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
