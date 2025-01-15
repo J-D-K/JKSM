@@ -44,7 +44,7 @@
         "Uses text menus instead of icon grids.",
         "Exports saves to ZIP files instead of unpacked folders. This is only recommended if you own a New 3DS.",
         "Forces JKSM to use English instead of the system's detected language.",
-        "Makes JKSM *attempt* to save and preserve secure values instead of deleting them.",
+        "Makes JKSM *attempt* to save and preserve secure values with save backups instead of deleting them.",
         "Whether or not holding A for three seconds is required to overwrite a save backup.",
         "Whether or not holding A for three seconds is required to restore a save backup.",
         "Whether or not holding A for three seconds is required to delete a save backup."

@@ -3,6 +3,7 @@
 #include "AppStates/ProgressTaskState.hpp"
 #include "AppStates/TaskState.hpp"
 #include "Config.hpp"
+#include "Data/Data.hpp"
 #include "FS/FS.hpp"
 #include "FS/IO.hpp"
 #include "FS/SaveMount.hpp"
@@ -14,23 +15,23 @@
 #include "Strings.hpp"
 #include "System/ProgressTask.hpp"
 #include "System/Task.hpp"
-
-namespace
-{
-    constexpr std::u16string_view SAVE_ROOT = u"save:/";
-}
+#include <string_view>
 
 // Struct used for confirming actions. This is a general struct and not everything is used by every action/function
 typedef struct
 {
         FsLib::Path TargetPath;
         Data::SaveDataType SaveType;
+        const Data::TitleData *TargetTitle;
         BackupMenuState *CallingState = nullptr;
         uint32_t UniqueID = 0;
 } TargetStruct;
 
 // Declarations. Definitions after class members.
-static void CreateNewBackup(System::ProgressTask *Task, FsLib::Path BackupPath, BackupMenuState *CreatingState);
+static void CreateNewBackup(System::ProgressTask *Task,
+                            FsLib::Path BackupPath,
+                            const Data::TitleData *TargetTitle,
+                            BackupMenuState *CreatingState);
 static void OverwriteBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct);
 static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct);
 static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct);
@@ -96,7 +97,7 @@ void BackupMenuState::Update(void)
         // Create path
         FsLib::Path BackupPath = m_DirectoryPath / BackupName;
 
-        JKSM::PushState(std::make_shared<ProgressTaskState>(this, CreateNewBackup, BackupPath, this));
+        JKSM::PushState(std::make_shared<ProgressTaskState>(this, CreateNewBackup, BackupPath, m_Data, this));
     }
     else if (Input::ButtonPressed(KEY_A) && m_BackupMenu.GetSelected() > 0)
     {
@@ -197,17 +198,48 @@ void BackupMenuState::Refresh(void)
     }
 }
 
-static void CreateNewBackup(System::ProgressTask *Task, FsLib::Path BackupPath, BackupMenuState *CreatingState)
+static void CreateNewBackup(System::ProgressTask *Task,
+                            FsLib::Path BackupPath,
+                            const Data::TitleData *TargetTitle,
+                            BackupMenuState *CreatingState)
 {
     // Make sure destination exists.
     if (!Config::GetByKey(Config::Keys::ExportToZip) && (FsLib::DirectoryExists(BackupPath) || FsLib::CreateDirectory(BackupPath)))
     {
-        FS::CopyDirectoryToDirectory(Task, SAVE_ROOT, BackupPath, false);
+        // Copy save as-is to target directory.
+        FS::CopyDirectoryToDirectory(Task, FS::SAVE_ROOT, BackupPath, false);
+
+        // If secure value preservation is active, try to dump it with the save if it exists.
+        uint64_t SecureValue = 0;
+        if (Config::GetByKey(Config::Keys::PreserveSecureValues) && FsLib::GetSecureValueForTitle(TargetTitle->GetUniqueID(), SecureValue))
+        {
+            // Path. Trying to make sure no game would possibly use this...
+            FsLib::Path SecureValuePath = BackupPath / u"._secure_value";
+
+            FsLib::File SecureValueFile(SecureValuePath, FS_OPEN_CREATE | FS_OPEN_WRITE);
+            if (!SecureValueFile.IsOpen() || SecureValueFile.Write(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
+            {
+                Logger::Log("Error while exporting secure value during backup: %s", FsLib::GetErrorString());
+                return;
+            }
+        }
     }
     else if (Config::GetByKey(Config::Keys::ExportToZip) || BackupPath.GetExtension() == u"zip")
     {
+        // Create the main backup first.
         zipFile Backup = zipOpen("sdmc:/Temp.zip", APPEND_STATUS_CREATE);
-        FS::CopyDirectoryToZip(Task, SAVE_ROOT, Backup);
+        FS::CopyDirectoryToZip(Task, FS::SAVE_ROOT, Backup);
+
+        // Check if we need to add the secure value to the zip.
+        uint64_t SecureValue = 0;
+        if (Config::GetByKey(Config::Keys::PreserveSecureValues) && FsLib::GetSecureValueForTitle(TargetTitle->GetUniqueID(), SecureValue) &&
+            zipOpenNewFileInZip(Backup, "._secure_value", NULL, 0, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION) == ZIP_OK)
+        {
+            zipWriteInFileInZip(Backup, &SecureValue, sizeof(uint64_t));
+            zipCloseFileInZip(Backup);
+        }
+
+        // Close and move zip to destination.
         zipClose(Backup, NULL);
         FsLib::RenameFile(u"sdmc:/Temp.zip", BackupPath);
     }
@@ -221,13 +253,13 @@ static void OverwriteBackup(System::ProgressTask *Task, std::shared_ptr<TargetSt
     if (FsLib::DirectoryExists(DataStruct->TargetPath) && FsLib::DeleteDirectoryRecursively(DataStruct->TargetPath) &&
         FsLib::CreateDirectory(DataStruct->TargetPath))
     {
-        FS::CopyDirectoryToDirectory(Task, SAVE_ROOT, DataStruct->TargetPath, false);
+        FS::CopyDirectoryToDirectory(Task, FS::SAVE_ROOT, DataStruct->TargetPath, false);
     }
     else if (FsLib::FileExists(DataStruct->TargetPath) && FsLib::DeleteFile(DataStruct->TargetPath))
     {
         // Assuming this is a zip.
         zipFile Backup = zipOpen("sdmc:/Temp.zip", APPEND_STATUS_CREATE);
-        FS::CopyDirectoryToZip(Task, SAVE_ROOT, Backup);
+        FS::CopyDirectoryToZip(Task, FS::SAVE_ROOT, Backup);
         zipClose(Backup, NULL);
         FsLib::RenameFile(u"sdmc:/Temp.zip", DataStruct->TargetPath);
     }
@@ -236,7 +268,7 @@ static void OverwriteBackup(System::ProgressTask *Task, std::shared_ptr<TargetSt
 
 static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStruct> DataStruct)
 {
-    if (!FsLib::DeleteDirectoryRecursively(SAVE_ROOT))
+    if (!FsLib::DeleteDirectoryRecursively(FS::SAVE_ROOT))
     {
         Logger::Log("Error occurred resetting save data: %s", FsLib::GetErrorString());
         Task->Finish();
@@ -255,7 +287,7 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
     // This can also be used to test if the target is a directory. Not just if it exists.
     if (FsLib::DirectoryExists(DataStruct->TargetPath))
     {
-        FS::CopyDirectoryToDirectory(Task, DataStruct->TargetPath, SAVE_ROOT, CommitData);
+        FS::CopyDirectoryToDirectory(Task, DataStruct->TargetPath, FS::SAVE_ROOT, CommitData);
     }
     else
     {
@@ -264,7 +296,7 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
 
         // Open file for *unzips* and extract it to save archive.
         unzFile UnZip = unzOpen("sdmc:/Temp.zip");
-        FS::CopyZipToDirectory(Task, UnZip, SAVE_ROOT, CommitData);
+        FS::CopyZipToDirectory(Task, UnZip, FS::SAVE_ROOT, CommitData);
         unzClose(UnZip);
 
         // Rename file back to original.
