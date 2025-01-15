@@ -60,9 +60,9 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -Wno-psabi -std=c++23
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= 	../../FsLib/3DS/FsLib/lib/libFsLib.a -lSDL_image `sdl-config --libs` \
+LIBS	:= 	../../FsLib/3DS/FsLib/lib/libFsLib.a `sdl-config --libs`			 \
 			`freetype-config --libs` -ljson-c -lcurl -lmbedtls -lmbedcrypto 	 \
-			-lmbedx509 -lminizip -ljpeg -lpng -lctru -lz -lzstd -lm
+			-lmbedx509 -lminizip -lpng -lctru -lz -lzstd -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

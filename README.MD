@@ -28,12 +28,13 @@
 Building JKSM requires installing [DevkitPro](https://devkitpro.org/wiki/Getting_Started) for your respective platform and installing the following libraries:
 ```
 3ds-sdl
-3ds-sdl_image
+3ds-libpng
 3ds-freetype 
 3ds-libjson-c
 3ds-curl
 3ds-libzstd
 3ds-zlib
+3ds-minizip
 ```
 With those installed run the following command:
 ```

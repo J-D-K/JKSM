@@ -1,6 +1,5 @@
 #include "SDL/SDL.hpp"
 #include "Logger.hpp"
-#include <SDL/SDL_image.h>
 #include <cstring>
 
 namespace
@@ -53,13 +52,6 @@ bool SDL::Initialize(void)
         return false;
     }
 
-    int ImgError = IMG_Init(IMG_INIT_PNG);
-    if (ImgError != IMG_INIT_PNG)
-    {
-        Logger::Log("Error initialize SDL_Image: %s.", IMG_GetError());
-        return false;
-    }
-
     // Get rid of the annoying cursor
     SDL_ShowCursor(false);
 
@@ -68,7 +60,6 @@ bool SDL::Initialize(void)
 
 void SDL::Exit(void)
 {
-    IMG_Quit();
     SDL_Quit();
 }
 
@@ -92,11 +83,7 @@ void SDL::FrameEnd(void)
     SDL_BlitSurface(s_TopScreen->Get(), NULL, s_FrameBuffer->Get(), &s_TopCoords);
     SDL_BlitSurface(s_BottomScreen->Get(), NULL, s_FrameBuffer->Get(), &s_BottomCoords);
 
-    int FlipError = SDL_Flip(s_FrameBuffer->Get());
-    if (FlipError != 0)
-    {
-        Logger::Log("Error flipping buffer to screen: %s", SDL_GetError());
-    }
+    SDL_Flip(s_FrameBuffer->Get());
 }
 
 SDL_Surface *SDL::GetCurrentBuffer(void)
