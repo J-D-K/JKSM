@@ -6,7 +6,7 @@
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <3ds.h>
 #include <algorithm>
 #include <array>
@@ -173,7 +173,7 @@ void Data::Initialize(System::ProgressTask *Task)
     for (uint32_t i = 0; i < SDTitleCount; i++)
     {
         // Set status. Update task.
-        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 0), TitleIDList[i]);
+        Task->SetStatus(Strings::GetStringByName(Strings::Names::DataLoadingText, 0), TitleIDList[i]);
         Task->SetCurrent(static_cast<double>(i));
 
         uint32_t UpperID = static_cast<uint32_t>(TitleIDList[i] >> 32);
@@ -211,7 +211,7 @@ void Data::Initialize(System::ProgressTask *Task)
     Task->Reset(static_cast<double>(NandTitleCount - 1.0f));
     for (uint32_t i = 0; i < NandTitleCount; i++)
     {
-        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 1), TitleIDList[i]);
+        Task->SetStatus(Strings::GetStringByName(Strings::Names::DataLoadingText, 1), TitleIDList[i]);
         Task->SetCurrent(static_cast<double>(i));
 
         // This makes face raiders and some other interesting stuff show up on New 3DS...
@@ -225,7 +225,7 @@ void Data::Initialize(System::ProgressTask *Task)
     }
 
     // Shared Extdata. These are fake and pushed at the end just to have them.
-    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 2));
+    Task->SetStatus(Strings::GetStringByName(Strings::Names::DataLoadingText, 2));
     Task->Reset(6.0f);
     // We're gonna skip testing these.
     Data::TitleSaveTypes SharedType = {false};
@@ -331,7 +331,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
         return false;
     }
 
-    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 3));
+    Task->SetStatus(Strings::GetStringByName(Strings::Names::DataLoadingText, 3));
     // This was special for 3DS so loading wouldn't be so long. I didn't know it was going to be literally instantaneous...
     // Buffer for storing all entries at once.
     std::unique_ptr<CacheEntry[]> CacheBuffer(new CacheEntry[Header.TitleCount]);
@@ -379,7 +379,7 @@ void CreateCacheFile(System::ProgressTask *Task)
         char UTF8Title[0x80] = {0};
         StringUtil::ToUTF8(CurrentTitle.GetTitle(), UTF8Title, 0x80);
         // Update thread.
-        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DataLoadingText, 4), UTF8Title);
+        Task->SetStatus(Strings::GetStringByName(Strings::Names::DataLoadingText, 4), UTF8Title);
         // Copy needed data over from title vector.
         CurrentEntry->TitleID = CurrentTitle.GetTitleID();
         CurrentEntry->MediaType = CurrentTitle.GetMediaType();

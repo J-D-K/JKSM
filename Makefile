@@ -6,7 +6,7 @@ FsLib:
 	$(MAKE) -C FsLib/3DS/FsLib
 
 JKSM: FsLib
-	$(MAKE) -C JKSM send
+	$(MAKE) -C JKSM
 
 clean:
 	$(MAKE) -C FsLib/3DS/FsLib clean

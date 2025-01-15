@@ -1,6 +1,6 @@
 #include "Keyboard.hpp"
 #include "Logger.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <3ds.h>
 #include <cstdio>
 #include <cstdlib>
@@ -11,8 +11,8 @@ bool Keyboard::GetStringWithKeyboard(const char *DefaultText, char16_t *TextOut,
     // Why does this function say UTF-16 characters, but swkbdInputText writes to char?
     swkbdInit(&KeyboardState, SWKBD_TYPE_QWERTY, 2, TextOutLength);
     swkbdSetInitialText(&KeyboardState, DefaultText);
-    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_LEFT, UI::Strings::GetStringByName(UI::Strings::Names::KeyboardButtons, 0), false);
-    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, UI::Strings::GetStringByName(UI::Strings::Names::KeyboardButtons, 1), true);
+    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_LEFT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 0), false);
+    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 1), true);
 
     char UTF8Buffer[TextOutLength + 1] = {0};
     SwkbdButton Button = swkbdInputText(&KeyboardState, UTF8Buffer, TextOutLength);
@@ -35,8 +35,8 @@ bool Keyboard::GetUnsignedIntWithKeyboard(unsigned int DefaultValue, unsigned in
     SwkbdState KeyboardState;
     swkbdInit(&KeyboardState, SWKBD_TYPE_NUMPAD, 2, 10);
     swkbdSetInitialText(&KeyboardState, NumberTextBuffer);
-    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_LEFT, UI::Strings::GetStringByName(UI::Strings::Names::KeyboardButtons, 0), false);
-    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, UI::Strings::GetStringByName(UI::Strings::Names::KeyboardButtons, 1), true);
+    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_LEFT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 0), false);
+    swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 1), true);
 
     char NumberBuffer[11] = {0};
     SwkbdButton Button = swkbdInputText(&KeyboardState, NumberBuffer, 10);

@@ -1,6 +1,7 @@
 #pragma once
 #include "AppStates/AppState.hpp"
 #include "Data/Data.hpp"
+#include "System/Task.hpp"
 #include "UI/Menu.hpp"
 
 class TitleOptionState : public AppState

@@ -1,13 +1,13 @@
 #include "AppStates/MessageState.hpp"
 #include "Input.hpp"
 #include "SDL/SDL.hpp"
+#include "Strings.hpp"
 #include "UI/Draw.hpp"
-#include "UI/Strings.hpp"
 
 MessageState::MessageState(AppState *CreatingState, std::string_view MessageString)
     : m_CreatingState(CreatingState), m_MessageString(MessageString)
 {
-    m_OKX = 160 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI ::Strings::Names::OK, 0)) / 2);
+    m_OKX = 160 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::OK, 0)) / 2);
 }
 
 void MessageState::Update(void)
@@ -41,5 +41,5 @@ void MessageState::DrawBottom(SDL_Surface *Target)
     // Fake ok button thingy.
     SDL::DrawRect(Target, 8, 190, 304, 1, SDL::Colors::White);
     // OK text
-    m_Noto->BlitTextAt(Target, m_OKX, 200, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::OK, 0));
+    m_Noto->BlitTextAt(Target, m_OKX, 200, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::OK, 0));
 }

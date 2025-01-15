@@ -1,4 +1,4 @@
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include "Config.hpp"
 #include "JSON.hpp"
 #include "Logger.hpp"
@@ -46,7 +46,7 @@ inline std::string GetFilePath(void)
     return FilePath;
 }
 
-void UI::Strings::Intialize(void)
+void Strings::Intialize(void)
 {
     // I'm being lazy with this.
     std::string FilePath = GetFilePath();
@@ -77,7 +77,7 @@ void UI::Strings::Intialize(void)
     }
 }
 
-const char *UI::Strings::GetStringByName(std::string_view StringName, uint8_t Index)
+const char *Strings::GetStringByName(std::string_view StringName, uint8_t Index)
 {
     auto FindString = s_StringMap.find(std::make_pair(StringName.data(), Index));
     if (FindString == s_StringMap.end())

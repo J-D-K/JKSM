@@ -11,9 +11,9 @@
 #include "Keyboard.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
+#include "Strings.hpp"
 #include "System/ProgressTask.hpp"
 #include "System/Task.hpp"
-#include "UI/Strings.hpp"
 
 namespace
 {
@@ -47,7 +47,7 @@ BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData 
         Logger::Log("Something went wrong creating %s for %016llX: %s", UTF8Buffer, Data->GetTitleID(), FsLib::GetErrorString());
     }
     // Center text
-    m_TextX = 160 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuCurrentBackups, 0)) / 2);
+    m_TextX = 160 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::BackupMenuCurrentBackups, 0)) / 2);
 
     BackupMenuState::Refresh();
 }
@@ -108,7 +108,7 @@ void BackupMenuState::Update(void)
         char TargetName[FsLib::MAX_PATH] = {0};
         StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
         std::string ConfirmOverwrite =
-            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 0), TargetName);
+            StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::BackupMenuConfirmations, 0), TargetName);
 
 
         JKSM::PushState(std::make_shared<ConfirmState<System::ProgressTask, ProgressTaskState, TargetStruct>>(
@@ -130,7 +130,7 @@ void BackupMenuState::Update(void)
         char TargetName[FsLib::MAX_PATH] = {0};
         StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
         std::string RestoreString =
-            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 1), TargetName);
+            StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::BackupMenuConfirmations, 1), TargetName);
 
         // Create  & push new confirmation.
         JKSM::PushState(
@@ -151,7 +151,7 @@ void BackupMenuState::Update(void)
         char TargetName[FsLib::MAX_PATH] = {0};
         StringUtil::ToUTF8(m_DirectoryListing[m_BackupMenu.GetSelected() - 1], TargetName, FsLib::MAX_PATH);
         std::string DeleteString =
-            StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuConfirmations, 2), TargetName);
+            StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::BackupMenuConfirmations, 2), TargetName);
 
         JKSM::PushState(std::make_shared<ConfirmState<System::Task, TaskState, TargetStruct>>(this,
                                                                                               DeleteString,
@@ -173,12 +173,7 @@ void BackupMenuState::DrawTop(SDL_Surface *Target)
 void BackupMenuState::DrawBottom(SDL_Surface *Target)
 {
     SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target,
-                       m_TextX,
-                       1,
-                       12,
-                       m_Noto->NO_TEXT_WRAP,
-                       UI::Strings::GetStringByName(UI::Strings::Names::BackupMenuCurrentBackups, 0));
+    m_Noto->BlitTextAt(Target, m_TextX, 1, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::BackupMenuCurrentBackups, 0));
 
     {
         std::scoped_lock<std::mutex> ListingLock(m_ListingMutex);
@@ -193,7 +188,7 @@ void BackupMenuState::Refresh(void)
     m_BackupMenu.Reset();
 
     // Loop and copy directory to menu after adding new
-    m_BackupMenu.AddOption(UI::Strings::GetStringByName(UI::Strings::Names::FolderMenuNew, 0));
+    m_BackupMenu.AddOption(Strings::GetStringByName(Strings::Names::FolderMenuNew, 0));
     for (uint32_t i = 0; i < m_DirectoryListing.GetEntryCount(); i++)
     {
         char UTF8Buffer[0x80] = {0};
@@ -283,7 +278,7 @@ static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataS
     // Set status just in case deletion takes a little while.
     char TargetName[FsLib::MAX_PATH] = {0};
     StringUtil::ToUTF8(DataStruct->TargetPath.CString(), TargetName, FsLib::MAX_PATH);
-    Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::DeletingBackup, 0), TargetName);
+    Task->SetStatus(Strings::GetStringByName(Strings::Names::DeletingBackup, 0), TargetName);
 
     if (FsLib::DirectoryExists(DataStruct->TargetPath) && FsLib::DeleteDirectoryRecursively(DataStruct->TargetPath))
     {

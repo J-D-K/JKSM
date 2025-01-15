@@ -2,11 +2,11 @@
 #include "Assets.hpp"
 #include "Input.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 
 TextTitleSelect::TextTitleSelect(Data::SaveDataType SaveType) : BaseSelectionState(SaveType), m_TitleMenu(40, 20, 320, 12)
 {
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType)) / 2);
+    m_TextX = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, m_SaveType)) / 2);
 
     TextTitleSelect::Refresh();
 }
@@ -25,7 +25,7 @@ void TextTitleSelect::DrawTop(SDL_Surface *Target)
 {
     m_TitleMenu.Draw(Target);
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType));
+    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::StateName, m_SaveType));
 }
 
 void TextTitleSelect::DrawBottom(SDL_Surface *Target)

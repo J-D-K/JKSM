@@ -92,15 +92,22 @@
         "Import Secure Value"
     ],
     "TitleOptionConfirmations": [
-        "Are you sure you want to permanently erase your current save data for [%s]?",
-        "Are you sure you want to format and reset your current save data for [%s]?"
+        "Are you sure you want to permanently erase your current save data for [%s]?"
     ],
     "TitleOptionTaskStatus": [
-        "Erasing save data for [%s]."
+        "Erasing save data for [%s].",
+        "Deleting extra data for [%s]."
     ],
     "TitleOptionMessages": [
         "Secure value exported to [%s].",
-        "Secure value imported from [%s]!"
+        "An error occurred while exporting the secure value. See log for details.",
+        "Secure value imported from [%s]!",
+        "An error occurred while importing the secure value. See log for details.",
+        "An error occurred while erasing the save data! See log for details.",
+        "An error occurred while deleted the extra data! See log for details.",
+        "Save data successfully erased for [%s]!",
+        "Secure value successfully deleted for [%s]!",
+        "An error occurred while trying to delete the secure value for this title."
     ],
     "PlayCoinsMessages": [
         "Error setting play coins: Failed to open shared archive.",

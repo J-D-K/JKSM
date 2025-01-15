@@ -14,12 +14,13 @@ namespace
         {u"sdmc:/JKSV", u"sdmc:/JKSM/Saves", u"sdmc:/JKSM/ExtData", u"sdmc:/JKSM/Shared", u"sdmc:/JKSM/Boss", u"sdmc:/JKSM/SysSave"};
 
     // These are the new, permanant JKSM folders.
-    constexpr std::array<std::u16string_view, 6> s_JKSMFolderLocations = {u"sdmc:/JKSM",
+    constexpr std::array<std::u16string_view, 7> s_JKSMFolderLocations = {u"sdmc:/JKSM",
                                                                           u"sdmc:/JKSM/User Saves",
                                                                           u"sdmc:/JKSM/Extra Data",
                                                                           u"sdmc:/JKSM/Shared Extra Data",
                                                                           u"sdmc:/JKSM/BOSS Extra Data",
-                                                                          u"sdmc:/JKSM/System Saves"};
+                                                                          u"sdmc:/JKSM/System Saves",
+                                                                          u"sdmc:/JKSM/Secure Values"};
 
     // This is new and doesn't need to be converted.
     constexpr std::u16string_view CONFIG_FOLDER = u"sdmc:/config/JKSM";
@@ -42,7 +43,7 @@ void FS::Initialize(void)
     }
 
     // This loop will create the others if they don't already exist.
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
     {
         if (!FsLib::DirectoryExists(s_JKSMFolderLocations[i]) && !FsLib::CreateDirectoriesRecursively(s_JKSMFolderLocations[i]))
         {

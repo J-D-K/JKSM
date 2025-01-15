@@ -6,7 +6,7 @@
 #include "JKSM.hpp"
 #include "Logger.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <memory>
 
 void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::TitleData *Data)
@@ -26,10 +26,10 @@ void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::T
                        18,
                        12,
                        320,
-                       UI::Strings::GetStringByName(UI::Strings::Names::StateInformation, 0),
+                       Strings::GetStringByName(Strings::Names::StateInformation, 0),
                        Data->GetTitleID(),
                        UTF8Publisher,
-                       UI::Strings::GetStringByName(UI::Strings::Names::MediaType, Data->GetMediaType()),
+                       Strings::GetStringByName(Strings::Names::MediaType, Data->GetMediaType()),
                        Data->GetProductCode());
 }
 

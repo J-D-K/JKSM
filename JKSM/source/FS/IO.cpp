@@ -2,7 +2,7 @@
 #include "FS/SaveMount.hpp"
 #include "Logger.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <condition_variable>
 #include <cstring>
 #include <ctime>
@@ -14,8 +14,6 @@ namespace
 {
     // Buffer size used for reading and writing files.
     constexpr size_t FILE_BUFFER_SIZE = 0x10000;
-    // This is so my 3DS doesn't choke to death trying to write zip files.
-    constexpr size_t ZIP_BUFFER_SIZE = 0x8000;
     // This is the struct the threads share so they can coordinate with eachother.
     typedef struct
     {
@@ -104,7 +102,7 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
             StringUtil::ToUTF8(FullSource.CString(), UTF8Buffer, 0x301);
             if (Task)
             {
-                Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::CopyingFile, 0), UTF8Buffer);
+                Task->SetStatus(Strings::GetStringByName(Strings::Names::CopyingFile, 0), UTF8Buffer);
                 Task->Reset(static_cast<double>(SourceFile.GetSize()));
             }
 
@@ -234,15 +232,15 @@ void FS::CopyDirectoryToZip(System::ProgressTask *Task, const FsLib::Path &Sourc
             // Set task stuff.
             if (Task)
             {
-                Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::AddingToZip, 0), UTF8Buffer);
+                Task->SetStatus(Strings::GetStringByName(Strings::Names::AddingToZip, 0), UTF8Buffer);
                 Task->Reset(static_cast<double>(SourceFile.GetSize()));
             }
 
             uint32_t TotalCopied = 0;
-            std::unique_ptr<unsigned char[]> FileBuffer(new unsigned char[ZIP_BUFFER_SIZE]);
+            std::unique_ptr<unsigned char[]> FileBuffer(new unsigned char[FILE_BUFFER_SIZE]);
             while (TotalCopied < SourceFile.GetSize())
             {
-                uint32_t BytesRead = SourceFile.Read(FileBuffer.get(), ZIP_BUFFER_SIZE);
+                uint32_t BytesRead = SourceFile.Read(FileBuffer.get(), FILE_BUFFER_SIZE);
 
                 ZipError = zipWriteInFileInZip(Destination, FileBuffer.get(), BytesRead);
                 if (ZipError == Z_OK)
@@ -323,7 +321,7 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
 
         int ReadCount = 0, TotalCount = 0;
         std::unique_ptr<unsigned char[]> ReadBuffer(new unsigned char[FILE_BUFFER_SIZE]);
-        Task->SetStatus(UI::Strings::GetStringByName(UI::Strings::Names::CopyingFile, 0), FileNameUTF8);
+        Task->SetStatus(Strings::GetStringByName(Strings::Names::CopyingFile, 0), FileNameUTF8);
         while ((ReadCount = unzReadCurrentFile(Source, ReadBuffer.get(), FILE_BUFFER_SIZE)) > 0)
         {
             DestinationFile.Write(ReadBuffer.get(), static_cast<size_t>(ReadCount));

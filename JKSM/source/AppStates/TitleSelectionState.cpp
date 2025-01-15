@@ -2,12 +2,12 @@
 #include "Assets.hpp"
 #include "Input.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <array>
 
 TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType) : BaseSelectionState(SaveType), m_TitleView(SaveType)
 {
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType)) / 2);
+    m_TextX = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, m_SaveType)) / 2);
 }
 
 void TitleSelectionState::Update(void)
@@ -28,7 +28,7 @@ void TitleSelectionState::DrawTop(SDL_Surface *Target)
 {
     m_TitleView.Draw(Target);
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, m_SaveType));
+    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::StateName, m_SaveType));
 }
 
 void TitleSelectionState::DrawBottom(SDL_Surface *Target)

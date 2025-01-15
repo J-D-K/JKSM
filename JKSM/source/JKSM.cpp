@@ -13,7 +13,7 @@
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <3ds.h>
 #include <mutex>
 #include <string_view>
@@ -85,7 +85,7 @@ JKSM::JKSM(void)
     Config::Initialize();
 
     // Loads UI strings from json in RomFs.
-    UI::Strings::Intialize();
+    Strings::Intialize();
 
     // Load and decompress font and use white as the default color.
     // JKSM can't change colors like JKSV can on Switch unfortunately. SDL 3DS is a CPU/soft rendered with surfaces and the working needed and extra processing power isn't worth it.
@@ -96,8 +96,8 @@ JKSM::JKSM(void)
     m_TitleTextX = 200 - (m_Noto->GetTextWidth(12, TITLE_TEXT.data()) / 2);
 
     // Align L and R. There's something off about the left arrow glyph in the Noto Sans font...
-    m_LX = m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0)) / 3;
-    m_RX = 392 - m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
+    m_LX = m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::LR, 0)) / 3;
+    m_RX = 392 - m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::LR, 1));
 
     // Init title select views.
     JKSM::InitializeViews();
@@ -224,8 +224,8 @@ void JKSM::Draw(void)
     // Draw the top bar, title and <L R>
     SDL::DrawRect(Top, 0, 0, 400, 16, SDL::Colors::BarColor);
     m_Noto->BlitTextAt(Top, m_TitleTextX, 1, 12, m_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
-    m_Noto->BlitTextAt(Top, m_LX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 0));
-    m_Noto->BlitTextAt(Top, m_RX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::LR, 1));
+    m_Noto->BlitTextAt(Top, m_LX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::LR, 0));
+    m_Noto->BlitTextAt(Top, m_RX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::LR, 1));
 
     SDL::FrameChangeScreens();
 
@@ -294,7 +294,7 @@ void JKSM::SetPlayCoins(void)
 {
     if (!FsLib::OpenSharedExtData(SHARED_DEVICE, 0xF000000B))
     {
-        ShowMessage(m_StateStack.top().get(), UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 0));
+        ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 0));
         return;
     }
 
@@ -303,7 +303,7 @@ void JKSM::SetPlayCoins(void)
     if (!GameCoin.IsOpen())
     {
         FsLib::CloseDevice(SHARED_DEVICE);
-        ShowMessage(m_StateStack.top().get(), UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 1));
+        ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 1));
         return;
     }
 
@@ -329,7 +329,6 @@ void JKSM::SetPlayCoins(void)
     FsLib::CloseDevice(SHARED_DEVICE);
 
     // Show message
-    std::string CoinSuccess =
-        StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
+    std::string CoinSuccess = StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
     ShowMessage(m_StateStack.top().get(), CoinSuccess);
 }

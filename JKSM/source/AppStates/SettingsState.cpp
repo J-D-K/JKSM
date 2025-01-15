@@ -8,7 +8,7 @@
 #include "JKSM.hpp"
 #include "Logger.hpp"
 #include "StringUtil.hpp"
-#include "UI/Strings.hpp"
+#include "Strings.hpp"
 #include <3ds.h>
 #include <array>
 #include <string_view>
@@ -49,12 +49,12 @@ static const char *GetValueText(uint8_t Value)
 SettingsState::SettingsState(void) : m_SettingsMenu(40, 20, 320, 12)
 {
     // Get centered coordinates for text.
-    m_SettingsX = 200 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::StateName, 5)) / 2);
-    m_DescriptionX = 160 - (m_Noto->GetTextWidth(12, UI::Strings::GetStringByName(UI::Strings::Names::SettingsDescription, 0)) / 2);
+    m_SettingsX = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, 5)) / 2);
+    m_DescriptionX = 160 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::SettingsDescription, 0)) / 2);
 
     uint8_t CurrentIndex = 0;
     const char *SettingsOption = NULL;
-    while ((SettingsOption = UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, CurrentIndex++)) != nullptr)
+    while ((SettingsOption = Strings::GetStringByName(Strings::Names::SettingsMenu, CurrentIndex++)) != nullptr)
     {
         // This is not the way I should do this, but I need to for now.
         m_SettingsMenu.AddOption(StringUtil::GetFormattedString(SettingsOption, GetValueText(0)));
@@ -75,50 +75,40 @@ void SettingsState::DrawTop(SDL_Surface *Target)
 {
     m_SettingsMenu.Draw(Target);
     SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_SettingsX, 225, 12, m_Noto->NO_TEXT_WRAP, UI::Strings::GetStringByName(UI::Strings::Names::StateName, 5));
+    m_Noto->BlitTextAt(Target, m_SettingsX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::StateName, 5));
 }
 
 void SettingsState::DrawBottom(SDL_Surface *Target)
 {
     SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target,
-                       m_DescriptionX,
-                       1,
-                       12,
-                       m_Noto->NO_TEXT_WRAP,
-                       UI::Strings::GetStringByName(UI::Strings::Names::SettingsDescription, 0));
+    m_Noto->BlitTextAt(Target, m_DescriptionX, 1, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::SettingsDescription, 0));
 
-    m_Noto->BlitTextAt(Target,
-                       4,
-                       18,
-                       12,
-                       312,
-                       UI::Strings::GetStringByName(UI::Strings::Names::SettingsDescriptions, m_SettingsMenu.GetSelected()));
+    m_Noto->BlitTextAt(Target, 4, 18, 12, 312, Strings::GetStringByName(Strings::Names::SettingsDescriptions, m_SettingsMenu.GetSelected()));
 }
 
 void SettingsState::UpdateMenuStrings(void)
 {
     // Wew these are long...
     m_SettingsMenu.EditOption(1,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 1),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 1),
                                                              GetValueText(Config::GetByKey(Config::Keys::TextMode))));
     m_SettingsMenu.EditOption(2,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 2),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 2),
                                                              GetValueText(Config::GetByKey(Config::Keys::ExportToZip))));
     m_SettingsMenu.EditOption(3,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 3),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 3),
                                                              GetValueText(Config::GetByKey(Config::Keys::ForceEnglish))));
     m_SettingsMenu.EditOption(4,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 4),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 4),
                                                              GetValueText(Config::GetByKey(Config::Keys::PreserveSecureValues))));
     m_SettingsMenu.EditOption(5,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 5),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 5),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToOverwrite))));
     m_SettingsMenu.EditOption(6,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 6),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 6),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToRestore))));
     m_SettingsMenu.EditOption(7,
-                              StringUtil::GetFormattedString(UI::Strings::GetStringByName(UI::Strings::Names::SettingsMenu, 7),
+                              StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 7),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToDelete))));
 }
 
