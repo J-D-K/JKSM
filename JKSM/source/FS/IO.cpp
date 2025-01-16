@@ -68,6 +68,12 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
 
     for (uint32_t i = 0; i < SourceDir.GetEntryCount(); i++)
     {
+        // Test to make sure JKSM doesn't copy the ._secure_value file to the save if it exists. This might be a little unsafe.
+        if (std::char_traits<char16_t>::compare(u"._secure_value", SourceDir[i], 14) == 0)
+        {
+            continue;
+        }
+
         if (SourceDir.EntryAtIsDirectory(i))
         {
             FsLib::Path NewSource = Source / SourceDir[i];

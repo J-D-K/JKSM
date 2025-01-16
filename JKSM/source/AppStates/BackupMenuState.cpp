@@ -24,7 +24,6 @@ typedef struct
         Data::SaveDataType SaveType;
         const Data::TitleData *TargetTitle;
         BackupMenuState *CallingState = nullptr;
-        uint32_t UniqueID = 0;
 } TargetStruct;
 
 // Declarations. Definitions after class members.
@@ -124,8 +123,8 @@ void BackupMenuState::Update(void)
         // Create confirmation struct.
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
         ConfirmStruct->TargetPath = m_DirectoryPath / m_DirectoryListing[m_BackupMenu.GetSelected() - 1];
-        ConfirmStruct->UniqueID = m_Data->GetUniqueID();
         ConfirmStruct->SaveType = m_SaveType;
+        ConfirmStruct->TargetTitle = m_Data;
 
         // Query string
         char TargetName[FsLib::MAX_PATH] = {0};
@@ -204,7 +203,8 @@ static void CreateNewBackup(System::ProgressTask *Task,
                             BackupMenuState *CreatingState)
 {
     // Make sure destination exists.
-    if (!Config::GetByKey(Config::Keys::ExportToZip) && (FsLib::DirectoryExists(BackupPath) || FsLib::CreateDirectory(BackupPath)))
+    if (!Config::GetByKey(Config::Keys::ExportToZip) && BackupPath.GetExtension() != u"zip" &&
+        (FsLib::DirectoryExists(BackupPath) || FsLib::CreateDirectory(BackupPath)))
     {
         // Copy save as-is to target directory.
         FS::CopyDirectoryToDirectory(Task, FS::SAVE_ROOT, BackupPath, false);
@@ -275,10 +275,25 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
         return;
     }
 
-    if (!Config::GetByKey(Config::Keys::PreserveSecureValues) && !FS::DeleteSecureValue(DataStruct->UniqueID))
+    // Secure value check. Scoped so path gets freed immediately after check is finished.
     {
-        Task->Finish();
-        return;
+        // This is the path the secure value if it exits.
+        FsLib::Path SecureValuePath = DataStruct->TargetPath / u"._secure_value";
+        if (Config::GetByKey(Config::Keys::PreserveSecureValues) && FsLib::FileExists(SecureValuePath))
+        {
+            // Try to open file and read secure value.
+            uint64_t SecureValue = 0;
+            FsLib::File SecureValueFile(SecureValuePath, FS_OPEN_READ);
+            if (!SecureValueFile.IsOpen() || SecureValueFile.Read(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t) ||
+                !FsLib::SetSecureValueForTitle(DataStruct->TargetTitle->GetUniqueID(), SecureValue))
+            {
+                Logger::Log("Error occurred while attempting to set and preserve secure value for game.");
+            }
+        }
+        else if (!Config::GetByKey(Config::Keys::PreserveSecureValues) && !FS::DeleteSecureValue(DataStruct->TargetTitle->GetUniqueID()))
+        {
+            Logger::Log("Error occurred while trying to delete secure value for game.");
+        }
     }
 
     // Whether or not committing data is needed.
