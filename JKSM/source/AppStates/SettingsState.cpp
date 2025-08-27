@@ -6,10 +6,10 @@
 #include "Data/Data.hpp"
 #include "Input.hpp"
 #include "JKSM.hpp"
-#include "Logger.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <3ds.h>
 #include <array>

@@ -33,7 +33,7 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	JKSM
 BUILD		:=	build
-SOURCES		:=	source source/FS source/System source/SDL source/Data source/UI source/AppStates
+SOURCES		:=	source source/FS source/System source/SDL source/Data source/UI source/AppStates source/logging
 DATA		:=	data
 INCLUDES	:=	include ../FsLib/3DS/FsLib/include
 #GRAPHICS	:=	gfx

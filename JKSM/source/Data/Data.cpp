@@ -3,11 +3,11 @@
 #include "Data/ExtData.hpp"
 #include "Data/SaveDataType.hpp"
 #include "JKSM.hpp"
-#include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <3ds.h>
 #include <algorithm>
@@ -151,7 +151,7 @@ void Data::Initialize(System::ProgressTask *Task)
     Result AmError        = AM_GetTitleCount(MEDIATYPE_SD, &SDTitleCount);
     if (R_FAILED(AmError))
     {
-        Logger::Log("Error getting title count for SD: 0x%08X.", AmError);
+        logger::log("Error getting title count for SD: 0x%08X.", AmError);
         Task->Finish();
         return;
     }
@@ -161,7 +161,7 @@ void Data::Initialize(System::ProgressTask *Task)
     AmError = AM_GetTitleList(&TitlesRead, MEDIATYPE_SD, SDTitleCount, TitleIDList.get());
     if (R_FAILED(AmError))
     {
-        Logger::Log("Error getting title ID list for SD: 0x%08X.", AmError);
+        logger::log("Error getting title ID list for SD: 0x%08X.", AmError);
         Task->Finish();
         return;
     }
@@ -187,7 +187,7 @@ void Data::Initialize(System::ProgressTask *Task)
     AmError                 = AM_GetTitleCount(MEDIATYPE_NAND, &NandTitleCount);
     if (R_FAILED(AmError))
     {
-        Logger::Log("Error getting title count for NAND: 0x%08X.", AmError);
+        logger::log("Error getting title count for NAND: 0x%08X.", AmError);
         Task->Finish();
         return;
     }
@@ -197,7 +197,7 @@ void Data::Initialize(System::ProgressTask *Task)
     AmError                 = AM_GetTitleList(&NandTitlesRead, MEDIATYPE_NAND, NandTitleCount, TitleIDList.get());
     if (R_FAILED(AmError))
     {
-        Logger::Log("Error getting title ID list for NAND: 0x%08X.", AmError);
+        logger::log("Error getting title ID list for NAND: 0x%08X.", AmError);
         Task->Finish();
         return;
     }
@@ -303,7 +303,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
     fslib::File CacheFile(CACHE_PATH, FS_OPEN_READ);
     if (!CacheFile.is_open())
     {
-        Logger::Log("Error opening the cache for reading: %s", fslib::error::get_string());
+        logger::log("Error opening the cache for reading: %s", fslib::error::get_string());
         return false;
     }
 
@@ -311,7 +311,7 @@ bool LoadCacheFile(System::ProgressTask *Task)
     CacheFile.read(&Header, sizeof(CacheHeader));
     if (Header.Magic != CACHE_MAGIC || Header.Revision != CURRENT_CACHE_REVISION)
     {
-        Logger::Log("Invalid or old cache revision. Forcing reload.");
+        logger::log("Invalid or old cache revision. Forcing reload.");
         return false;
     }
 
@@ -344,7 +344,7 @@ void CreateCacheFile(System::ProgressTask *Task)
     fslib::File CacheFile(CACHE_PATH, FS_OPEN_CREATE | FS_OPEN_WRITE, CacheSize);
     if (!CacheFile.is_open())
     {
-        Logger::Log("Error opening cache file for writing: %s", fslib::error::get_string());
+        logger::log("Error opening cache file for writing: %s", fslib::error::get_string());
         return;
     }
 

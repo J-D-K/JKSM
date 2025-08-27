@@ -1,8 +1,8 @@
 #include "SDL/Font.hpp"
 
-#include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <3ds.h>
 #include <algorithm>
@@ -49,7 +49,7 @@ bool SDL::FreeType::Initialize(void)
     FT_Error FTError = FT_Init_FreeType(&s_FTLib);
     if (FTError != 0)
     {
-        Logger::Log("Error intializing FreeType: %i.", FTError);
+        logger::log("Error intializing FreeType: %i.", FTError);
         return false;
     }
     return true;
@@ -67,7 +67,7 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor)
     std::FILE *FontFile = std::fopen(FontPath.data(), "rb");
     if (!FontFile)
     {
-        Logger::Log("Error opening font file for reading.");
+        logger::log("Error opening font file for reading.");
         return;
     }
 
@@ -82,14 +82,14 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor)
         std::unique_ptr<char[]> CompressedBuffer(new char[CompressedSize]);
         if (!CompressedBuffer)
         {
-            Logger::Log("Error allocating CompressedBuffer");
+            logger::log("Error allocating CompressedBuffer");
             return;
         }
         // Read it.
         size_t ReadSize = std::fread(CompressedBuffer.get(), 1, CompressedSize, FontFile);
         if (ReadSize != CompressedSize)
         {
-            Logger::Log("Error reading full compressed size font.");
+            logger::log("Error reading full compressed size font.");
             return;
         }
 
@@ -101,7 +101,7 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor)
     FT_Error FTError = FT_New_Memory_Face(s_FTLib, m_FontBuffer.get(), UncompressedSize, 0, &m_FTFace);
     if (FTError != 0)
     {
-        Logger::Log("Error creating new FreeType face: %i.", FTError);
+        logger::log("Error creating new FreeType face: %i.", FTError);
         return;
     }
 }
@@ -211,7 +211,7 @@ void SDL::Font::ResizeFont(int FontSize)
 
     m_FontSize       = FontSize;
     FT_Error FTError = FT_Set_Pixel_Sizes(m_FTFace, 0, static_cast<FT_UInt>(m_FontSize));
-    if (FTError != 0) { Logger::Log("Error setting font size in pixels: %i.", FTError); }
+    if (FTError != 0) { logger::log("Error setting font size in pixels: %i.", FTError); }
 }
 
 SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_Int32 FreeTypeLoadFlags)

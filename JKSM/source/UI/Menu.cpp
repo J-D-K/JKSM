@@ -1,14 +1,19 @@
 #include "UI/Menu.hpp"
+
 #include "Assets.hpp"
 #include "Input.hpp"
-#include "Logger.hpp"
 #include "UI/Draw.hpp"
+#include "logging/logger.hpp"
+
 #include <3ds.h>
 #include <cmath>
 
 UI::Menu::Menu(int X, int Y, int Width, int MaxDrawLength)
-    : m_X(X), m_Y(Y), m_Width(Width), m_MaximumDrawLength(MaxDrawLength - 1),
-      m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White))
+    : m_X(X)
+    , m_Y(Y)
+    , m_Width(Width)
+    , m_MaximumDrawLength(MaxDrawLength - 1)
+    , m_Noto(SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White))
 {
 }
 
@@ -20,10 +25,7 @@ void UI::Menu::AddOption(std::string_view Option)
 
 void UI::Menu::EditOption(int Index, std::string_view Option)
 {
-    if (Index < 0 || Index > m_OptionsLength)
-    {
-        return;
-    }
+    if (Index < 0 || Index > m_OptionsLength) { return; }
     m_Options[Index] = Option;
 }
 
@@ -35,87 +37,45 @@ void UI::Menu::Reset(void)
 
 void UI::Menu::Update(void)
 {
-    if (m_Selected > m_OptionsLength)
-    {
-        m_Selected = m_OptionsLength;
-    }
+    if (m_Selected > m_OptionsLength) { m_Selected = m_OptionsLength; }
 
-    if (Input::ButtonPressed(KEY_UP))
-    {
-        Menu::HandleUpPress();
-    }
-    else if (Input::ButtonPressed(KEY_DOWN))
-    {
-        Menu::HandleDownPress();
-    }
-    else if (Input::ButtonPressed(KEY_LEFT))
-    {
-        Menu::HandleLeftPress();
-    }
-    else if (Input::ButtonPressed(KEY_RIGHT))
-    {
-        Menu::HandleRightPress();
-    }
+    if (Input::ButtonPressed(KEY_UP)) { Menu::HandleUpPress(); }
+    else if (Input::ButtonPressed(KEY_DOWN)) { Menu::HandleDownPress(); }
+    else if (Input::ButtonPressed(KEY_LEFT)) { Menu::HandleLeftPress(); }
+    else if (Input::ButtonPressed(KEY_RIGHT)) { Menu::HandleRightPress(); }
 }
 
 void UI::Menu::Draw(SDL_Surface *Target)
 {
-    if (m_Options.size() <= 0)
-    {
-        return;
-    }
+    if (m_Options.size() <= 0) { return; }
 
-    if (m_ShiftDirection && (m_ColorShift += 6) >= 0x72)
-    {
-        m_ShiftDirection = false;
-    }
-    else if (!m_ShiftDirection && (m_ColorShift -= 3) <= 0)
-    {
-        m_ShiftDirection = true;
-    }
+    if (m_ShiftDirection && (m_ColorShift += 6) >= 0x72) { m_ShiftDirection = false; }
+    else if (!m_ShiftDirection && (m_ColorShift -= 3) <= 0) { m_ShiftDirection = true; }
 
     size_t OptionEnd = 0;
-    if (m_OptionStart + m_MaximumDrawLength > m_OptionsLength)
-    {
-        OptionEnd = m_Options.size();
-    }
-    else
-    {
-        OptionEnd = m_MaximumDrawLength + 1;
-    }
+    if (m_OptionStart + m_MaximumDrawLength > m_OptionsLength) { OptionEnd = m_Options.size(); }
+    else { OptionEnd = m_MaximumDrawLength + 1; }
 
     for (size_t i = m_OptionStart, Y = m_Y; i < m_OptionStart + OptionEnd; i++, Y += 17)
     {
-        if (m_Selected == static_cast<int>(i))
-        {
-            UI::DrawBoundingBox(Target, m_X - 3, Y - 3, m_Width + 6, 20, m_ColorShift);
-        }
+        if (m_Selected == static_cast<int>(i)) { UI::DrawBoundingBox(Target, m_X - 3, Y - 3, m_Width + 6, 20, m_ColorShift); }
         m_Noto->BlitTextAt(Target, m_X + 3, Y, 12, m_Noto->NO_TEXT_WRAP, m_Options[i].c_str());
     }
 }
 
-int UI::Menu::GetSelected(void) const
-{
-    return m_Selected;
-}
+int UI::Menu::GetSelected(void) const { return m_Selected; }
 
-size_t UI::Menu::GetSize(void) const
-{
-    return m_Options.size();
-}
+size_t UI::Menu::GetSize(void) const { return m_Options.size(); }
 
 void UI::Menu::HandleUpPress(void)
 {
     --m_Selected;
     if (m_Selected < 0)
     {
-        m_Selected = m_OptionsLength;
+        m_Selected    = m_OptionsLength;
         m_OptionStart = m_MaximumDrawLength > m_OptionsLength ? 0 : m_OptionsLength - m_MaximumDrawLength;
     }
-    else if (m_Selected < m_OptionStart + (m_MaximumDrawLength / 2) && m_OptionStart > 0)
-    {
-        --m_OptionStart;
-    }
+    else if (m_Selected < m_OptionStart + (m_MaximumDrawLength / 2) && m_OptionStart > 0) { --m_OptionStart; }
 }
 
 void UI::Menu::HandleDownPress(void)
@@ -123,7 +83,7 @@ void UI::Menu::HandleDownPress(void)
     ++m_Selected;
     if (m_Selected > m_OptionsLength)
     {
-        m_Selected = 0;
+        m_Selected    = 0;
         m_OptionStart = 0;
     }
     else if (m_Selected > m_OptionStart + (m_MaximumDrawLength / 2) && m_OptionStart + m_MaximumDrawLength < m_OptionsLength)
@@ -154,11 +114,12 @@ void UI::Menu::HandleRightPress(void)
     m_Selected += OptionJumpCount;
     if (m_Selected > m_OptionsLength)
     {
-        m_Selected = m_OptionsLength;
+        m_Selected    = m_OptionsLength;
         m_OptionStart = m_MaximumDrawLength > m_OptionsLength ? 0 : m_OptionsLength - m_MaximumDrawLength;
     }
     else if (m_Selected > m_OptionStart + m_MaximumDrawLength)
     {
-        m_OptionStart = (m_Selected + OptionJumpCount) > m_OptionsLength ? m_OptionsLength - m_MaximumDrawLength : m_Selected - OptionJumpCount;
+        m_OptionStart = (m_Selected + OptionJumpCount) > m_OptionsLength ? m_OptionsLength - m_MaximumDrawLength
+                                                                         : m_Selected - OptionJumpCount;
     }
 }

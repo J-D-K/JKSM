@@ -1,6 +1,8 @@
 #include "Keyboard.hpp"
-#include "Logger.hpp"
+
 #include "Strings.hpp"
+#include "logging/logger.hpp"
+
 #include <3ds.h>
 #include <cstdio>
 #include <cstdlib>
@@ -15,13 +17,11 @@ bool Keyboard::GetStringWithKeyboard(const char *DefaultText, char16_t *TextOut,
     swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 1), true);
 
     char UTF8Buffer[TextOutLength + 1] = {0};
-    SwkbdButton Button = swkbdInputText(&KeyboardState, UTF8Buffer, TextOutLength);
-    if (Button == SWKBD_BUTTON_LEFT)
-    {
-        return false;
-    }
+    SwkbdButton Button                 = swkbdInputText(&KeyboardState, UTF8Buffer, TextOutLength);
+    if (Button == SWKBD_BUTTON_LEFT) { return false; }
     // Probably convert back to what it originally was...
     utf8_to_utf16(reinterpret_cast<uint16_t *>(TextOut), reinterpret_cast<const uint8_t *>(UTF8Buffer), TextOutLength);
+
     return true;
 }
 
@@ -39,7 +39,7 @@ bool Keyboard::GetUnsignedIntWithKeyboard(unsigned int DefaultValue, unsigned in
     swkbdSetButton(&KeyboardState, SWKBD_BUTTON_RIGHT, Strings::GetStringByName(Strings::Names::KeyboardButtons, 1), true);
 
     char NumberBuffer[11] = {0};
-    SwkbdButton Button = swkbdInputText(&KeyboardState, NumberBuffer, 10);
+    SwkbdButton Button    = swkbdInputText(&KeyboardState, NumberBuffer, 10);
     if (Button == SWKBD_BUTTON_LEFT)
     {
         // Cancelled.

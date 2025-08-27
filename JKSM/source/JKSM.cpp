@@ -11,10 +11,10 @@
 #include "FS/FS.hpp"
 #include "Input.hpp"
 #include "Keyboard.hpp"
-#include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "logging/logger.hpp"
 
 #include <3ds.h>
 #include <mutex>
@@ -41,7 +41,7 @@ bool IntializeService(Result (*Function)(Args...), const char *ServiceName, Args
     Result InitError = (*Function)(Arguments...);
     if (R_FAILED(InitError))
     {
-        Logger::Log("Error initializing %s: 0x%08X.", ServiceName, InitError);
+        logger::log("Error initializing %s: 0x%08X.", ServiceName, InitError);
         return false;
     }
     return true;
@@ -59,7 +59,7 @@ JKSM::JKSM(void)
     FS::Initialize();
 
     // Creates and clears log
-    Logger::Initialize();
+    logger::initialize();
 
     // Services JKSM  needs.
     ABORT_ON_FAILURE(IntializeService(amInit, "AM"));

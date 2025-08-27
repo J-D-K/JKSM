@@ -50,7 +50,7 @@ BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData 
     {
         char UTF8Buffer[0x80] = {0};
         StringUtil::ToUTF8(m_DirectoryPath.full_path(), UTF8Buffer, 0x80);
-        Logger::Log("Something went wrong creating %s for %016llX: %s",
+        logger::log("Something went wrong creating %s for %016llX: %s",
                     UTF8Buffer,
                     Data->GetTitleID(),
                     fslib::error::get_string());
@@ -63,7 +63,7 @@ BackupMenuState::BackupMenuState(AppState *CreatingState, const Data::TitleData 
 
 BackupMenuState::~BackupMenuState()
 {
-    if (!fslib::close_device(FS::SAVE_MOUNT)) { Logger::Log("Error closing save archive: %s", fslib::error::get_string()); }
+    if (!fslib::close_device(FS::SAVE_MOUNT)) { logger::log("Error closing save archive: %s", fslib::error::get_string()); }
 }
 
 void BackupMenuState::Update(void)
@@ -226,7 +226,7 @@ static void CreateNewBackup(System::ProgressTask *Task,
             fslib::File SecureValueFile(SecureValuePath, FS_OPEN_CREATE | FS_OPEN_WRITE);
             if (!SecureValueFile.is_open() || SecureValueFile.write(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
             {
-                Logger::Log("Error while exporting secure value during backup: %s", fslib::error::get_string());
+                logger::log("Error while exporting secure value during backup: %s", fslib::error::get_string());
                 return;
             }
         }
@@ -279,7 +279,7 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
 {
     if (!fslib::delete_directory_recursively(FS::SAVE_ROOT))
     {
-        Logger::Log("Error occurred resetting save data: %s", fslib::error::get_string());
+        logger::log("Error occurred resetting save data: %s", fslib::error::get_string());
         Task->Finish();
         return;
     }
@@ -296,13 +296,13 @@ static void RestoreBackup(System::ProgressTask *Task, std::shared_ptr<TargetStru
             if (!SecureValueFile.is_open() || SecureValueFile.read(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t) ||
                 !fslib::set_secure_value_for_title(DataStruct->TargetTitle->GetUniqueID(), SecureValue))
             {
-                Logger::Log("Error occurred while attempting to set and preserve secure value for game.");
+                logger::log("Error occurred while attempting to set and preserve secure value for game.");
             }
         }
         else if (!Config::GetByKey(Config::Keys::PreserveSecureValues) &&
                  !FS::DeleteSecureValue(DataStruct->TargetTitle->GetUniqueID()))
         {
-            Logger::Log("Error occurred while trying to delete secure value for game.");
+            logger::log("Error occurred while trying to delete secure value for game.");
         }
     }
 
@@ -346,7 +346,7 @@ static void DeleteBackup(System::Task *Task, std::shared_ptr<TargetStruct> DataS
     {
         DataStruct->CallingState->Refresh();
     }
-    else { Logger::Log("Error deleting backup: %s", fslib::error::get_string()); }
+    else { logger::log("Error deleting backup: %s", fslib::error::get_string()); }
 
     DataStruct->CallingState->Refresh();
 

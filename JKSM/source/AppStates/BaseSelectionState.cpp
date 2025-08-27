@@ -4,10 +4,10 @@
 #include "AppStates/TitleOptionState.hpp"
 #include "FS/SaveMount.hpp"
 #include "JKSM.hpp"
-#include "Logger.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <memory>
 
@@ -88,7 +88,7 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
         break;
     }
 
-    if (!Mounted) { Logger::Log("Error mounting save for %016llX: %s", Data->GetTitleID(), fslib::error::get_string()); }
+    if (!Mounted) { logger::log("Error mounting save for %016llX: %s", Data->GetTitleID(), fslib::error::get_string()); }
 
     return Mounted;
 }

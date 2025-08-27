@@ -1,5 +1,7 @@
 #include "SDL/SDL.hpp"
-#include "Logger.hpp"
+
+#include "logging/logger.hpp"
+
 #include <cstring>
 
 namespace
@@ -11,11 +13,11 @@ namespace
     // This is the pointer to the current buffer set.
     SDL_Surface *s_CurrentBuffer = nullptr;
     // These are the names of the surfaces for the map.
-    constexpr std::string_view FRAMEBUFFER_NAME = "FRAMEBUFFER";
-    constexpr std::string_view TOP_SCREEN_NAME = "TOP_SCREEN_BUFFER";
+    constexpr std::string_view FRAMEBUFFER_NAME   = "FRAMEBUFFER";
+    constexpr std::string_view TOP_SCREEN_NAME    = "TOP_SCREEN_BUFFER";
     constexpr std::string_view BOTTOM_SCREEN_NAME = "BOTTOM_SCREEN_NAME";
     // These are the coordinates for bliting the top and bottom buffers to the framebuffer.
-    SDL_Rect s_TopCoords = {.x = 0, .y = 0, .w = 400, .h = 240};
+    SDL_Rect s_TopCoords    = {.x = 0, .y = 0, .w = 400, .h = 240};
     SDL_Rect s_BottomCoords = {.x = 40, .y = 240, .w = 320, .h = 240};
 } // namespace
 
@@ -24,14 +26,15 @@ bool SDL::Initialize(void)
     int SDLError = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     if (SDLError)
     {
-        Logger::Log("Error initializing SDL: %s", SDL_GetError());
+        logger::log("Error initializing SDL: %s", SDL_GetError());
         return false;
     }
     // This is the main framebuffer surface. I don't like needing to offset coordinates to blit to the bottom screen.
-    s_FrameBuffer = SDL::SurfaceManager::CreateLoadResource(FRAMEBUFFER_NAME, SDL_SetVideoMode(400, 480, 32, SDL_DUALSCR), false);
+    s_FrameBuffer =
+        SDL::SurfaceManager::CreateLoadResource(FRAMEBUFFER_NAME, SDL_SetVideoMode(400, 480, 32, SDL_DUALSCR), false);
     if (!s_FrameBuffer)
     {
-        Logger::Log("Error setting video mode: %s", SDL_GetError());
+        logger::log("Error setting video mode: %s", SDL_GetError());
         return false;
     }
 
@@ -40,7 +43,7 @@ bool SDL::Initialize(void)
     s_TopScreen = SDL::SurfaceManager::CreateLoadResource(TOP_SCREEN_NAME, 400, 240, false);
     if (!s_TopScreen)
     {
-        Logger::Log("Error allocating top screen buffer: %s", SDL_GetError());
+        logger::log("Error allocating top screen buffer: %s", SDL_GetError());
         return false;
     }
 
@@ -48,7 +51,7 @@ bool SDL::Initialize(void)
     s_BottomScreen = SDL::SurfaceManager::CreateLoadResource(BOTTOM_SCREEN_NAME, 320, 240, false);
     if (!s_BottomScreen)
     {
-        Logger::Log("Error allocating bottom screen buffer: %s", SDL_GetError());
+        logger::log("Error allocating bottom screen buffer: %s", SDL_GetError());
         return false;
     }
 
@@ -58,10 +61,7 @@ bool SDL::Initialize(void)
     return true;
 }
 
-void SDL::Exit(void)
-{
-    SDL_Quit();
-}
+void SDL::Exit(void) { SDL_Quit(); }
 
 void SDL::FrameBegin(void)
 {
@@ -73,10 +73,7 @@ void SDL::FrameBegin(void)
     s_CurrentBuffer = s_TopScreen->Get();
 }
 
-void SDL::FrameChangeScreens(void)
-{
-    s_CurrentBuffer = s_BottomScreen->Get();
-}
+void SDL::FrameChangeScreens(void) { s_CurrentBuffer = s_BottomScreen->Get(); }
 
 void SDL::FrameEnd(void)
 {
@@ -86,10 +83,7 @@ void SDL::FrameEnd(void)
     SDL_Flip(s_FrameBuffer->Get());
 }
 
-SDL_Surface *SDL::GetCurrentBuffer(void)
-{
-    return s_CurrentBuffer;
-}
+SDL_Surface *SDL::GetCurrentBuffer(void) { return s_CurrentBuffer; }
 
 void SDL::DrawRect(SDL_Surface *Target, int X, int Y, int Width, int Height, SDL::Color Color)
 {

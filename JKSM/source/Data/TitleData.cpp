@@ -3,10 +3,10 @@
 #include "Assets.hpp"
 #include "Config.hpp"
 #include "Data/SMDH.hpp"
-#include "Logger.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <array>
 #include <cstring>
@@ -53,7 +53,7 @@ Data::TitleData::TitleData(uint64_t TitleID, FS_MediaType MediaType, Data::Title
     Result AMError = AM_GetTitleProductCode(m_MediaType, m_TitleID, m_ProductCode);
     if (R_FAILED(AMError))
     {
-        Logger::Log("Error getting product code for %016llX.", m_TitleID);
+        logger::log("Error getting product code for %016llX.", m_TitleID);
         std::memset(m_ProductCode, 0x00, 0x20);
     }
 
@@ -152,7 +152,7 @@ void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)
     uint8_t SystemLanguage = Config::GetSystemLanguage();
 
     Result AmError = AM_GetTitleProductCode(m_MediaType, m_TitleID, m_ProductCode);
-    if (R_FAILED(AmError)) { Logger::Log("Error getting product code for %016llX: 0x%08X.", m_TitleID, AmError); }
+    if (R_FAILED(AmError)) { logger::log("Error getting product code for %016llX: 0x%08X.", m_TitleID, AmError); }
 
     if (std::char_traits<uint16_t>::length(SMDH.applicationTitles[SystemLanguage].shortDescription) <= 0)
     {
@@ -173,7 +173,7 @@ void Data::TitleData::TitleInitializeSMDH(const Data::SMDH &SMDH)
     m_Icon                    = SDL::SurfaceManager::CreateLoadResource(TitleIDString, 48, 48, false);
     if (!m_Icon)
     {
-        Logger::Log("Error creating icon surface for %016llX: %s.", m_TitleID, SDL_GetError());
+        logger::log("Error creating icon surface for %016llX: %s.", m_TitleID, SDL_GetError());
         return;
     }
 

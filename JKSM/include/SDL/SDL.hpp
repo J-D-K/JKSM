@@ -1,9 +1,10 @@
 #pragma once
-#include "Logger.hpp"
 #include "SDL/Color.hpp"
 #include "SDL/Font.hpp"
 #include "SDL/ResourceManager.hpp"
 #include "SDL/Surface.hpp"
+#include "logging/logger.hpp"
+
 #include <SDL/SDL.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H

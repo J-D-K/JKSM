@@ -1,5 +1,6 @@
 #pragma once
-#include "Logger.hpp"
+#include "logging/logger.hpp"
+
 #include <cstdarg>
 #include <mutex>
 #include <string>
@@ -27,10 +28,7 @@ namespace System
                 m_Thread = std::thread(Function, Task, std::forward<Args>(Arguments)...);
             }
 
-            virtual ~Task()
-            {
-                m_Thread.join();
-            }
+            virtual ~Task() { m_Thread.join(); }
 
             // Returns whether thread has signaled its finished.
             bool IsFinished(void)
@@ -67,7 +65,7 @@ namespace System
             }
 
         private:
-            //Thread.
+            // Thread.
             std::thread m_Thread;
             // Mutex
             std::mutex m_ThreadLock;

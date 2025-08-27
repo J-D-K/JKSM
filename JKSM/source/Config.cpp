@@ -1,8 +1,8 @@
 #include "Config.hpp"
 
 #include "JSON.hpp"
-#include "Logger.hpp"
 #include "fslib.hpp"
+#include "logging/logger.hpp"
 
 #include <cstring>
 #include <string>
@@ -25,14 +25,14 @@ void Config::Initialize(void)
     Result CFGUError = CFGU_GetSystemLanguage(&s_SystemLanguage);
     if (R_FAILED(CFGUError))
     {
-        Logger::Log("Error getting system language. Defaulting to English.");
+        logger::log("Error getting system language. Defaulting to English.");
         s_SystemLanguage = CFG_LANGUAGE_EN;
     }
 
     JSON::Object ConfigJSON = JSON::NewObject(json_object_from_file, CONFIG_FILE_PATH.data());
     if (!ConfigJSON)
     {
-        Logger::Log("Error opening config for reading.");
+        logger::log("Error opening config for reading.");
         Config::ResetToDefault();
         return;
     }
@@ -81,7 +81,7 @@ void Config::Save(void)
     JSON::Object ConfigJSON = JSON::NewObject(json_object_new_object);
     if (!ConfigJSON)
     {
-        Logger::Log("Error allocating JSON::Object for config writing.");
+        logger::log("Error allocating JSON::Object for config writing.");
         return;
     }
 
@@ -94,7 +94,7 @@ void Config::Save(void)
     fslib::File JSONOut(u"sdmc:/config/JKSM/JKSM.json", FS_OPEN_CREATE | FS_OPEN_WRITE);
     if (!JSONOut.is_open())
     {
-        Logger::Log("Error opening config file for writing: %s", fslib::error::get_string());
+        logger::log("Error opening config file for writing: %s", fslib::error::get_string());
         return;
     }
     JSONOut << json_object_get_string(ConfigJSON.get());

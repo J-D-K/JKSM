@@ -1,6 +1,6 @@
 #include "FS/FS.hpp"
 
-#include "Logger.hpp"
+#include "logging/logger.hpp"
 
 #include <3ds.h>
 #include <array>
@@ -40,13 +40,13 @@ void FS::Initialize(void)
         if (fslib::directory_exists(s_JKSVFolderLocations[i]) &&
             !fslib::rename_directory(s_JKSVFolderLocations[i], s_JKSMFolderLocations[i]))
         {
-            Logger::Log("Error updating folder locations for JKSM update: %s.", fslib::error::get_string());
+            logger::log("Error updating folder locations for JKSM update: %s.", fslib::error::get_string());
         }
     }
 
     if (!fslib::directory_exists(CONFIG_FOLDER) && !fslib::create_directory_recursively(CONFIG_FOLDER))
     {
-        Logger::Log("Error creating JKSM config folder: %s.", fslib::error::get_string());
+        logger::log("Error creating JKSM config folder: %s.", fslib::error::get_string());
     }
 
     // This loop will create the others if they don't already exist.
@@ -55,7 +55,7 @@ void FS::Initialize(void)
         if (!fslib::directory_exists(s_JKSMFolderLocations[i]) &&
             !fslib::create_directory_recursively(s_JKSMFolderLocations[i]))
         {
-            Logger::Log(fslib::error::get_string());
+            logger::log(fslib::error::get_string());
         }
     }
 }
@@ -65,7 +65,7 @@ fslib::Path FS::GetBasePath(Data::SaveDataType SaveType)
     // Make sure it's not out of bounds.
     if (SaveType + 1 > Data::SaveTypeTotal)
     {
-        Logger::Log("Empty return");
+        logger::log("Empty return");
         return fslib::Path(u"");
     }
 
@@ -82,7 +82,7 @@ bool FS::DeleteSecureValue(uint32_t UniqueID)
     Result FsError = FSUSER_ControlSecureSave(SECURESAVE_ACTION_DELETE, &Input, sizeof(uint64_t), &Output, sizeof(uint8_t));
     if (R_FAILED(FsError))
     {
-        Logger::Log("Error deleting secure value for %08X: 0x%08X.", UniqueID, FsError);
+        logger::log("Error deleting secure value for %08X: 0x%08X.", UniqueID, FsError);
         return false;
     }
     return true;

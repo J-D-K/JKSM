@@ -1,5 +1,6 @@
 #pragma once
-#include "Logger.hpp"
+#include "logging/logger.hpp"
+
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -10,17 +11,17 @@ namespace SDL
     class Font;
 
     using SharedSurface = std::shared_ptr<SDL::Surface>;
-    using SharedFont = std::shared_ptr<SDL::Font>;
+    using SharedFont    = std::shared_ptr<SDL::Font>;
 
     template <typename Type>
     class ResourceManager
     {
         public:
             // No copying.
-            ResourceManager(const ResourceManager &) = delete;
-            ResourceManager(ResourceManager &&) = delete;
+            ResourceManager(const ResourceManager &)            = delete;
+            ResourceManager(ResourceManager &&)                 = delete;
             ResourceManager &operator=(const ResourceManager &) = delete;
-            ResourceManager &operator=(ResourceManager &&) = delete;
+            ResourceManager &operator=(ResourceManager &&)      = delete;
 
             template <typename... Args>
             static std::shared_ptr<Type> CreateLoadResource(std::string_view ResourceName, Args... Arguments)
@@ -56,5 +57,5 @@ namespace SDL
             static inline std::unordered_map<std::string, std::weak_ptr<Type>> m_ResourceMap;
     };
     using SurfaceManager = SDL::ResourceManager<SDL::Surface>;
-    using FontManager = SDL::ResourceManager<SDL::Font>;
+    using FontManager    = SDL::ResourceManager<SDL::Font>;
 } // namespace SDL

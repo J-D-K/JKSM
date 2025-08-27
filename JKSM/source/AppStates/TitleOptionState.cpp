@@ -112,7 +112,7 @@ void TitleOptionState::Update(void)
                 if (!fslib::get_secure_value_for_title(m_TargetTitle->GetUniqueID(), SecureValue))
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
-                    Logger::Log("Error getting secure value: %s", fslib::error::get_string());
+                    logger::log("Error getting secure value: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -124,7 +124,7 @@ void TitleOptionState::Update(void)
                 if (!SecureValueFile.is_open())
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
-                    Logger::Log("Error opening secure value output file: %s", fslib::error::get_string());
+                    logger::log("Error opening secure value output file: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -132,7 +132,7 @@ void TitleOptionState::Update(void)
                 if (SecureValueFile.write(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
-                    Logger::Log("Error writing secure value to file: %s", fslib::error::get_string());
+                    logger::log("Error writing secure value to file: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -156,7 +156,7 @@ void TitleOptionState::Update(void)
                 if (!fslib::file_exists(SecureValuePath))
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
-                    Logger::Log("Error: no secure value file found for title.");
+                    logger::log("Error: no secure value file found for title.");
                     return;
                 }
 
@@ -164,7 +164,7 @@ void TitleOptionState::Update(void)
                 if (!SecureValueFile.is_open())
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
-                    Logger::Log("Error opening secure value file for reading: %s", fslib::error::get_string());
+                    logger::log("Error opening secure value file for reading: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -173,7 +173,7 @@ void TitleOptionState::Update(void)
                 if (SecureValueFile.read(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
-                    Logger::Log("Error reading secure value from file: %s", fslib::error::get_string());
+                    logger::log("Error reading secure value from file: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -181,7 +181,7 @@ void TitleOptionState::Update(void)
                 if (!fslib::set_secure_value_for_title(m_TargetTitle->GetUniqueID(), SecureValue))
                 {
                     ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
-                    Logger::Log("Error setting secure value: %s", fslib::error::get_string());
+                    logger::log("Error setting secure value: %s", fslib::error::get_string());
                     return;
                 }
 
@@ -232,7 +232,7 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
     {
         // Failure. Display message so user doesn't complain on github without reading the log.
         ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
-        Logger::Log("Error occurred opening save for erasure: %s", fslib::error::get_string());
+        logger::log("Error occurred opening save for erasure: %s", fslib::error::get_string());
         Task->Finish();
         return;
     }
@@ -241,7 +241,7 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
     {
         // Show message and bail
         ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
-        Logger::Log("Error occurred opening system save for erasure: %s", fslib::error::get_string());
+        logger::log("Error occurred opening system save for erasure: %s", fslib::error::get_string());
         Task->Finish();
         return;
     }
@@ -250,19 +250,19 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
     if (!fslib::delete_directory_recursively(FS::SAVE_ROOT))
     {
         ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
-        Logger::Log("Error erasing root of save data: %s", fslib::error::get_string());
+        logger::log("Error erasing root of save data: %s", fslib::error::get_string());
     }
 
     if (!fslib::control_device(FS::SAVE_MOUNT))
     {
         ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
-        Logger::Log("Error committing changes to save data: %s", fslib::error::get_string());
+        logger::log("Error committing changes to save data: %s", fslib::error::get_string());
     }
 
     // Attempt to close archive.
     if (!fslib::close_device(FS::SAVE_MOUNT))
     {
-        Logger::Log("Error closing device after save erasure: %s", fslib::error::get_string());
+        logger::log("Error closing device after save erasure: %s", fslib::error::get_string());
     }
 
     // Show success message
