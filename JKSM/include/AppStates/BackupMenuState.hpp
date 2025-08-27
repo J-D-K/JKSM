@@ -1,9 +1,10 @@
 #pragma once
 #include "AppStates/AppState.hpp"
 #include "Data/TitleData.hpp"
-#include "FsLib.hpp"
 #include "System/ProgressTask.hpp"
 #include "UI/Menu.hpp"
+#include "fslib.hpp"
+
 #include <memory>
 #include <mutex>
 
@@ -30,9 +31,9 @@ class BackupMenuState : public AppState
         // Backup menu.
         UI::Menu m_BackupMenu;
         // Directory Path
-        FsLib::Path m_DirectoryPath;
+        fslib::Path m_DirectoryPath;
         // Directory Listing.
-        FsLib::Directory m_DirectoryListing;
+        fslib::Directory m_DirectoryListing;
         // X coordinate for centering bottom text header thingy.
         int m_TextX = 0;
         // Mutex to prevent corruption.

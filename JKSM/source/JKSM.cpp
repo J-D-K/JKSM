@@ -1,4 +1,5 @@
 #include "JKSM.hpp"
+
 #include "AppStates/MessageState.hpp"
 #include "AppStates/ProgressTaskState.hpp"
 #include "AppStates/SettingsState.hpp"
@@ -14,17 +15,15 @@
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+
 #include <3ds.h>
 #include <mutex>
 #include <string_view>
 #include <vector>
 
 // This macro cleans stuff up a lot IMO, so I'm going to use it.
-#define ABORT_ON_FAILURE(x)                                                                                                                    \
-    if (!x)                                                                                                                                    \
-    {                                                                                                                                          \
-        return;                                                                                                                                \
-    }
+#define ABORT_ON_FAILURE(x)                                                                                                    \
+    if (!x) { return; }
 
 namespace
 {
@@ -51,10 +50,10 @@ bool IntializeService(Result (*Function)(Args...), const char *ServiceName, Args
 JKSM::JKSM(void)
 {
     // FsLib is needed the most, so it's first.
-    ABORT_ON_FAILURE(FsLib::Initialize());
+    ABORT_ON_FAILURE(fslib::initialize());
 
     // Bypass archive_dev.
-    ABORT_ON_FAILURE(FsLib::Dev::InitializeSDMC());
+    ABORT_ON_FAILURE(fslib::dev::initialize_sdmc());
 
     // This takes care of making sure needed directories exist.
     FS::Initialize();
@@ -70,12 +69,9 @@ JKSM::JKSM(void)
     ABORT_ON_FAILURE(IntializeService(romfsInit, "RomFs"));
 
     // Check for New 3DS and enable clock & L2
-    bool New3DS = false;
+    bool New3DS     = false;
     Result AptError = APT_CheckNew3DS(&New3DS);
-    if (R_SUCCEEDED(AptError) && New3DS)
-    {
-        osSetSpeedupEnable(true);
-    }
+    if (R_SUCCEEDED(AptError) && New3DS) { osSetSpeedupEnable(true); }
 
     // SDL & Freetype.
     ABORT_ON_FAILURE(SDL::Initialize());
@@ -88,7 +84,8 @@ JKSM::JKSM(void)
     Strings::Intialize();
 
     // Load and decompress font and use white as the default color.
-    // JKSM can't change colors like JKSV can on Switch unfortunately. SDL 3DS is a CPU/soft rendered with surfaces and the working needed and extra processing power isn't worth it.
+    // JKSM can't change colors like JKSV can on Switch unfortunately. SDL 3DS is a CPU/soft rendered with surfaces and the
+    // working needed and extra processing power isn't worth it.
     m_Noto = SDL::FontManager::CreateLoadResource(Asset::Names::NOTO_SANS, Asset::Paths::NOTO_SANS_PATH, SDL::Colors::White);
     ABORT_ON_FAILURE(m_Noto);
 
@@ -123,20 +120,14 @@ JKSM::~JKSM()
     amExit();
 }
 
-bool JKSM::IsRunning(void) const
-{
-    return m_IsRunning;
-}
+bool JKSM::IsRunning(void) const { return m_IsRunning; }
 
 void JKSM::Update(void)
 {
     Input::Update();
 
     // This needs to be done here so the purging loop works correctly.
-    if (!m_StateStack.empty())
-    {
-        m_StateStack.top()->Update();
-    }
+    if (!m_StateStack.empty()) { m_StateStack.top()->Update(); }
 
     // Pop from stack until active state is hit. Make sure it has focus.
     while (!m_StateStack.empty() && !m_StateStack.top()->IsActive())
@@ -146,10 +137,7 @@ void JKSM::Update(void)
     }
 
     // If the back is a locking type state, bail and don't allow exiting with start.
-    if (m_StateStack.top()->GetType() == AppState::StateFlags::Lock)
-    {
-        return;
-    }
+    if (m_StateStack.top()->GetType() == AppState::StateFlags::Lock) { return; }
 
     // If a refresh is signaled or a cart is inserted.
     if (m_RefreshRequired || Data::GameCardUpdateCheck())
@@ -163,10 +151,7 @@ void JKSM::Update(void)
     }
 
     // Global JKSM controls.
-    if (Input::ButtonPressed(KEY_START))
-    {
-        m_IsRunning = false;
-    } // Only allow state switching if the top isn't a semi-lock
+    if (Input::ButtonPressed(KEY_START)) { m_IsRunning = false; } // Only allow state switching if the top isn't a semi-lock
     else if (Input::ButtonPressed(KEY_L) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
     {
         if (--m_CurrentState < 0)
@@ -174,10 +159,7 @@ void JKSM::Update(void)
             // Set current state to max
             m_CurrentState = m_StateTotal - 1;
             // Loop and push entire array to stack,
-            for (size_t i = 0; i < m_StateTotal; i++)
-            {
-                JKSM::PushState(m_StateArray.at(i));
-            }
+            for (size_t i = 0; i < m_StateTotal; i++) { JKSM::PushState(m_StateArray.at(i)); }
         }
         else
         {
@@ -191,10 +173,7 @@ void JKSM::Update(void)
         {
             m_CurrentState = 0;
             // Pop all states except the first.
-            for (size_t i = m_StateTotal; i > 1; i--)
-            {
-                m_StateStack.pop();
-            }
+            for (size_t i = m_StateTotal; i > 1; i--) { m_StateStack.pop(); }
             m_StateStack.top()->GiveFocus();
         }
         else
@@ -217,10 +196,7 @@ void JKSM::Draw(void)
     // Get top screen surface
     SDL_Surface *Top = SDL::GetCurrentBuffer();
     // Draw the top of the stack
-    if (!m_StateStack.empty())
-    {
-        m_StateStack.top()->DrawTop(Top);
-    }
+    if (!m_StateStack.empty()) { m_StateStack.top()->DrawTop(Top); }
     // Draw the top bar, title and <L R>
     SDL::DrawRect(Top, 0, 0, 400, 16, SDL::Colors::BarColor);
     m_Noto->BlitTextAt(Top, m_TitleTextX, 1, 12, m_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
@@ -231,10 +207,7 @@ void JKSM::Draw(void)
 
     // Get bottom screen surface.
     SDL_Surface *Bottom = SDL::GetCurrentBuffer();
-    if (!m_StateStack.empty())
-    {
-        m_StateStack.top()->DrawBottom(Bottom);
-    }
+    if (!m_StateStack.empty()) { m_StateStack.top()->DrawBottom(Bottom); }
     // Just draw the bottom bar here.
     SDL::DrawRect(Bottom, 0, 224, 320, 16, SDL::Colors::BarColor);
 
@@ -243,10 +216,7 @@ void JKSM::Draw(void)
 
 void JKSM::PushState(std::shared_ptr<AppState> NewState)
 {
-    if (!m_StateStack.empty())
-    {
-        m_StateStack.top()->TakeFocus();
-    }
+    if (!m_StateStack.empty()) { m_StateStack.top()->TakeFocus(); }
 
     // Give focus to incoming state.
     NewState->GiveFocus();
@@ -254,10 +224,7 @@ void JKSM::PushState(std::shared_ptr<AppState> NewState)
     m_StateStack.push(NewState);
 }
 
-void JKSM::RefreshViews(void)
-{
-    m_RefreshRequired = true;
-}
+void JKSM::RefreshViews(void) { m_RefreshRequired = true; }
 
 void JKSM::InitializeViews(void)
 {
@@ -267,68 +234,57 @@ void JKSM::InitializeViews(void)
     // Loop and create the states.
     for (size_t i = 0; i < m_StateTotal - 1; i++)
     {
-        if (TextMode)
-        {
-            m_StateArray[i] = std::make_shared<TextTitleSelect>(static_cast<Data::SaveDataType>(i));
-        }
-        else
-        {
-            m_StateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i));
-        }
+        if (TextMode) { m_StateArray[i] = std::make_shared<TextTitleSelect>(static_cast<Data::SaveDataType>(i)); }
+        else { m_StateArray[i] = std::make_shared<TitleSelectionState>(static_cast<Data::SaveDataType>(i)); }
     }
 
     // Clear stack.
-    for (size_t i = 0; i < m_StateStack.size(); i++)
-    {
-        m_StateStack.pop();
-    }
+    for (size_t i = 0; i < m_StateStack.size(); i++) { m_StateStack.pop(); }
 
     // Push states until the current is hit again.
-    for (int i = 0; i <= m_CurrentState; i++)
-    {
-        m_StateStack.push(m_StateArray.at(i));
-    }
+    for (int i = 0; i <= m_CurrentState; i++) { m_StateStack.push(m_StateArray.at(i)); }
 }
 
 void JKSM::SetPlayCoins(void)
 {
-    if (!FsLib::OpenSharedExtData(SHARED_DEVICE, 0xF000000B))
+    if (!fslib::open_shared_extra_data(SHARED_DEVICE, 0xF000000B))
     {
         ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 0));
         return;
     }
 
     // Open target file.
-    FsLib::File GameCoin(u"shared:/gamecoin.dat", FS_OPEN_READ | FS_OPEN_WRITE);
-    if (!GameCoin.IsOpen())
+    fslib::File GameCoin(u"shared:/gamecoin.dat", FS_OPEN_READ | FS_OPEN_WRITE);
+    if (!GameCoin.is_open())
     {
-        FsLib::CloseDevice(SHARED_DEVICE);
+        fslib::close_device(SHARED_DEVICE);
         ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 1));
         return;
     }
 
-    // Seek to position and read the current play coin amount.
+    // seek to position and read the current play coin amount.
     uint16_t CurrentPlayCoins = 0, DesiredPlayCoins = 0;
-    GameCoin.Seek(0x4, GameCoin.Beginning);
-    GameCoin.Read(&CurrentPlayCoins, sizeof(uint16_t));
+    GameCoin.seek(0x4, GameCoin.BEGINNING);
+    GameCoin.read(&CurrentPlayCoins, sizeof(uint16_t));
 
     if (!Keyboard::GetUnsignedIntWithKeyboard(CurrentPlayCoins, reinterpret_cast<unsigned int *>(&DesiredPlayCoins)))
     {
         // Just cleanup and return on cancel.
-        FsLib::CloseDevice(SHARED_DEVICE);
+        fslib::close_device(SHARED_DEVICE);
         return;
     }
 
-    // Seek to same position as before.
-    GameCoin.Seek(0x4, GameCoin.Beginning);
+    // seek to same position as before.
+    GameCoin.seek(0x4, GameCoin.BEGINNING);
 
     // Write desired amount.
-    GameCoin.Write(&DesiredPlayCoins, sizeof(uint16_t));
+    GameCoin.write(&DesiredPlayCoins, sizeof(uint16_t));
 
     // Cleanup
-    FsLib::CloseDevice(SHARED_DEVICE);
+    fslib::close_device(SHARED_DEVICE);
 
     // Show message
-    std::string CoinSuccess = StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
+    std::string CoinSuccess =
+        StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
     ShowMessage(m_StateStack.top().get(), CoinSuccess);
 }

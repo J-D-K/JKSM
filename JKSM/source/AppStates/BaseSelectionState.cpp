@@ -1,17 +1,19 @@
 #include "AppStates/BaseSelectionState.hpp"
+
 #include "AppStates/BackupMenuState.hpp"
 #include "AppStates/TitleOptionState.hpp"
 #include "FS/SaveMount.hpp"
-#include "FsLib.hpp"
 #include "JKSM.hpp"
 #include "Logger.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "fslib.hpp"
+
 #include <memory>
 
 void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::TitleData *Data)
 {
-    char UTF8Title[0x80] = {0};
+    char UTF8Title[0x80]     = {0};
     char UTF8Publisher[0x80] = {0};
     StringUtil::ToUTF8(Data->GetTitle(), UTF8Title, 0x80);
     StringUtil::ToUTF8(Data->GetPublisher(), UTF8Publisher, 0x80);
@@ -35,10 +37,7 @@ void BaseSelectionState::DrawTitleInformation(SDL_Surface *Target, const Data::T
 
 void BaseSelectionState::CreateBackupStateWithData(const Data::TitleData *Data)
 {
-    if (!MountSaveData(Data))
-    {
-        return;
-    }
+    if (!MountSaveData(Data)) { return; }
 
     JKSM::PushState(std::make_shared<BackupMenuState>(this, Data, m_SaveType));
 }
@@ -55,31 +54,31 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
     {
         case Data::SaveTypeUser:
         {
-            Mounted = FsLib::OpenUserSaveData(FS::SAVE_MOUNT, Data->GetMediaType(), Data->GetLowerID(), Data->GetUpperID());
+            Mounted = fslib::open_user_save_data(FS::SAVE_MOUNT, Data->GetMediaType(), Data->GetTitleID());
         }
         break;
 
         case Data::SaveTypeExtData:
         {
-            Mounted = FsLib::OpenExtData(FS::SAVE_MOUNT, Data->GetExtDataID());
+            Mounted = fslib::open_extra_data(FS::SAVE_MOUNT, Data->GetExtDataID());
         }
         break;
 
         case Data::SaveTypeSharedExtData:
         {
-            Mounted = FsLib::OpenSharedExtData(FS::SAVE_MOUNT, Data->GetLowerID());
+            Mounted = fslib::open_shared_extra_data(FS::SAVE_MOUNT, Data->GetLowerID());
         }
         break;
 
         case Data::SaveTypeBossExtData:
         {
-            Mounted = FsLib::OpenBossExtData(FS::SAVE_MOUNT, Data->GetExtDataID());
+            Mounted = fslib::open_boss_extra_data(FS::SAVE_MOUNT, Data->GetExtDataID());
         }
         break;
 
         case Data::SaveTypeSystem:
         {
-            Mounted = FsLib::OpenSystemSaveData(FS::SAVE_MOUNT, Data->GetUniqueID());
+            Mounted = fslib::open_system_save_data(FS::SAVE_MOUNT, Data->GetUniqueID());
         }
         break;
 
@@ -89,10 +88,7 @@ bool BaseSelectionState::MountSaveData(const Data::TitleData *Data)
         break;
     }
 
-    if (!Mounted)
-    {
-        Logger::Log("Error mounting save for %016llX: %s", Data->GetTitleID(), FsLib::GetErrorString());
-    }
+    if (!Mounted) { Logger::Log("Error mounting save for %016llX: %s", Data->GetTitleID(), fslib::error::get_string()); }
 
     return Mounted;
 }

@@ -1,8 +1,10 @@
 #include "FS/IO.hpp"
+
 #include "FS/SaveMount.hpp"
 #include "Logger.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+
 #include <condition_variable>
 #include <cstring>
 #include <ctime>
@@ -28,19 +30,19 @@ namespace
     } SharedThreadData;
 } // namespace
 
-void ReadThreadFunction(FsLib::File &SourceFile, SharedThreadData &Data)
+void ReadThreadFunction(fslib::File &SourceFile, SharedThreadData &Data)
 {
     // Record file size for loop.
-    uint64_t FileSize = SourceFile.GetSize();
+    uint64_t FileSize = SourceFile.get_size();
 
     // Loop until entire file is read.
     for (uint64_t TotalRead = 0; TotalRead < FileSize;)
     {
         // Read from source
-        Data.BytesRead = SourceFile.Read(Data.SharedBuffer.get(), FILE_BUFFER_SIZE);
+        Data.BytesRead = SourceFile.read(Data.SharedBuffer.get(), FILE_BUFFER_SIZE);
         if (Data.BytesRead == 0)
         {
-            Logger::Log("Error reading from file: %s", FsLib::GetErrorString());
+            Logger::Log("Error reading from file: %s", fslib::error::get_string());
             // To do: Handle this better if it occurs.
         }
 
@@ -57,31 +59,31 @@ void ReadThreadFunction(FsLib::File &SourceFile, SharedThreadData &Data)
     }
 }
 
-void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path &Source, const FsLib::Path &Destination, bool Commit)
+void FS::CopyDirectoryToDirectory(System::ProgressTask *Task,
+                                  const fslib::Path &Source,
+                                  const fslib::Path &Destination,
+                                  bool Commit)
 {
-    FsLib::Directory SourceDir(Source);
-    if (!SourceDir.IsOpen())
+    fslib::Directory SourceDir(Source);
+    if (!SourceDir.is_open())
     {
-        Logger::Log("Error opening directory: %s", FsLib::GetErrorString());
+        Logger::Log("Error opening directory: %s", fslib::error::get_string());
         return;
     }
 
-    for (uint32_t i = 0; i < SourceDir.GetEntryCount(); i++)
+    for (uint32_t i = 0; i < SourceDir.get_count(); i++)
     {
         // Test to make sure JKSM doesn't copy the ._secure_value file to the save if it exists. This might be a little unsafe.
-        if (std::char_traits<char16_t>::compare(u"._secure_value", SourceDir[i], 14) == 0)
-        {
-            continue;
-        }
+        if (std::char_traits<char16_t>::compare(u"._secure_value", SourceDir[i].get_filename(), 14) == 0) { continue; }
 
-        if (SourceDir.EntryAtIsDirectory(i))
+        if (SourceDir[i].is_directory())
         {
-            FsLib::Path NewSource = Source / SourceDir[i];
-            FsLib::Path NewDestination = Destination / SourceDir[i];
+            fslib::Path NewSource      = Source / SourceDir[i];
+            fslib::Path NewDestination = Destination / SourceDir[i];
             // Check to make sure it exists first...
-            if (!FsLib::DirectoryExists(NewDestination) && !FsLib::CreateDirectory(NewDestination))
+            if (!fslib::directory_exists(NewDestination) && !fslib::create_directory(NewDestination))
             {
-                Logger::Log("Error creating destination directory: %s", FsLib::GetErrorString());
+                Logger::Log("Error creating destination directory: %s", fslib::error::get_string());
                 continue;
             }
             FS::CopyDirectoryToDirectory(Task, NewSource, NewDestination, Commit);
@@ -89,27 +91,27 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
         else
         {
             // Full paths.
-            FsLib::Path FullSource = Source / SourceDir[i];
-            FsLib::Path FullDestination = Destination / SourceDir[i];
+            fslib::Path FullSource      = Source / SourceDir[i];
+            fslib::Path FullDestination = Destination / SourceDir[i];
 
             // Files
-            FsLib::File SourceFile(FullSource, FS_OPEN_READ);
-            FsLib::File DestinationFile(FullDestination, FS_OPEN_CREATE | FS_OPEN_WRITE, SourceFile.GetSize());
+            fslib::File SourceFile(FullSource, FS_OPEN_READ);
+            fslib::File DestinationFile(FullDestination, FS_OPEN_CREATE | FS_OPEN_WRITE, SourceFile.get_size());
 
             // Check
-            if (!SourceFile.IsOpen() || !DestinationFile.IsOpen())
+            if (!SourceFile.is_open() || !DestinationFile.is_open())
             {
-                Logger::Log("Error opening one of the files: %s", FsLib::GetErrorString());
+                Logger::Log("Error opening one of the files: %s", fslib::error::get_string());
                 continue;
             }
 
             // Get FullSource as UTF8 and update task
             char UTF8Buffer[0x301] = {0};
-            StringUtil::ToUTF8(FullSource.CString(), UTF8Buffer, 0x301);
+            StringUtil::ToUTF8(FullSource.full_path(), UTF8Buffer, 0x301);
             if (Task)
             {
                 Task->SetStatus(Strings::GetStringByName(Strings::Names::CopyingFile, 0), UTF8Buffer);
-                Task->Reset(static_cast<double>(SourceFile.GetSize()));
+                Task->Reset(static_cast<double>(SourceFile.get_size()));
             }
 
             // Create shared data for threads and allocate the buffer.
@@ -117,7 +119,7 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
             Data.SharedBuffer = std::make_unique<unsigned char[]>(FILE_BUFFER_SIZE);
 
             // Grab file size quick.
-            uint64_t FileSize = SourceFile.GetSize();
+            uint64_t FileSize = SourceFile.get_size();
             // Spawn read thread early.
             std::thread ReadThread(ReadThreadFunction, std::ref(SourceFile), std::ref(Data));
 
@@ -144,10 +146,10 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
                 }
 
                 // Write data to destination
-                size_t WriteCount = DestinationFile.Write(LocalBuffer.get(), BytesRead);
+                size_t WriteCount = DestinationFile.write(LocalBuffer.get(), BytesRead);
                 if (WriteCount <= 0)
                 {
-                    Logger::Log("Error writing to file: %s", FsLib::GetErrorString());
+                    Logger::Log("Error writing to file: %s", fslib::error::get_string());
                     // To do: Handle this somehow.
                 }
 
@@ -155,49 +157,46 @@ void FS::CopyDirectoryToDirectory(System::ProgressTask *Task, const FsLib::Path 
                 BytesWritten += WriteCount;
 
                 // Update progress.
-                if (Task)
-                {
-                    Task->SetCurrent(static_cast<double>(BytesWritten));
-                }
+                if (Task) { Task->SetCurrent(static_cast<double>(BytesWritten)); }
             }
 
             // Join read thread
             ReadThread.join();
 
             // Close the destination file early just incase commit is required.
-            DestinationFile.Close();
+            DestinationFile.close();
 
-            if (Commit && !FsLib::ControlDevice(FS::SAVE_MOUNT))
+            if (Commit && !fslib::control_device(FS::SAVE_MOUNT))
             {
-                Logger::Log("Error committing save to device: %s", FsLib::GetErrorString());
+                Logger::Log("Error committing save to device: %s", fslib::error::get_string());
             }
         }
     }
 }
 
-void FS::CopyDirectoryToZip(System::ProgressTask *Task, const FsLib::Path &Source, zipFile Destination)
+void FS::CopyDirectoryToZip(System::ProgressTask *Task, const fslib::Path &Source, zipFile Destination)
 {
-    FsLib::Directory SourceDir(Source);
-    if (!SourceDir.IsOpen())
+    fslib::Directory SourceDir(Source);
+    if (!SourceDir.is_open())
     {
-        Logger::Log("Error opening source directory: %s", FsLib::GetErrorString());
+        Logger::Log("Error opening source directory: %s", fslib::error::get_string());
         return;
     }
 
-    for (uint32_t i = 0; i < SourceDir.GetEntryCount(); i++)
+    for (uint32_t i = 0; i < SourceDir.get_count(); i++)
     {
-        if (SourceDir.EntryAtIsDirectory(i))
+        if (SourceDir[i].is_directory())
         {
-            FsLib::Path NewSource = Source / SourceDir[i];
+            fslib::Path NewSource = Source / SourceDir[i];
             FS::CopyDirectoryToZip(Task, NewSource, Destination);
         }
         else
         {
-            FsLib::Path FullSource = Source / SourceDir[i];
-            FsLib::File SourceFile(FullSource, FS_OPEN_READ);
-            if (!SourceFile.IsOpen())
+            fslib::Path FullSource = Source / SourceDir[i];
+            fslib::File SourceFile(FullSource, FS_OPEN_READ);
+            if (!SourceFile.is_open())
             {
-                Logger::Log("Error opening source file for ZIP: %s", FsLib::GetErrorString());
+                Logger::Log("Error opening source file for ZIP: %s", fslib::error::get_string());
                 continue;
             }
 
@@ -206,26 +205,28 @@ void FS::CopyDirectoryToZip(System::ProgressTask *Task, const FsLib::Path &Sourc
             std::time(&Timer);
             std::tm *LocalTime = localtime(&Timer);
 
-            zip_fileinfo FileInfo = {.tmz_date = {.tm_sec = LocalTime->tm_sec,
-                                                  .tm_min = LocalTime->tm_min,
-                                                  .tm_hour = LocalTime->tm_hour,
-                                                  .tm_mday = LocalTime->tm_mday,
-                                                  .tm_mon = LocalTime->tm_mon,
-                                                  .tm_year = 1900 + LocalTime->tm_year},
-                                     .dosDate = 0,
+            zip_fileinfo FileInfo = {.tmz_date    = {.tm_sec  = LocalTime->tm_sec,
+                                                     .tm_min  = LocalTime->tm_min,
+                                                     .tm_hour = LocalTime->tm_hour,
+                                                     .tm_mday = LocalTime->tm_mday,
+                                                     .tm_mon  = LocalTime->tm_mon,
+                                                     .tm_year = 1900 + LocalTime->tm_year},
+                                     .dosDate     = 0,
                                      .internal_fa = 0,
                                      .external_fa = 0};
 
-            // We need to convert the UTF16 to UTF for the zip. This is a pain thanks to 3DS needing UTF-16 paths, but here we go.
-            // Full path.
-            FsLib::Path ZipFileName = Source / SourceDir[i];
+            // We need to convert the UTF16 to UTF for the zip. This is a pain thanks to 3DS needing UTF-16 paths, but here we
+            // go. Full path.
+            fslib::Path ZipFileName = Source / SourceDir[i];
             // Get pointer to C string.
-            const char16_t *PathPointer = ZipFileName.CString();
+            const char16_t *PathPointer = ZipFileName.full_path();
             // Find where the path begins...
-            const char16_t *PathBegin = std::char_traits<char16_t>::find(PathPointer, ZipFileName.GetLength(), u'/') + 1;
+            const char16_t *PathBegin = std::char_traits<char16_t>::find(PathPointer, ZipFileName.get_length(), u'/') + 1;
             // Covert to UTF-8
-            char UTF8Buffer[FsLib::MAX_PATH] = {0};
-            utf16_to_utf8(reinterpret_cast<uint8_t *>(UTF8Buffer), reinterpret_cast<const uint16_t *>(PathBegin), FsLib::MAX_PATH);
+            char UTF8Buffer[fslib::MAX_PATH] = {0};
+            utf16_to_utf8(reinterpret_cast<uint8_t *>(UTF8Buffer),
+                          reinterpret_cast<const uint16_t *>(PathBegin),
+                          fslib::MAX_PATH);
             // That should do it.
 
             int ZipError = zipOpenNewFileInZip(Destination, UTF8Buffer, &FileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, 1);
@@ -239,33 +240,27 @@ void FS::CopyDirectoryToZip(System::ProgressTask *Task, const FsLib::Path &Sourc
             if (Task)
             {
                 Task->SetStatus(Strings::GetStringByName(Strings::Names::AddingToZip, 0), UTF8Buffer);
-                Task->Reset(static_cast<double>(SourceFile.GetSize()));
+                Task->Reset(static_cast<double>(SourceFile.get_size()));
             }
 
             uint32_t TotalCopied = 0;
             std::unique_ptr<unsigned char[]> FileBuffer(new unsigned char[FILE_BUFFER_SIZE]);
-            while (TotalCopied < SourceFile.GetSize())
+            while (TotalCopied < SourceFile.get_size())
             {
-                uint32_t BytesRead = SourceFile.Read(FileBuffer.get(), FILE_BUFFER_SIZE);
+                uint32_t BytesRead = SourceFile.read(FileBuffer.get(), FILE_BUFFER_SIZE);
 
                 ZipError = zipWriteInFileInZip(Destination, FileBuffer.get(), BytesRead);
-                if (ZipError == Z_OK)
-                {
-                    Logger::Log("%s", FsLib::GetErrorString());
-                }
+                if (ZipError == Z_OK) { Logger::Log("%s", fslib::error::get_string()); }
                 TotalCopied += BytesRead;
 
-                if (Task)
-                {
-                    Task->SetCurrent(TotalCopied);
-                }
+                if (Task) { Task->SetCurrent(TotalCopied); }
             }
             zipCloseFileInZip(Destination);
         }
     }
 }
 
-void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const FsLib::Path &Destination, bool Commit)
+void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const fslib::Path &Destination, bool Commit)
 {
     Logger::Log("CopyZipToDir");
 
@@ -277,8 +272,7 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         return;
     }
 
-    do
-    {
+    do {
         if (unzOpenCurrentFile(Source) != UNZ_OK)
         {
             Logger::Log("Error opening file in zip!");
@@ -286,10 +280,10 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         }
         Logger::Log("unzOpenCurrent");
         // This really is all needed.
-        unz_file_info FileInfo = {0};
-        char FileNameUTF8[FsLib::MAX_PATH] = {0};
-        char16_t FileNameUTF16[FsLib::MAX_PATH] = {0};
-        if (unzGetCurrentFileInfo(Source, &FileInfo, FileNameUTF8, FsLib::MAX_PATH, NULL, 0, NULL, 0) != UNZ_OK)
+        unz_file_info FileInfo                  = {0};
+        char FileNameUTF8[fslib::MAX_PATH]      = {0};
+        char16_t FileNameUTF16[fslib::MAX_PATH] = {0};
+        if (unzGetCurrentFileInfo(Source, &FileInfo, FileNameUTF8, fslib::MAX_PATH, NULL, 0, NULL, 0) != UNZ_OK)
         {
             Logger::Log("Error reading file info from zip!");
             continue;
@@ -297,30 +291,30 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         Logger::Log("unzGetCurrentInfo");
 
         // Convert to UTF-16 for Path
-        StringUtil::ToUTF16(FileNameUTF8, FileNameUTF16, FsLib::MAX_PATH);
-        FsLib::Path DestinationPath = Destination / FileNameUTF16;
+        StringUtil::ToUTF16(FileNameUTF8, FileNameUTF16, fslib::MAX_PATH);
+        fslib::Path DestinationPath = Destination / FileNameUTF16;
         Logger::Log("UTF-8 -> UTF-16");
 
         // Make sure we create entire path before file name.
-        FsLib::Path TargetDir = DestinationPath.SubPath(DestinationPath.FindLastOf(u'/'));
+        fslib::Path TargetDir = DestinationPath.sub_path(DestinationPath.find_last_of(u'/'));
 
         char DirBuffer[0x40] = {0};
-        StringUtil::ToUTF8(TargetDir.CString(), DirBuffer, 0x40);
+        StringUtil::ToUTF8(TargetDir.full_path(), DirBuffer, 0x40);
         Logger::Log("TargetDir: %s", DirBuffer);
 
         // Check to make sure it isn't the root, it doesn't exist already and if it was created.
-        if (!(std::char_traits<char16_t>::compare(TargetDir.CString(), u"save:", 6) == 0) && !FsLib::DirectoryExists(TargetDir) &&
-            !FsLib::CreateDirectoriesRecursively(TargetDir))
+        if (!(std::char_traits<char16_t>::compare(TargetDir.full_path(), u"save:", 6) == 0) &&
+            !fslib::directory_exists(TargetDir) && !fslib::create_directory_recursively(TargetDir))
         {
-            Logger::Log("Error creating target directory for restore: %s", FsLib::GetErrorString());
+            Logger::Log("Error creating target directory for restore: %s", fslib::error::get_string());
             continue;
         }
         Logger::Log("Create target dir.");
 
-        FsLib::File DestinationFile(DestinationPath, FS_OPEN_CREATE | FS_OPEN_WRITE, FileInfo.uncompressed_size);
-        if (!DestinationFile.IsOpen())
+        fslib::File DestinationFile(DestinationPath, FS_OPEN_CREATE | FS_OPEN_WRITE, FileInfo.uncompressed_size);
+        if (!DestinationFile.is_open())
         {
-            Logger::Log("Error opening destination file for writing: %s", FsLib::GetErrorString());
+            Logger::Log("Error opening destination file for writing: %s", fslib::error::get_string());
             continue;
         }
         Logger::Log("Destination file.");
@@ -330,14 +324,14 @@ void FS::CopyZipToDirectory(System::ProgressTask *Task, unzFile Source, const Fs
         Task->SetStatus(Strings::GetStringByName(Strings::Names::CopyingFile, 0), FileNameUTF8);
         while ((ReadCount = unzReadCurrentFile(Source, ReadBuffer.get(), FILE_BUFFER_SIZE)) > 0)
         {
-            DestinationFile.Write(ReadBuffer.get(), static_cast<size_t>(ReadCount));
+            DestinationFile.write(ReadBuffer.get(), static_cast<size_t>(ReadCount));
             Task->SetCurrent((TotalCount += ReadCount));
         }
 
         if (Commit)
         {
-            DestinationFile.Close();
-            FsLib::ControlDevice(FS::SAVE_MOUNT);
+            DestinationFile.close();
+            fslib::control_device(FS::SAVE_MOUNT);
         }
     } while (unzGoToNextFile(Source) != UNZ_END_OF_LIST_OF_FILE);
 }

@@ -1,7 +1,9 @@
 #include "SDL/Font.hpp"
-#include "FsLib.hpp"
+
 #include "Logger.hpp"
 #include "SDL/SDL.hpp"
+#include "fslib.hpp"
+
 #include <3ds.h>
 #include <algorithm>
 #include <array>
@@ -25,7 +27,7 @@ namespace
 // These are helper functions that don't really belong in the class.
 static size_t FindNextBreakpoint(const char *String)
 {
-    uint32_t Codepoint = 0x00;
+    uint32_t Codepoint  = 0x00;
     size_t StringLength = std::char_traits<char>::length(String);
     for (size_t i = 0; i < StringLength;)
     {
@@ -55,13 +57,11 @@ bool SDL::FreeType::Initialize(void)
 
 void SDL::FreeType::Exit(void)
 {
-    if (s_FTLib)
-    {
-        FT_Done_FreeType(s_FTLib);
-    }
+    if (s_FTLib) { FT_Done_FreeType(s_FTLib); }
 }
 
-SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({TextColor.RAW})
+SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor)
+    : m_TextColor({TextColor.RAW})
 {
     // Unfortunately, I'm not sure FsLib is ever going to get RomFS support. Still need stdio or fstream for this...
     std::FILE *FontFile = std::fopen(FontPath.data(), "rb");
@@ -73,7 +73,7 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({
 
     // These are needed for decompressing the font.
     uint32_t UncompressedSize = 0;
-    uint32_t CompressedSize = 0;
+    uint32_t CompressedSize   = 0;
     fread(&UncompressedSize, sizeof(uint32_t), 1, FontFile);
     fread(&CompressedSize, sizeof(uint32_t), 1, FontFile);
 
@@ -108,18 +108,12 @@ SDL::Font::Font(std::string_view FontPath, SDL::Color TextColor) : m_TextColor({
 
 SDL::Font::~Font()
 {
-    if (m_FTFace)
-    {
-        FT_Done_Face(m_FTFace);
-    }
+    if (m_FTFace) { FT_Done_Face(m_FTFace); }
 }
 
 void SDL::Font::BlitTextAt(SDL_Surface *Target, int X, int Y, int FontSize, int WrapWidth, const char *Format, ...)
 {
-    if (!m_FTFace)
-    {
-        return;
-    }
+    if (!m_FTFace) { return; }
 
     // Va arg the text passed.
     char VaBuffer[VA_BUFFER_SIZE] = {0};
@@ -162,10 +156,7 @@ void SDL::Font::BlitTextAt(SDL_Surface *Target, int X, int Y, int FontSize, int 
         for (size_t j = 0; j < CurrentWordLength;)
         {
             ssize_t UnitCount = decode_utf8(&Codepoint, reinterpret_cast<const uint8_t *>(&WordBuffer[j]));
-            if (UnitCount <= 0)
-            {
-                break;
-            }
+            if (UnitCount <= 0) { break; }
 
             j += UnitCount;
             // Process newline chars.
@@ -194,8 +185,8 @@ void SDL::Font::BlitTextAt(SDL_Surface *Target, int X, int Y, int FontSize, int 
 
 size_t SDL::Font::GetTextWidth(int FontSize, const char *Text)
 {
-    uint32_t Codepoint = 0;
-    size_t TextWidth = 0;
+    uint32_t Codepoint  = 0;
+    size_t TextWidth    = 0;
     size_t StringLength = std::char_traits<char>::length(Text);
 
     ResizeFont(FontSize);
@@ -203,39 +194,24 @@ size_t SDL::Font::GetTextWidth(int FontSize, const char *Text)
     for (size_t i = 0; i < StringLength;)
     {
         ssize_t UnitCount = decode_utf8(&Codepoint, reinterpret_cast<const uint8_t *>(&Text[i]));
-        if (UnitCount <= 0)
-        {
-            return TextWidth;
-        }
+        if (UnitCount <= 0) { return TextWidth; }
 
         i += UnitCount;
-        if (Codepoint == L'\n')
-        {
-            continue;
-        }
+        if (Codepoint == L'\n') { continue; }
 
         FontGlyph *CurrentGlyph = Font::SearchLoadGlyph(Codepoint, FontSize, FT_LOAD_RENDER);
-        if (CurrentGlyph)
-        {
-            TextWidth += CurrentGlyph->AdvanceX;
-        }
+        if (CurrentGlyph) { TextWidth += CurrentGlyph->AdvanceX; }
     }
     return TextWidth;
 }
 
 void SDL::Font::ResizeFont(int FontSize)
 {
-    if (m_FontSize == FontSize)
-    {
-        return;
-    }
+    if (m_FontSize == FontSize) { return; }
 
-    m_FontSize = FontSize;
+    m_FontSize       = FontSize;
     FT_Error FTError = FT_Set_Pixel_Sizes(m_FTFace, 0, static_cast<FT_UInt>(m_FontSize));
-    if (FTError != 0)
-    {
-        Logger::Log("Error setting font size in pixels: %i.", FTError);
-    }
+    if (FTError != 0) { Logger::Log("Error setting font size in pixels: %i.", FTError); }
 }
 
 SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_Int32 FreeTypeLoadFlags)
@@ -246,37 +222,28 @@ SDL::FontGlyph *SDL::Font::SearchLoadGlyph(uint32_t Codepoint, int FontSize, FT_
     }
 
     FT_UInt CodepointIndex = FT_Get_Char_Index(m_FTFace, Codepoint);
-    FT_Error FTError = FT_Load_Glyph(m_FTFace, CodepointIndex, FreeTypeLoadFlags);
-    if (CodepointIndex == 0 || FTError != 0 || m_FTFace->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY)
-    {
-        return nullptr;
-    }
+    FT_Error FTError       = FT_Load_Glyph(m_FTFace, CodepointIndex, FreeTypeLoadFlags);
+    if (CodepointIndex == 0 || FTError != 0 || m_FTFace->glyph->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY) { return nullptr; }
     // Pointer to bitmap in FTFace
     FT_Bitmap GlyphBitmap = m_FTFace->glyph->bitmap;
     // Allocate surface for glyph.
 
     // Glyph needs a name for map.
-    std::string GlyphName = std::to_string(Codepoint) + " - " + std::to_string(FontSize);
+    std::string GlyphName           = std::to_string(Codepoint) + " - " + std::to_string(FontSize);
     SDL::SharedSurface GlyphSurface = SDL::SurfaceManager::CreateLoadResource(GlyphName, GlyphBitmap.width, GlyphBitmap.rows);
-    if (!GlyphSurface)
-    {
-        return nullptr;
-    }
+    if (!GlyphSurface) { return nullptr; }
 
     // This is for iterating through to render or construct the glyph.
-    size_t BitmapSize = GlyphBitmap.width * GlyphBitmap.rows;
+    size_t BitmapSize           = GlyphBitmap.width * GlyphBitmap.rows;
     unsigned char *BitmapBuffer = GlyphBitmap.buffer;
-    uint32_t *SurfacePixels = reinterpret_cast<uint32_t *>(GlyphSurface->Get()->pixels);
+    uint32_t *SurfacePixels     = reinterpret_cast<uint32_t *>(GlyphSurface->Get()->pixels);
 
     // Loop through and fill out the pixels in surface.
-    for (size_t i = 0; i < BitmapSize; i++)
-    {
-        SurfacePixels[i] = (m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i];
-    }
+    for (size_t i = 0; i < BitmapSize; i++) { SurfacePixels[i] = (m_TextColor.RAW & 0xFFFFFF00) | BitmapBuffer[i]; }
 
     m_GlyphCacheMap[std::make_pair(Codepoint, FontSize)] = {.AdvanceX = static_cast<int16_t>(m_FTFace->glyph->advance.x >> 6),
-                                                            .Top = static_cast<int16_t>(m_FTFace->glyph->bitmap_top),
-                                                            .Left = static_cast<int16_t>(m_FTFace->glyph->bitmap_left),
+                                                            .Top      = static_cast<int16_t>(m_FTFace->glyph->bitmap_top),
+                                                            .Left     = static_cast<int16_t>(m_FTFace->glyph->bitmap_left),
                                                             .GlyphSurface = GlyphSurface};
 
     return &m_GlyphCacheMap.at(std::make_pair(Codepoint, FontSize));

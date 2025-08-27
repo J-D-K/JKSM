@@ -51,7 +51,7 @@ ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
 CFLAGS	:=	-g -Wall -O2 -mword-relocations `sdl-config --cflags` -ffast-math \
 			`freetype-config --cflags` -fomit-frame-pointer -ffunction-sections \
-			$(ARCH)
+			-fmax-errors=1 $(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D__3DS__
 
