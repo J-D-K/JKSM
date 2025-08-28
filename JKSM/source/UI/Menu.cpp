@@ -29,13 +29,13 @@ void UI::Menu::EditOption(int Index, std::string_view Option)
     m_Options[Index] = Option;
 }
 
-void UI::Menu::Reset(void)
+void UI::Menu::Reset()
 {
     m_Options.clear();
     m_OptionsLength = -1;
 }
 
-void UI::Menu::Update(void)
+void UI::Menu::Update()
 {
     if (m_Selected > m_OptionsLength) { m_Selected = m_OptionsLength; }
 
@@ -63,11 +63,11 @@ void UI::Menu::Draw(SDL_Surface *Target)
     }
 }
 
-int UI::Menu::GetSelected(void) const { return m_Selected; }
+int UI::Menu::GetSelected() const { return m_Selected; }
 
-size_t UI::Menu::GetSize(void) const { return m_Options.size(); }
+size_t UI::Menu::GetSize() const { return m_Options.size(); }
 
-void UI::Menu::HandleUpPress(void)
+void UI::Menu::HandleUpPress()
 {
     --m_Selected;
     if (m_Selected < 0)
@@ -78,7 +78,7 @@ void UI::Menu::HandleUpPress(void)
     else if (m_Selected < m_OptionStart + (m_MaximumDrawLength / 2) && m_OptionStart > 0) { --m_OptionStart; }
 }
 
-void UI::Menu::HandleDownPress(void)
+void UI::Menu::HandleDownPress()
 {
     ++m_Selected;
     if (m_Selected > m_OptionsLength)
@@ -92,7 +92,7 @@ void UI::Menu::HandleDownPress(void)
     }
 }
 
-void UI::Menu::HandleLeftPress(void)
+void UI::Menu::HandleLeftPress()
 {
     int OptionJumpCount = std::ceil(static_cast<double>(m_MaximumDrawLength) / 2.0f);
     m_Selected -= OptionJumpCount;
@@ -108,7 +108,7 @@ void UI::Menu::HandleLeftPress(void)
     }
 }
 
-void UI::Menu::HandleRightPress(void)
+void UI::Menu::HandleRightPress()
 {
     int OptionJumpCount = std::ceil(static_cast<double>(m_MaximumDrawLength) / 2.0f);
     m_Selected += OptionJumpCount;

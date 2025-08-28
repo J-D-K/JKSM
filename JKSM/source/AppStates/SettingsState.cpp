@@ -1,6 +1,5 @@
-#include "AppStates/SettingsState.hpp"
+#include "appstates/SettingsState.hpp"
 
-#include "AppStates/ProgressTaskState.hpp"
 #include "Assets.hpp"
 #include "Config.hpp"
 #include "Data/Data.hpp"
@@ -8,6 +7,7 @@
 #include "JKSM.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "appstates/ProgressTaskState.hpp"
 #include "fslib.hpp"
 #include "logging/logger.hpp"
 
@@ -48,96 +48,96 @@ static const char *GetValueText(uint8_t Value)
     return "nullptr";
 }
 
-SettingsState::SettingsState(void)
-    : m_SettingsMenu(40, 20, 320, 12)
+SettingsState::SettingsState()
+    : m_settingsMenu(40, 20, 320, 12)
 {
     // Get centered coordinates for text.
-    m_SettingsX    = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, 5)) / 2);
-    m_DescriptionX = 160 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::SettingsDescription, 0)) / 2);
+    m_settingsX    = 200 - (m_noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, 5)) / 2);
+    m_descriptionX = 160 - (m_noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::SettingsDescription, 0)) / 2);
 
     uint8_t CurrentIndex       = 0;
     const char *SettingsOption = NULL;
     while ((SettingsOption = Strings::GetStringByName(Strings::Names::SettingsMenu, CurrentIndex++)) != nullptr)
     {
         // This is not the way I should do this, but I need to for now.
-        m_SettingsMenu.AddOption(StringUtil::GetFormattedString(SettingsOption, GetValueText(0)));
+        m_settingsMenu.AddOption(StringUtil::GetFormattedString(SettingsOption, GetValueText(0)));
     }
 }
 
-void SettingsState::Update(void)
+void SettingsState::update()
 {
-    m_SettingsMenu.Update();
-    SettingsState::UpdateMenuStrings();
-    if (Input::ButtonPressed(KEY_A)) { SettingsState::UpdateConfig(); }
+    m_settingsMenu.Update();
+    SettingsState::update_menu_strings();
+    if (Input::ButtonPressed(KEY_A)) { SettingsState::update_config(); }
 }
 
-void SettingsState::DrawTop(SDL_Surface *Target)
+void SettingsState::draw_top(SDL_Surface *target)
 {
-    m_SettingsMenu.Draw(Target);
-    SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target,
-                       m_SettingsX,
+    m_settingsMenu.Draw(target);
+    SDL::DrawRect(target, 0, 224, 400, 16, SDL::Colors::BarColor);
+    m_noto->BlitTextAt(target,
+                       m_settingsX,
                        225,
                        12,
-                       m_Noto->NO_TEXT_WRAP,
+                       m_noto->NO_TEXT_WRAP,
                        Strings::GetStringByName(Strings::Names::StateName, 5));
 }
 
-void SettingsState::DrawBottom(SDL_Surface *Target)
+void SettingsState::draw_bottom(SDL_Surface *target)
 {
-    SDL::DrawRect(Target, 0, 0, 320, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target,
-                       m_DescriptionX,
+    SDL::DrawRect(target, 0, 0, 320, 16, SDL::Colors::BarColor);
+    m_noto->BlitTextAt(target,
+                       m_descriptionX,
                        1,
                        12,
-                       m_Noto->NO_TEXT_WRAP,
+                       m_noto->NO_TEXT_WRAP,
                        Strings::GetStringByName(Strings::Names::SettingsDescription, 0));
 
-    m_Noto->BlitTextAt(Target,
+    m_noto->BlitTextAt(target,
                        4,
                        18,
                        12,
                        312,
-                       Strings::GetStringByName(Strings::Names::SettingsDescriptions, m_SettingsMenu.GetSelected()));
+                       Strings::GetStringByName(Strings::Names::SettingsDescriptions, m_settingsMenu.GetSelected()));
 }
 
-void SettingsState::UpdateMenuStrings(void)
+void SettingsState::update_menu_strings()
 {
     // Wew these are long...
-    m_SettingsMenu.EditOption(1,
+    m_settingsMenu.EditOption(1,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 1),
                                                              GetValueText(Config::GetByKey(Config::Keys::TextMode))));
-    m_SettingsMenu.EditOption(2,
+    m_settingsMenu.EditOption(2,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 2),
                                                              GetValueText(Config::GetByKey(Config::Keys::ExportToZip))));
-    m_SettingsMenu.EditOption(3,
+    m_settingsMenu.EditOption(3,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 3),
                                                              GetValueText(Config::GetByKey(Config::Keys::ForceEnglish))));
-    m_SettingsMenu.EditOption(
+    m_settingsMenu.EditOption(
         4,
         StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 4),
                                        GetValueText(Config::GetByKey(Config::Keys::PreserveSecureValues))));
-    m_SettingsMenu.EditOption(5,
+    m_settingsMenu.EditOption(5,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 5),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToOverwrite))));
-    m_SettingsMenu.EditOption(6,
+    m_settingsMenu.EditOption(6,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 6),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToRestore))));
-    m_SettingsMenu.EditOption(7,
+    m_settingsMenu.EditOption(7,
                               StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::SettingsMenu, 7),
                                                              GetValueText(Config::GetByKey(Config::Keys::HoldToDelete))));
 }
 
-void SettingsState::UpdateConfig(void)
+void SettingsState::update_config()
 {
     bool SaveConfig = true;
-    switch (m_SettingsMenu.GetSelected())
+    switch (m_settingsMenu.GetSelected())
     {
         case REFRESH_TITLES:
         {
             if (fslib::delete_file(u"sdmc:/JKSM/cache.bin"))
             {
-                std::shared_ptr<AppState> DataRefresh = std::make_shared<ProgressTaskState>(this, Data::Initialize);
+                std::shared_ptr<BaseState> DataRefresh = std::make_shared<ProgressTaskState>(this, Data::Initialize);
                 JKSM::PushState(DataRefresh);
             }
             SaveConfig = false;

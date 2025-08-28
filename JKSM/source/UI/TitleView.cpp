@@ -1,9 +1,12 @@
 #include "UI/TitleView.hpp"
+
 #include "Input.hpp"
 #include "UI/Draw.hpp"
+
 #include <cmath>
 
-UI::TitleView::TitleView(Data::SaveDataType SaveType) : m_SaveType(SaveType)
+UI::TitleView::TitleView(Data::SaveDataType SaveType)
+    : m_SaveType(SaveType)
 {
     TitleView::Refresh();
 }
@@ -14,28 +17,17 @@ void UI::TitleView::Initialize(Data::SaveDataType SaveType)
     TitleView::Refresh();
 }
 
-void UI::TitleView::Update(void)
+void UI::TitleView::Update()
 {
     int TileTotal = m_TitleTiles.size() - 1;
 
-    if (Input::ButtonPressed(KEY_DUP) && (m_Selected -= 7) < 0)
-    {
-        m_Selected = 0;
-    }
-    else if (Input::ButtonPressed(KEY_DDOWN) && (m_Selected += 7) > TileTotal)
-    {
-        m_Selected = TileTotal;
-    }
-    else if (Input::ButtonPressed(KEY_DLEFT) && --m_Selected < 0)
-    {
-        m_Selected = 0;
-    }
-    else if (Input::ButtonPressed(KEY_DRIGHT) && ++m_Selected > TileTotal)
-    {
-        m_Selected = TileTotal;
-    }
+    if (Input::ButtonPressed(KEY_DUP) && (m_Selected -= 7) < 0) { m_Selected = 0; }
+    else if (Input::ButtonPressed(KEY_DDOWN) && (m_Selected += 7) > TileTotal) { m_Selected = TileTotal; }
+    else if (Input::ButtonPressed(KEY_DLEFT) && --m_Selected < 0) { m_Selected = 0; }
+    else if (Input::ButtonPressed(KEY_DRIGHT) && ++m_Selected > TileTotal) { m_Selected = TileTotal; }
 
-    // I know some of these are magic numbers and I can't remember how I came up with them. I just remember this being like a balancing act.
+    // I know some of these are magic numbers and I can't remember how I came up with them. I just remember this being like a
+    // balancing act.
     if (m_SelectionY > 160)
     {
         double Add = (160.0f - static_cast<double>(m_SelectionY)) / 2.0f;
@@ -50,24 +42,16 @@ void UI::TitleView::Update(void)
 
 void UI::TitleView::Draw(SDL_Surface *Target)
 {
-    if (m_TitleTiles.size() <= 0)
-    {
-        return;
-    }
+    if (m_TitleTiles.size() <= 0) { return; }
 
-    if (m_ShiftDirection && (m_ColorShift += 6) >= 0x72)
-    {
-        m_ShiftDirection = false;
-    }
-    else if (!m_ShiftDirection && (m_ColorShift -= 3) <= 0)
-    {
-        m_ShiftDirection = true;
-    }
+    if (m_ShiftDirection && (m_ColorShift += 6) >= 0x72) { m_ShiftDirection = false; }
+    else if (!m_ShiftDirection && (m_ColorShift -= 3) <= 0) { m_ShiftDirection = true; }
 
     for (int TemporaryY = m_Y, i = 0; i < static_cast<int>(m_TitleTiles.size()); TemporaryY += 56)
     {
         size_t RowEnd = i + 7;
-        for (int TemporaryX = m_X; i < static_cast<int>(RowEnd > m_TitleTiles.size() ? m_TitleTiles.size() : RowEnd); TemporaryX += 54, i++)
+        for (int TemporaryX = m_X; i < static_cast<int>(RowEnd > m_TitleTiles.size() ? m_TitleTiles.size() : RowEnd);
+             TemporaryX += 54, i++)
         {
             if (i == m_Selected)
             {
@@ -77,17 +61,14 @@ void UI::TitleView::Draw(SDL_Surface *Target)
             }
 
             // Don't bother wasting time processing or bliting stuff we can't see anyway.
-            if (TemporaryY < -32 || TemporaryY > 224)
-            {
-                continue;
-            }
+            if (TemporaryY < -32 || TemporaryY > 224) { continue; }
 
             m_TitleTiles[i].DrawAt(Target, TemporaryX, TemporaryY);
         }
     }
 }
 
-void UI::TitleView::Refresh(void)
+void UI::TitleView::Refresh()
 {
     // Clear current tiles.
     m_TitleTiles.clear();
@@ -100,17 +81,8 @@ void UI::TitleView::Refresh(void)
     }
 }
 
-void UI::TitleView::SetSelected(int Selected)
-{
-    m_Selected = Selected;
-}
+void UI::TitleView::SetSelected(int Selected) { m_Selected = Selected; }
 
-int UI::TitleView::GetSelected(void) const
-{
-    return m_Selected;
-}
+int UI::TitleView::GetSelected() const { return m_Selected; }
 
-Data::TitleData *UI::TitleView::GetSelectedTitleData(void)
-{
-    return m_TitleData.at(m_Selected);
-}
+Data::TitleData *UI::TitleView::GetSelectedTitleData() { return m_TitleData.at(m_Selected); }

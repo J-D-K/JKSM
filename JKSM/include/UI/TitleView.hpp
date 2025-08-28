@@ -2,6 +2,7 @@
 #include "Data/Data.hpp"
 #include "UI/Element.hpp"
 #include "UI/TitleTile.hpp"
+
 #include <vector>
 
 namespace UI
@@ -10,22 +11,22 @@ namespace UI
     {
         public:
             // Default
-            TitleView(void) = default;
+            TitleView() = default;
             // Constructor version of Initialize.
             TitleView(Data::SaveDataType SaveType);
             ~TitleView() {};
             // Initializes TitleView using SaveType.
             void Initialize(Data::SaveDataType SaveType);
-            void Update(void);
+            void Update();
             void Draw(SDL_Surface *Target);
             // Forces a complete refresh of view
-            void Refresh(void);
+            void Refresh();
             // Allows you to set the selected tile.
             void SetSelected(int Selected);
             // Returns index of selected tile.
-            int GetSelected(void) const;
+            int GetSelected() const;
             // Returns the pointer to the selected TitleData
-            Data::TitleData *GetSelectedTitleData(void);
+            Data::TitleData *GetSelectedTitleData();
 
         private:
             // Save type of view

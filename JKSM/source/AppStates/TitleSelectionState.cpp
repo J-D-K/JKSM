@@ -1,42 +1,42 @@
-#include "AppStates/TitleSelectionState.hpp"
+#include "appstates/TitleSelectionState.hpp"
+
 #include "Assets.hpp"
 #include "Input.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+
 #include <array>
 
-TitleSelectionState::TitleSelectionState(Data::SaveDataType SaveType) : BaseSelectionState(SaveType), m_TitleView(SaveType)
+TitleSelectionState::TitleSelectionState(Data::SaveDataType saveType)
+    : BaseSelectionState(saveType)
+    , m_titleView(saveType)
 {
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, m_SaveType)) / 2);
+    m_textX = 200 - (m_noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, m_saveType)) / 2);
 }
 
-void TitleSelectionState::Update(void)
+void TitleSelectionState::update()
 {
-    m_TitleView.Update();
+    m_titleView.Update();
 
-    if (Input::ButtonPressed(KEY_A))
-    {
-        BaseSelectionState::CreateBackupStateWithData(m_TitleView.GetSelectedTitleData());
-    }
-    else if (Input::ButtonPressed(KEY_X))
-    {
-        BaseSelectionState::CreateOptionStateWithData(m_TitleView.GetSelectedTitleData());
-    }
+    if (Input::ButtonPressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleView.GetSelectedTitleData()); }
+    else if (Input::ButtonPressed(KEY_X)) { BaseSelectionState::create_option_state(m_titleView.GetSelectedTitleData()); }
 }
 
-void TitleSelectionState::DrawTop(SDL_Surface *Target)
+void TitleSelectionState::draw_top(SDL_Surface *target)
 {
-    m_TitleView.Draw(Target);
-    SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::StateName, m_SaveType));
+    m_titleView.Draw(target);
+    SDL::DrawRect(target, 0, 224, 400, 16, SDL::Colors::BarColor);
+    m_noto->BlitTextAt(target,
+                       m_textX,
+                       225,
+                       12,
+                       m_noto->NO_TEXT_WRAP,
+                       Strings::GetStringByName(Strings::Names::StateName, m_saveType));
 }
 
-void TitleSelectionState::DrawBottom(SDL_Surface *Target)
+void TitleSelectionState::draw_bottom(SDL_Surface *target)
 {
-    BaseSelectionState::DrawTitleInformation(Target, m_TitleView.GetSelectedTitleData());
+    BaseSelectionState::draw_title_info(target, m_titleView.GetSelectedTitleData());
 }
 
-void TitleSelectionState::Refresh(void)
-{
-    m_TitleView.Refresh();
-}
+void TitleSelectionState::refresh() { m_titleView.Refresh(); }

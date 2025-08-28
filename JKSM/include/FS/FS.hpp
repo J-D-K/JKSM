@@ -8,7 +8,7 @@
 namespace FS
 {
     // This is here purely for remaining backwards compatible. Current JKSM's FS is entirely FsLib.
-    void Initialize(void);
+    void Initialize();
     // This will return the base path depending on save type passed.
     fslib::Path GetBasePath(Data::SaveDataType SaveType);
     // Attempts to delete secure value for unique ID passed.

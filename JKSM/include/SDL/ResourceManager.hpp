@@ -46,9 +46,9 @@ namespace SDL
 
         private:
             // No constructing.
-            ResourceManager(void) = default;
+            ResourceManager() = default;
 
-            static ResourceManager &GetInstance(void)
+            static ResourceManager &GetInstance()
             {
                 static ResourceManager Instance;
                 return Instance;

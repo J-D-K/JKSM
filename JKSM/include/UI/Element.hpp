@@ -6,10 +6,10 @@ namespace UI
     class Element
     {
         public:
-            Element(void) = default;
+            Element() = default;
             virtual ~Element() {};
 
-            virtual void Update(void) = 0;
+            virtual void Update()                  = 0;
             virtual void Draw(SDL_Surface *Target) = 0;
     };
 } // namespace UI

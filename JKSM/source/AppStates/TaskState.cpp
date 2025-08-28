@@ -1,24 +1,24 @@
-#include "AppStates/TaskState.hpp"
+#include "appstates/TaskState.hpp"
 
 #include "UI/Draw.hpp"
 #include "logging/logger.hpp"
 
-void TaskState::Update(void)
+void TaskState::update()
 {
-    if (m_Task->IsFinished()) { AppState::Deactivate(); }
+    if (m_task->IsFinished()) { BaseState::deactivate(); }
 }
 
-void TaskState::DrawTop(SDL_Surface *Target)
+void TaskState::draw_top(SDL_Surface *target)
 {
-    if (m_CreatingState) { m_CreatingState->DrawTop(Target); }
+    if (m_creatingState) { m_creatingState->draw_top(target); }
 }
 
-void TaskState::DrawBottom(SDL_Surface *Target)
+void TaskState::draw_bottom(SDL_Surface *target)
 {
-    if (m_CreatingState) { m_CreatingState->DrawBottom(Target); }
+    if (m_creatingState) { m_creatingState->draw_bottom(target); }
     // Render dialog box
-    UI::DrawDialogBox(Target, 8, 18, 304, 204);
+    UI::DrawDialogBox(target, 8, 18, 304, 204);
     // Render status here, wrapped. Didn't work too well centered on the top screen.
-    std::string ThreadStatus = m_Task->GetStatus();
-    m_Noto->BlitTextAt(Target, 30, 30, 12, 268, ThreadStatus.c_str());
+    std::string ThreadStatus = m_task->GetStatus();
+    m_noto->BlitTextAt(target, 30, 30, 12, 268, ThreadStatus.c_str());
 }

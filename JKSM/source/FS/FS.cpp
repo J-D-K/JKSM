@@ -32,7 +32,7 @@ namespace
     constexpr std::u16string_view CONFIG_FOLDER = u"sdmc:/config/JKSM";
 } // namespace
 
-void FS::Initialize(void)
+void FS::Initialize()
 {
     // This loop will update locations for the user.
     for (int i = 0; i < 6; i++)

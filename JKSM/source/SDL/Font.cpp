@@ -44,7 +44,7 @@ static size_t FindNextBreakpoint(const char *String)
     return StringLength;
 }
 
-bool SDL::FreeType::Initialize(void)
+bool SDL::FreeType::Initialize()
 {
     FT_Error FTError = FT_Init_FreeType(&s_FTLib);
     if (FTError != 0)
@@ -55,7 +55,7 @@ bool SDL::FreeType::Initialize(void)
     return true;
 }
 
-void SDL::FreeType::Exit(void)
+void SDL::FreeType::Exit()
 {
     if (s_FTLib) { FT_Done_FreeType(s_FTLib); }
 }

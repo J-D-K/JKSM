@@ -1,48 +1,55 @@
-#include "AppStates/TextTitleSelect.hpp"
+#include "appstates/TextTitleSelect.hpp"
+
 #include "Assets.hpp"
 #include "Input.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
 
-TextTitleSelect::TextTitleSelect(Data::SaveDataType SaveType) : BaseSelectionState(SaveType), m_TitleMenu(40, 20, 320, 12)
+TextTitleSelect::TextTitleSelect(Data::SaveDataType saveType)
+    : BaseSelectionState(saveType)
+    , m_titleMenu(40, 20, 320, 12)
 {
-    m_TextX = 200 - (m_Noto->GetTextWidth(12, Strings::GetStringByName(Strings::Names::StateName, m_SaveType)) / 2);
+    const char *stateName = Strings::GetStringByName(Strings::Names::StateName, m_saveType);
 
-    TextTitleSelect::Refresh();
+    m_textX = 200 - (m_noto->GetTextWidth(12, stateName) / 2);
+
+    TextTitleSelect::refresh();
 }
 
-void TextTitleSelect::Update(void)
+void TextTitleSelect::update()
 {
-    m_TitleMenu.Update();
+    m_titleMenu.Update();
 
-    if (Input::ButtonPressed(KEY_A))
-    {
-        BaseSelectionState::CreateBackupStateWithData(m_TitleData.at(m_TitleMenu.GetSelected()));
-    }
+    if (Input::ButtonPressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleData.at(m_titleMenu.GetSelected())); }
 }
 
-void TextTitleSelect::DrawTop(SDL_Surface *Target)
+void TextTitleSelect::draw_top(SDL_Surface *target)
 {
-    m_TitleMenu.Draw(Target);
-    SDL::DrawRect(Target, 0, 224, 400, 16, SDL::Colors::BarColor);
-    m_Noto->BlitTextAt(Target, m_TextX, 225, 12, m_Noto->NO_TEXT_WRAP, Strings::GetStringByName(Strings::Names::StateName, m_SaveType));
+    m_titleMenu.Draw(target);
+    SDL::DrawRect(target, 0, 224, 400, 16, SDL::Colors::BarColor);
+    m_noto->BlitTextAt(target,
+                       m_textX,
+                       225,
+                       12,
+                       m_noto->NO_TEXT_WRAP,
+                       Strings::GetStringByName(Strings::Names::StateName, m_saveType));
 }
 
-void TextTitleSelect::DrawBottom(SDL_Surface *Target)
+void TextTitleSelect::draw_bottom(SDL_Surface *target)
 {
-    BaseSelectionState::DrawTitleInformation(Target, m_TitleData.at(m_TitleMenu.GetSelected()));
+    BaseSelectionState::draw_title_info(target, m_titleData.at(m_titleMenu.GetSelected()));
 }
 
-void TextTitleSelect::Refresh(void)
+void TextTitleSelect::refresh()
 {
-    m_TitleMenu.Reset();
+    m_titleMenu.Reset();
 
-    Data::GetTitlesWithType(m_SaveType, m_TitleData);
+    Data::GetTitlesWithType(m_saveType, m_titleData);
 
-    for (auto &CurrentData : m_TitleData)
+    for (auto &currentData : m_titleData)
     {
         char UTF8Title[0x80] = {0};
-        StringUtil::ToUTF8(CurrentData->GetTitle(), UTF8Title, 0x80);
-        m_TitleMenu.AddOption(UTF8Title);
+        StringUtil::ToUTF8(currentData->GetTitle(), UTF8Title, 0x80);
+        m_titleMenu.AddOption(UTF8Title);
     }
 }

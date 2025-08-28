@@ -1,4 +1,5 @@
 #include "JKSM.hpp"
+
 #include <3ds.h>
 
 extern "C"
@@ -9,18 +10,12 @@ extern "C"
         // This is here for the sole purpose of stopping JKSM from initializing and being tainted by the nightmare
         that is ctrulib's archive_dev.c
     */
-    void __appInit()
-    {
-        srvInit();
-    }
+    void __appInit() { srvInit(); }
 
-    void __appExit()
-    {
-        srvExit();
-    }
+    void __appExit() { srvExit(); }
 }
 
-int main(void)
+int main()
 {
     JKSM Jksm{};
     while (aptMainLoop() && Jksm.IsRunning())

@@ -1,7 +1,8 @@
 #pragma once
-#include "AppStates/AppState.hpp"
 #include "SDL/SDL.hpp"
 #include "UI/Element.hpp"
+#include "appstates/BaseState.hpp"
+
 #include <array>
 #include <string>
 #include <vector>
@@ -12,7 +13,7 @@ namespace UI
     {
         public:
             // Default.
-            Menu(void) = default;
+            Menu() = default;
             // Calls Initialize for you.
             Menu(int X, int Y, int Width, int MaxDrawLength);
             ~Menu() {};
@@ -21,15 +22,15 @@ namespace UI
             // Edits the option at index.
             void EditOption(int Index, std::string_view Option);
             // Clears the option vector
-            void Reset(void);
+            void Reset();
             // Handles input
-            void Update(void);
+            void Update();
             // Draws menu to target.
             void Draw(SDL_Surface *Target);
             // Returns the selected option.
-            int GetSelected(void) const;
+            int GetSelected() const;
             // Returns the number of options
-            size_t GetSize(void) const;
+            size_t GetSize() const;
 
         private:
             // Currently selected option
@@ -51,9 +52,9 @@ namespace UI
             // Bool to control color shifting.
             bool m_ShiftDirection = true;
             // These methods aren't needed outside of the class and handle input
-            void HandleUpPress(void);
-            void HandleDownPress(void);
-            void HandleLeftPress(void);
-            void HandleRightPress(void);
+            void HandleUpPress();
+            void HandleDownPress();
+            void HandleLeftPress();
+            void HandleRightPress();
     };
 } // namespace UI

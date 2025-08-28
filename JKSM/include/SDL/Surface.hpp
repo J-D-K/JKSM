@@ -1,5 +1,6 @@
 #pragma once
 #include "SDL/Color.hpp"
+
 #include <SDL/SDL.h>
 #include <string_view>
 
@@ -8,8 +9,9 @@ namespace SDL
     class Surface
     {
         public:
-            Surface(void) = default;
-            // Creates and empty surface Width and Height in size. AlphaBlended with whether or not the surface should be blended when blitted.
+            Surface() = default;
+            // Creates and empty surface Width and Height in size. AlphaBlended with whether or not the surface should be
+            // blended when blitted.
             Surface(int Width, int Height, bool AlphaBlended = true);
             // Loads image from file path
             Surface(std::string_view FilePath, bool AlphaBlended = true);
@@ -18,7 +20,7 @@ namespace SDL
             // Calls SDL_FreeSurface at destruction
             ~Surface();
             // Returns pointer to internal SDL_Surface.
-            SDL_Surface *Get(void);
+            SDL_Surface *Get();
             // Blits surface at X, Y.
             void BlitAt(SDL_Surface *Target, int X, int Y);
             // Blits part of the surface at X, Y.
@@ -30,6 +32,6 @@ namespace SDL
             // Underlying SDL_Surface
             SDL_Surface *m_Surface = nullptr;
             // Disables alpha blending for surface.
-            void DisableAlphaBlending(void);
+            void DisableAlphaBlending();
     };
 } // namespace SDL

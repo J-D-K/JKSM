@@ -21,7 +21,7 @@ namespace
     SDL_Rect s_BottomCoords = {.x = 40, .y = 240, .w = 320, .h = 240};
 } // namespace
 
-bool SDL::Initialize(void)
+bool SDL::Initialize()
 {
     int SDLError = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     if (SDLError)
@@ -61,9 +61,9 @@ bool SDL::Initialize(void)
     return true;
 }
 
-void SDL::Exit(void) { SDL_Quit(); }
+void SDL::Exit() { SDL_Quit(); }
 
-void SDL::FrameBegin(void)
+void SDL::FrameBegin()
 {
     // Clear both screen buffers to the default Switch UI color.
     std::memset(s_TopScreen->Get()->pixels, 0x2D, 400 * 240 * sizeof(uint32_t));
@@ -73,9 +73,9 @@ void SDL::FrameBegin(void)
     s_CurrentBuffer = s_TopScreen->Get();
 }
 
-void SDL::FrameChangeScreens(void) { s_CurrentBuffer = s_BottomScreen->Get(); }
+void SDL::FrameChangeScreens() { s_CurrentBuffer = s_BottomScreen->Get(); }
 
-void SDL::FrameEnd(void)
+void SDL::FrameEnd()
 {
     SDL_BlitSurface(s_TopScreen->Get(), NULL, s_FrameBuffer->Get(), &s_TopCoords);
     SDL_BlitSurface(s_BottomScreen->Get(), NULL, s_FrameBuffer->Get(), &s_BottomCoords);
@@ -83,7 +83,7 @@ void SDL::FrameEnd(void)
     SDL_Flip(s_FrameBuffer->Get());
 }
 
-SDL_Surface *SDL::GetCurrentBuffer(void) { return s_CurrentBuffer; }
+SDL_Surface *SDL::GetCurrentBuffer() { return s_CurrentBuffer; }
 
 void SDL::DrawRect(SDL_Surface *Target, int X, int Y, int Width, int Height, SDL::Color Color)
 {

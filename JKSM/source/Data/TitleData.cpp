@@ -86,7 +86,7 @@ Data::TitleData::TitleData(uint64_t TitleID,
     std::memcpy(m_Icon->Get()->pixels, IconData, ICON_BUFFER_SIZE);
 }
 
-bool Data::TitleData::HasSaveData(void) const
+bool Data::TitleData::HasSaveData() const
 {
     for (size_t i = 0; i < Data::SaveTypeTotal; i++)
     {
@@ -95,33 +95,33 @@ bool Data::TitleData::HasSaveData(void) const
     return false;
 }
 
-uint64_t Data::TitleData::GetTitleID(void) const { return m_TitleID; }
+uint64_t Data::TitleData::GetTitleID() const { return m_TitleID; }
 
-uint32_t Data::TitleData::GetLowerID(void) const { return static_cast<uint32_t>(m_TitleID & 0xFFFFFFFF); }
+uint32_t Data::TitleData::GetLowerID() const { return static_cast<uint32_t>(m_TitleID & 0xFFFFFFFF); }
 
-uint32_t Data::TitleData::GetUpperID(void) const { return static_cast<uint32_t>(m_TitleID >> 32 & 0xFFFFFFFF); }
+uint32_t Data::TitleData::GetUpperID() const { return static_cast<uint32_t>(m_TitleID >> 32 & 0xFFFFFFFF); }
 
-uint32_t Data::TitleData::GetUniqueID(void) const { return TitleData::GetLowerID() >> 8; }
+uint32_t Data::TitleData::GetUniqueID() const { return TitleData::GetLowerID() >> 8; }
 
-uint32_t Data::TitleData::GetExtDataID(void) const { return Data::ExtDataRedirect(m_TitleID); }
+uint32_t Data::TitleData::GetExtDataID() const { return Data::ExtDataRedirect(m_TitleID); }
 
-FS_MediaType Data::TitleData::GetMediaType(void) const { return m_MediaType; }
+FS_MediaType Data::TitleData::GetMediaType() const { return m_MediaType; }
 
-bool Data::TitleData::IsFavorite(void) const { return m_IsFavorite; }
+bool Data::TitleData::IsFavorite() const { return m_IsFavorite; }
 
-const char *Data::TitleData::GetProductCode(void) const { return m_ProductCode; }
+const char *Data::TitleData::GetProductCode() const { return m_ProductCode; }
 
-const char16_t *Data::TitleData::GetTitle(void) const { return m_Title; }
+const char16_t *Data::TitleData::GetTitle() const { return m_Title; }
 
-const char16_t *Data::TitleData::GetPathSafeTitle(void) const { return m_PathSafeTitle; }
+const char16_t *Data::TitleData::GetPathSafeTitle() const { return m_PathSafeTitle; }
 
-const char16_t *Data::TitleData::GetPublisher(void) const { return m_Publisher; }
+const char16_t *Data::TitleData::GetPublisher() const { return m_Publisher; }
 
-Data::TitleSaveTypes Data::TitleData::GetSaveTypes(void) const { return m_TitleSaveTypes; }
+Data::TitleSaveTypes Data::TitleData::GetSaveTypes() const { return m_TitleSaveTypes; }
 
-SDL::SharedSurface Data::TitleData::GetIcon(void) { return m_Icon; }
+SDL::SharedSurface Data::TitleData::GetIcon() { return m_Icon; }
 
-void Data::TitleData::TitleInitializeDefault(void)
+void Data::TitleData::TitleInitializeDefault()
 {
     std::string TitleIDString = StringUtil::GetFormattedString("%016llX", m_TitleID);
 

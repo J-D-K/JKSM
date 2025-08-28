@@ -3,6 +3,7 @@
 #include "Data/SMDH.hpp"
 #include "Data/SaveDataType.hpp"
 #include "SDL/ResourceManager.hpp"
+
 #include <3ds.h>
 #include <cstdint>
 
@@ -16,7 +17,7 @@ namespace Data
     class TitleData
     {
         public:
-            TitleData(void) = default;
+            TitleData() = default;
             // Initialize from system. The last argument is because there's no point in running another test.
             TitleData(uint64_t TitleID, FS_MediaType MediaType, Data::TitleSaveTypes TitleSaveTypes);
             // Initialize from cache. Basically just copying this stuff.
@@ -29,33 +30,33 @@ namespace Data
                       const void *IconData);
 
             // Returns if the title has any save data at all.
-            bool HasSaveData(void) const;
+            bool HasSaveData() const;
             // Returns the full title id.
-            uint64_t GetTitleID(void) const;
+            uint64_t GetTitleID() const;
             // Returns the lower 32 bits of title id.
-            uint32_t GetLowerID(void) const;
+            uint32_t GetLowerID() const;
             // Returns the upper 32 bits of title id.
-            uint32_t GetUpperID(void) const;
+            uint32_t GetUpperID() const;
             // Returns the unique id
-            uint32_t GetUniqueID(void) const;
+            uint32_t GetUniqueID() const;
             // Returns the ID used for opening ExtData
-            uint32_t GetExtDataID(void) const;
+            uint32_t GetExtDataID() const;
             // Returns the media type of the title.
-            FS_MediaType GetMediaType(void) const;
+            FS_MediaType GetMediaType() const;
             // Returns if title is favorited in config.
-            bool IsFavorite(void) const;
+            bool IsFavorite() const;
             // Returns product code
-            const char *GetProductCode(void) const;
+            const char *GetProductCode() const;
             // Returns Title
-            const char16_t *GetTitle(void) const;
+            const char16_t *GetTitle() const;
             // Returns scrubbed title
-            const char16_t *GetPathSafeTitle(void) const;
+            const char16_t *GetPathSafeTitle() const;
             // Returns Publisher
-            const char16_t *GetPublisher(void) const;
+            const char16_t *GetPublisher() const;
             // Returns types of saves title has.
-            Data::TitleSaveTypes GetSaveTypes(void) const;
+            Data::TitleSaveTypes GetSaveTypes() const;
             // Returns icon.
-            SDL::SharedSurface GetIcon(void);
+            SDL::SharedSurface GetIcon();
 
         private:
             // Title ID;
@@ -77,7 +78,7 @@ namespace Data
             // Icon.
             SDL::SharedSurface m_Icon = nullptr;
             // This function loads defaults in case of SDMH loading failure.
-            void TitleInitializeDefault(void);
+            void TitleInitializeDefault();
             // This method initializes TitleData using an SMDH
             void TitleInitializeSMDH(const Data::SMDH &SMDH);
     };

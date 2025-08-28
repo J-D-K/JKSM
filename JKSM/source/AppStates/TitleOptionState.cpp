@@ -1,7 +1,5 @@
-#include "AppStates/TitleOptionState.hpp"
+#include "appstates/TitleOptionState.hpp"
 
-#include "AppStates/ConfirmState.hpp"
-#include "AppStates/MessageState.hpp"
 #include "FS/FS.hpp"
 #include "FS/SaveMount.hpp"
 #include "Input.hpp"
@@ -10,6 +8,8 @@
 #include "Strings.hpp"
 #include "System/Task.hpp"
 #include "UI/Draw.hpp"
+#include "appstates/ConfirmState.hpp"
+#include "appstates/MessageState.hpp"
 #include "fslib.hpp"
 
 namespace
@@ -41,43 +41,43 @@ typedef struct
 static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct);
 static void DeleteExtraData(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct);
 
-TitleOptionState::TitleOptionState(AppState *CreatingState, const Data::TitleData *TargetTitle, Data::SaveDataType SaveType)
-    : m_CreatingState(CreatingState)
-    , m_TargetTitle(TargetTitle)
-    , m_SaveType(SaveType)
-    , m_OptionsMenu(70, 30, 258, 11)
+TitleOptionState::TitleOptionState(BaseState *creatingState, const Data::TitleData *targetTitle, Data::SaveDataType saveType)
+    : m_creatingState(creatingState)
+    , m_targetTitle(targetTitle)
+    , m_saveType(saveType)
+    , m_optionsMenu(70, 30, 258, 11)
 {
     int CurrentString      = 0;
     const char *MenuString = nullptr;
     while ((MenuString = Strings::GetStringByName(Strings::Names::TitleOptions, CurrentString++)) != nullptr)
     {
-        m_OptionsMenu.AddOption(MenuString);
+        m_optionsMenu.AddOption(MenuString);
     }
 }
 
-void TitleOptionState::Update(void)
+void TitleOptionState::update()
 {
-    m_OptionsMenu.Update();
+    m_optionsMenu.Update();
 
     if (Input::ButtonPressed(KEY_A))
     {
-        switch (m_OptionsMenu.GetSelected())
+        switch (m_optionsMenu.GetSelected())
         {
             case DELETE_SECURE_VALUE:
             {
-                if (!FS::DeleteSecureValue(m_TargetTitle->GetUniqueID()))
+                if (!FS::DeleteSecureValue(m_targetTitle->GetUniqueID()))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 8));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 8));
                 }
                 else
                 {
                     char UTF8Title[0x40] = {0};
-                    StringUtil::ToUTF8(m_TargetTitle->GetTitle(), UTF8Title, 0x40);
+                    StringUtil::ToUTF8(m_targetTitle->GetTitle(), UTF8Title, 0x40);
 
                     std::string SuccessMessage =
                         StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::TitleOptionMessages, 7),
                                                        UTF8Title);
-                    ShowMessage(this, SuccessMessage);
+                    MessageState::create_and_push(this, SuccessMessage);
                 }
             }
             break;
@@ -86,13 +86,13 @@ void TitleOptionState::Update(void)
             {
                 // Data struct
                 std::shared_ptr<TargetStruct> DataStruct(new TargetStruct);
-                DataStruct->TargetTitle   = m_TargetTitle;
-                DataStruct->SaveType      = m_SaveType;
+                DataStruct->TargetTitle   = m_targetTitle;
+                DataStruct->SaveType      = m_saveType;
                 DataStruct->CreatingState = this;
 
                 // Warning/confirmation string.
                 char UTF8Title[0x40] = {0};
-                StringUtil::ToUTF8(m_TargetTitle->GetTitle(), UTF8Title, 0x40);
+                StringUtil::ToUTF8(m_targetTitle->GetTitle(), UTF8Title, 0x40);
                 std::string ConfirmErase =
                     StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::TitleOptionConfirmations, 0),
                                                    UTF8Title);
@@ -109,21 +109,21 @@ void TitleOptionState::Update(void)
             case EXPORT_SECURE_VALUE:
             {
                 uint64_t SecureValue = 0;
-                if (!fslib::get_secure_value_for_title(m_TargetTitle->GetUniqueID(), SecureValue))
+                if (!fslib::get_secure_value_for_title(m_targetTitle->GetUniqueID(), SecureValue))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
                     logger::log("Error getting secure value: %s", fslib::error::get_string());
                     return;
                 }
 
                 // Path to export to.
-                fslib::Path SecureValuePath = fslib::Path(SECURE_VALUE_BASE_PATH) / m_TargetTitle->GetPathSafeTitle() + u".bin";
+                fslib::Path SecureValuePath = fslib::Path(SECURE_VALUE_BASE_PATH) / m_targetTitle->GetPathSafeTitle() + u".bin";
 
                 // Open file.
                 fslib::File SecureValueFile(SecureValuePath, FS_OPEN_CREATE | FS_OPEN_WRITE);
                 if (!SecureValueFile.is_open())
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
                     logger::log("Error opening secure value output file: %s", fslib::error::get_string());
                     return;
                 }
@@ -131,7 +131,7 @@ void TitleOptionState::Update(void)
                 // Try to write value
                 if (SecureValueFile.write(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 1));
                     logger::log("Error writing secure value to file: %s", fslib::error::get_string());
                     return;
                 }
@@ -143,19 +143,19 @@ void TitleOptionState::Update(void)
                 std::string SuccessMessage =
                     StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::TitleOptionMessages, 0), UTF8Path);
 
-                ShowMessage(this, SuccessMessage);
+                MessageState::create_and_push(this, SuccessMessage);
             }
             break;
 
             case IMPORT_SECURE_VALUE:
             {
                 // Start with path.
-                fslib::Path SecureValuePath = fslib::Path(SECURE_VALUE_BASE_PATH) / m_TargetTitle->GetPathSafeTitle() + u".bin";
+                fslib::Path SecureValuePath = fslib::Path(SECURE_VALUE_BASE_PATH) / m_targetTitle->GetPathSafeTitle() + u".bin";
 
                 // Check if file even exists before going further.
                 if (!fslib::file_exists(SecureValuePath))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
                     logger::log("Error: no secure value file found for title.");
                     return;
                 }
@@ -163,7 +163,7 @@ void TitleOptionState::Update(void)
                 fslib::File SecureValueFile(SecureValuePath, FS_OPEN_READ);
                 if (!SecureValueFile.is_open())
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
                     logger::log("Error opening secure value file for reading: %s", fslib::error::get_string());
                     return;
                 }
@@ -172,15 +172,15 @@ void TitleOptionState::Update(void)
                 uint64_t SecureValue = 0;
                 if (SecureValueFile.read(&SecureValue, sizeof(uint64_t)) != sizeof(uint64_t))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
                     logger::log("Error reading secure value from file: %s", fslib::error::get_string());
                     return;
                 }
 
                 // Set it.
-                if (!fslib::set_secure_value_for_title(m_TargetTitle->GetUniqueID(), SecureValue))
+                if (!fslib::set_secure_value_for_title(m_targetTitle->GetUniqueID(), SecureValue))
                 {
-                    ShowMessage(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
+                    MessageState::create_and_push(this, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 3));
                     logger::log("Error setting secure value: %s", fslib::error::get_string());
                     return;
                 }
@@ -194,25 +194,25 @@ void TitleOptionState::Update(void)
                     StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::TitleOptionMessages, 2), UTF8Path);
 
                 // Wew
-                ShowMessage(this, SuccessMessage);
+                MessageState::create_and_push(this, SuccessMessage);
             }
             break;
         }
     }
-    else if (Input::ButtonPressed(KEY_B)) { AppState::Deactivate(); }
+    else if (Input::ButtonPressed(KEY_B)) { BaseState::deactivate(); }
 }
 
-void TitleOptionState::DrawTop(SDL_Surface *Target)
+void TitleOptionState::draw_top(SDL_Surface *target)
 {
-    if (m_CreatingState) { m_CreatingState->DrawTop(Target); }
+    if (m_creatingState) { m_creatingState->draw_top(target); }
     // Render dialog & menu
-    UI::DrawDialogBox(Target, 48, 18, 304, 204);
-    m_OptionsMenu.Draw(Target);
+    UI::DrawDialogBox(target, 48, 18, 304, 204);
+    m_optionsMenu.Draw(target);
 }
 
-void TitleOptionState::DrawBottom(SDL_Surface *Target)
+void TitleOptionState::draw_bottom(SDL_Surface *target)
 {
-    if (m_CreatingState) { m_CreatingState->DrawBottom(Target); }
+    if (m_creatingState) { m_creatingState->draw_bottom(target); }
 }
 
 static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> DataStruct)
@@ -231,7 +231,8 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
                                     DataStruct->TargetTitle->GetTitleID()))
     {
         // Failure. Display message so user doesn't complain on github without reading the log.
-        ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
+        MessageState::create_and_push(DataStruct->CreatingState,
+                                      Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
         logger::log("Error occurred opening save for erasure: %s", fslib::error::get_string());
         Task->Finish();
         return;
@@ -240,7 +241,8 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
              !fslib::open_system_save_data(FS::SAVE_MOUNT, DataStruct->TargetTitle->GetUniqueID()))
     {
         // Show message and bail
-        ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
+        MessageState::create_and_push(DataStruct->CreatingState,
+                                      Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
         logger::log("Error occurred opening system save for erasure: %s", fslib::error::get_string());
         Task->Finish();
         return;
@@ -249,13 +251,15 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
     // These are logged and messaged, but no bail.
     if (!fslib::delete_directory_recursively(FS::SAVE_ROOT))
     {
-        ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
+        MessageState::create_and_push(DataStruct->CreatingState,
+                                      Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
         logger::log("Error erasing root of save data: %s", fslib::error::get_string());
     }
 
     if (!fslib::control_device(FS::SAVE_MOUNT))
     {
-        ShowMessage(DataStruct->CreatingState, Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
+        MessageState::create_and_push(DataStruct->CreatingState,
+                                      Strings::GetStringByName(Strings::Names::TitleOptionMessages, 4));
         logger::log("Error committing changes to save data: %s", fslib::error::get_string());
     }
 
@@ -268,7 +272,7 @@ static void EraseSaveData(System::Task *Task, std::shared_ptr<TargetStruct> Data
     // Show success message
     std::string Success =
         StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::TitleOptionMessages, 6), UTF8Title);
-    ShowMessage(DataStruct->CreatingState, Success);
+    MessageState::create_and_push(DataStruct->CreatingState, Success);
 
     // Should be done
     Task->Finish();

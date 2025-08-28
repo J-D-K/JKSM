@@ -1,10 +1,5 @@
 #include "JKSM.hpp"
 
-#include "AppStates/MessageState.hpp"
-#include "AppStates/ProgressTaskState.hpp"
-#include "AppStates/SettingsState.hpp"
-#include "AppStates/TextTitleSelect.hpp"
-#include "AppStates/TitleSelectionState.hpp"
 #include "Assets.hpp"
 #include "Config.hpp"
 #include "Data/Data.hpp"
@@ -14,6 +9,11 @@
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "appstates/MessageState.hpp"
+#include "appstates/ProgressTaskState.hpp"
+#include "appstates/SettingsState.hpp"
+#include "appstates/TextTitleSelect.hpp"
+#include "appstates/TitleSelectionState.hpp"
 #include "logging/logger.hpp"
 
 #include <3ds.h>
@@ -47,7 +47,7 @@ bool IntializeService(Result (*Function)(Args...), const char *ServiceName, Args
     return true;
 }
 
-JKSM::JKSM(void)
+JKSM::JKSM()
 {
     // FsLib is needed the most, so it's first.
     ABORT_ON_FAILURE(fslib::initialize());
@@ -120,24 +120,24 @@ JKSM::~JKSM()
     amExit();
 }
 
-bool JKSM::IsRunning(void) const { return m_IsRunning; }
+bool JKSM::IsRunning() const { return m_IsRunning; }
 
-void JKSM::Update(void)
+void JKSM::Update()
 {
     Input::Update();
 
     // This needs to be done here so the purging loop works correctly.
-    if (!m_StateStack.empty()) { m_StateStack.top()->Update(); }
+    if (!m_StateStack.empty()) { m_StateStack.top()->update(); }
 
     // Pop from stack until active state is hit. Make sure it has focus.
-    while (!m_StateStack.empty() && !m_StateStack.top()->IsActive())
+    while (!m_StateStack.empty() && !m_StateStack.top()->is_active())
     {
         m_StateStack.pop();
-        m_StateStack.top()->GiveFocus();
+        m_StateStack.top()->give_focus();
     }
 
     // If the back is a locking type state, bail and don't allow exiting with start.
-    if (m_StateStack.top()->GetType() == AppState::StateFlags::Lock) { return; }
+    if (m_StateStack.top()->get_type() == BaseState::StateFlags::Lock) { return; }
 
     // If a refresh is signaled or a cart is inserted.
     if (m_RefreshRequired || Data::GameCardUpdateCheck())
@@ -145,14 +145,14 @@ void JKSM::Update(void)
         // Loop and refresh all view states in array.
         for (size_t i = 0; i < m_StateTotal - 1; i++)
         {
-            std::static_pointer_cast<TitleSelectionState>(m_StateArray.at(i))->Refresh();
+            std::static_pointer_cast<TitleSelectionState>(m_StateArray.at(i))->refresh();
         }
         m_RefreshRequired = false;
     }
 
     // Global JKSM controls.
     if (Input::ButtonPressed(KEY_START)) { m_IsRunning = false; } // Only allow state switching if the top isn't a semi-lock
-    else if (Input::ButtonPressed(KEY_L) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
+    else if (Input::ButtonPressed(KEY_L) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         if (--m_CurrentState < 0)
         {
@@ -164,39 +164,39 @@ void JKSM::Update(void)
         else
         {
             m_StateStack.pop();
-            m_StateStack.top()->GiveFocus();
+            m_StateStack.top()->give_focus();
         }
     }
-    else if (Input::ButtonPressed(KEY_R) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
+    else if (Input::ButtonPressed(KEY_R) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         if (++m_CurrentState == m_StateTotal)
         {
             m_CurrentState = 0;
             // Pop all states except the first.
             for (size_t i = m_StateTotal; i > 1; i--) { m_StateStack.pop(); }
-            m_StateStack.top()->GiveFocus();
+            m_StateStack.top()->give_focus();
         }
         else
         {
-            m_StateStack.top()->TakeFocus();
+            m_StateStack.top()->take_focus();
             m_StateStack.push(m_StateArray[m_CurrentState]);
-            m_StateStack.top()->GiveFocus();
+            m_StateStack.top()->give_focus();
         }
     }
-    else if (Input::ButtonPressed(KEY_SELECT) && m_StateStack.top()->GetType() != AppState::StateFlags::SemiLock)
+    else if (Input::ButtonPressed(KEY_SELECT) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         JKSM::SetPlayCoins();
     }
 }
 
-void JKSM::Draw(void)
+void JKSM::Draw()
 {
     SDL::FrameBegin();
 
     // Get top screen surface
     SDL_Surface *Top = SDL::GetCurrentBuffer();
     // Draw the top of the stack
-    if (!m_StateStack.empty()) { m_StateStack.top()->DrawTop(Top); }
+    if (!m_StateStack.empty()) { m_StateStack.top()->draw_top(Top); }
     // Draw the top bar, title and <L R>
     SDL::DrawRect(Top, 0, 0, 400, 16, SDL::Colors::BarColor);
     m_Noto->BlitTextAt(Top, m_TitleTextX, 1, 12, m_Noto->NO_TEXT_WRAP, TITLE_TEXT.data());
@@ -207,26 +207,26 @@ void JKSM::Draw(void)
 
     // Get bottom screen surface.
     SDL_Surface *Bottom = SDL::GetCurrentBuffer();
-    if (!m_StateStack.empty()) { m_StateStack.top()->DrawBottom(Bottom); }
+    if (!m_StateStack.empty()) { m_StateStack.top()->draw_bottom(Bottom); }
     // Just draw the bottom bar here.
     SDL::DrawRect(Bottom, 0, 224, 320, 16, SDL::Colors::BarColor);
 
     SDL::FrameEnd();
 }
 
-void JKSM::PushState(std::shared_ptr<AppState> NewState)
+void JKSM::PushState(std::shared_ptr<BaseState> NewState)
 {
-    if (!m_StateStack.empty()) { m_StateStack.top()->TakeFocus(); }
+    if (!m_StateStack.empty()) { m_StateStack.top()->take_focus(); }
 
     // Give focus to incoming state.
-    NewState->GiveFocus();
+    NewState->give_focus();
     // Push it to stack
     m_StateStack.push(NewState);
 }
 
-void JKSM::RefreshViews(void) { m_RefreshRequired = true; }
+void JKSM::RefreshViews() { m_RefreshRequired = true; }
 
-void JKSM::InitializeViews(void)
+void JKSM::InitializeViews()
 {
     // Whether or not we're using text mode.
     bool TextMode = Config::GetByKey(Config::Keys::TextMode);
@@ -245,11 +245,14 @@ void JKSM::InitializeViews(void)
     for (int i = 0; i <= m_CurrentState; i++) { m_StateStack.push(m_StateArray.at(i)); }
 }
 
-void JKSM::SetPlayCoins(void)
+void JKSM::SetPlayCoins()
 {
     if (!fslib::open_shared_extra_data(SHARED_DEVICE, 0xF000000B))
     {
-        ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 0));
+        const char *message = Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 0);
+        BaseState *top      = m_StateStack.top().get();
+
+        MessageState::create_and_push(top, message);
         return;
     }
 
@@ -257,8 +260,11 @@ void JKSM::SetPlayCoins(void)
     fslib::File GameCoin(u"shared:/gamecoin.dat", FS_OPEN_READ | FS_OPEN_WRITE);
     if (!GameCoin.is_open())
     {
+        const char *message = Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 1);
+        BaseState *top      = m_StateStack.top().get();
+
+        MessageState::create_and_push(top, message);
         fslib::close_device(SHARED_DEVICE);
-        ShowMessage(m_StateStack.top().get(), Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 1));
         return;
     }
 
@@ -286,5 +292,5 @@ void JKSM::SetPlayCoins(void)
     // Show message
     std::string CoinSuccess =
         StringUtil::GetFormattedString(Strings::GetStringByName(Strings::Names::PlayCoinsMessages, 2), DesiredPlayCoins);
-    ShowMessage(m_StateStack.top().get(), CoinSuccess);
+    MessageState::create_and_push(m_StateStack.top().get(), CoinSuccess);
 }

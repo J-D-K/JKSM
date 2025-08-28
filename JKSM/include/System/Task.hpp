@@ -31,21 +31,21 @@ namespace System
             virtual ~Task() { m_Thread.join(); }
 
             // Returns whether thread has signaled its finished.
-            bool IsFinished(void)
+            bool IsFinished()
             {
                 std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 return m_Finished;
             }
 
             // Allows thread to signal finishing its task.
-            void Finish(void)
+            void Finish()
             {
                 std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 m_Finished = true;
             }
 
             // Returns status string.
-            std::string GetStatus(void)
+            std::string GetStatus()
             {
                 std::scoped_lock<std::mutex> ThreadLock(m_ThreadLock);
                 return m_ThreadStatus;

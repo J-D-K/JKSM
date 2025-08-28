@@ -3,7 +3,7 @@
 
 namespace Input
 {
-    void Update(void);
+    void Update();
 
     bool ButtonPressed(uint32_t Button);
     bool ButtonHeld(uint32_t Button);

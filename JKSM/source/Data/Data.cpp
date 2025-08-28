@@ -240,7 +240,7 @@ void Data::Initialize(System::ProgressTask *Task)
 }
 
 // To do: This works, but not up to current standards.
-bool Data::GameCardUpdateCheck(void)
+bool Data::GameCardUpdateCheck()
 {
     if (!s_DataInitialized) { return false; }
 

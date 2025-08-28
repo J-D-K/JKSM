@@ -20,7 +20,7 @@ namespace
     std::mutex s_logLock{};
 } // namespace
 
-void logger::initialize(void)
+void logger::initialize()
 {
     const fslib::Path logPath{LOG_FILE_PATH};
 

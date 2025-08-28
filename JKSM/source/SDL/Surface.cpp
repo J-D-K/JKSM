@@ -105,7 +105,7 @@ SDL::Surface::Surface(SDL_Surface *ExternalSurface, bool AlphaBlended)
 
 SDL::Surface::~Surface() { SDL_FreeSurface(m_Surface); }
 
-SDL_Surface *SDL::Surface::Get(void) { return m_Surface; }
+SDL_Surface *SDL::Surface::Get() { return m_Surface; }
 
 void SDL::Surface::BlitAt(SDL_Surface *Target, int X, int Y)
 {
@@ -144,7 +144,7 @@ void SDL::Surface::ChangePixelsToColor(SDL::Color Color)
     }
 }
 
-void SDL::Surface::DisableAlphaBlending(void)
+void SDL::Surface::DisableAlphaBlending()
 {
     if (SDL_SetAlpha(m_Surface, 0, 0xFF) != 0)
     {

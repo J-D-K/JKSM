@@ -31,7 +31,7 @@ namespace
 } // namespace
 
 // This just does some tests and returns the path to the file we're using.
-inline std::string GetFilePath(void)
+inline std::string GetFilePath()
 {
     uint8_t SystemLanguage = Config::GetSystemLanguage();
 
@@ -46,7 +46,7 @@ inline std::string GetFilePath(void)
     return FilePath;
 }
 
-void Strings::Intialize(void)
+void Strings::Intialize()
 {
     // I'm being lazy with this.
     std::string FilePath = GetFilePath();

@@ -19,7 +19,7 @@ namespace
     uint8_t s_SystemLanguage = 0;
 } // namespace
 
-void Config::Initialize(void)
+void Config::Initialize()
 {
     // Read system language first.
     Result CFGUError = CFGU_GetSystemLanguage(&s_SystemLanguage);
@@ -50,7 +50,7 @@ void Config::Initialize(void)
     }
 }
 
-void Config::ResetToDefault(void)
+void Config::ResetToDefault()
 {
     s_ConfigMap[Config::Keys::TextMode.data()]             = 0;
     s_ConfigMap[Config::Keys::ForceEnglish.data()]         = 0;
@@ -76,7 +76,7 @@ void Config::ResetToDefault(void)
     Config::Save();
 }
 
-void Config::Save(void)
+void Config::Save()
 {
     JSON::Object ConfigJSON = JSON::NewObject(json_object_new_object);
     if (!ConfigJSON)
@@ -112,7 +112,7 @@ void Config::SetByKey(std::string_view Key, uint8_t Value)
     s_ConfigMap[Key.data()] = Value;
 }
 
-uint8_t Config::GetSystemLanguage(void)
+uint8_t Config::GetSystemLanguage()
 {
     if (Config::GetByKey(Config::Keys::ForceEnglish)) { return CFG_LANGUAGE_EN; }
     return s_SystemLanguage;

@@ -19,23 +19,14 @@ namespace System
             void Reset(double Goal)
             {
                 m_Current = 0;
-                m_Goal = Goal;
+                m_Goal    = Goal;
             }
 
-            void SetGoal(double Goal)
-            {
-                m_Goal = Goal;
-            }
+            void SetGoal(double Goal) { m_Goal = Goal; }
 
-            void SetCurrent(double Current)
-            {
-                m_Current = Current;
-            }
+            void SetCurrent(double Current) { m_Current = Current; }
 
-            double GetProgress(void) const
-            {
-                return (m_Current / m_Goal);
-            }
+            double GetProgress() const { return (m_Current / m_Goal); }
 
         private:
             // The Current/Goal value.
