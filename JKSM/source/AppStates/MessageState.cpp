@@ -1,9 +1,9 @@
 #include "appstates/MessageState.hpp"
 
-#include "Input.hpp"
 #include "SDL/SDL.hpp"
 #include "Strings.hpp"
 #include "UI/Draw.hpp"
+#include "input.hpp"
 
 MessageState::MessageState(BaseState *creatingState, std::string_view message)
     : m_creatingState(creatingState)
@@ -16,7 +16,7 @@ MessageState::MessageState(BaseState *creatingState, std::string_view message)
 void MessageState::update()
 {
     // Basically any button pressed.
-    if (Input::ButtonPressed(0xFFFFFFFF)) { BaseState::deactivate(); }
+    if (input::button_pressed(0xFFFFFFFF)) { BaseState::deactivate(); }
 }
 
 void MessageState::draw_top(SDL_Surface *target)

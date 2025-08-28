@@ -3,12 +3,12 @@
 #include "Assets.hpp"
 #include "Config.hpp"
 #include "Data/Data.hpp"
-#include "Input.hpp"
 #include "JKSM.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
 #include "appstates/ProgressTaskState.hpp"
 #include "fslib.hpp"
+#include "input.hpp"
 #include "logging/logger.hpp"
 
 #include <3ds.h>
@@ -68,7 +68,7 @@ void SettingsState::update()
 {
     m_settingsMenu.Update();
     SettingsState::update_menu_strings();
-    if (Input::ButtonPressed(KEY_A)) { SettingsState::update_config(); }
+    if (input::button_pressed(KEY_A)) { SettingsState::update_config(); }
 }
 
 void SettingsState::draw_top(SDL_Surface *target)

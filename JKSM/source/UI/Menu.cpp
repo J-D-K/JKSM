@@ -1,8 +1,8 @@
 #include "UI/Menu.hpp"
 
 #include "Assets.hpp"
-#include "Input.hpp"
 #include "UI/Draw.hpp"
+#include "input.hpp"
 #include "logging/logger.hpp"
 
 #include <3ds.h>
@@ -39,10 +39,10 @@ void UI::Menu::Update()
 {
     if (m_Selected > m_OptionsLength) { m_Selected = m_OptionsLength; }
 
-    if (Input::ButtonPressed(KEY_UP)) { Menu::HandleUpPress(); }
-    else if (Input::ButtonPressed(KEY_DOWN)) { Menu::HandleDownPress(); }
-    else if (Input::ButtonPressed(KEY_LEFT)) { Menu::HandleLeftPress(); }
-    else if (Input::ButtonPressed(KEY_RIGHT)) { Menu::HandleRightPress(); }
+    if (input::button_pressed(KEY_UP)) { Menu::HandleUpPress(); }
+    else if (input::button_pressed(KEY_DOWN)) { Menu::HandleDownPress(); }
+    else if (input::button_pressed(KEY_LEFT)) { Menu::HandleLeftPress(); }
+    else if (input::button_pressed(KEY_RIGHT)) { Menu::HandleRightPress(); }
 }
 
 void UI::Menu::Draw(SDL_Surface *Target)

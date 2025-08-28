@@ -1,7 +1,7 @@
 #include "UI/TitleView.hpp"
 
-#include "Input.hpp"
 #include "UI/Draw.hpp"
+#include "input.hpp"
 
 #include <cmath>
 
@@ -21,10 +21,10 @@ void UI::TitleView::Update()
 {
     int TileTotal = m_TitleTiles.size() - 1;
 
-    if (Input::ButtonPressed(KEY_DUP) && (m_Selected -= 7) < 0) { m_Selected = 0; }
-    else if (Input::ButtonPressed(KEY_DDOWN) && (m_Selected += 7) > TileTotal) { m_Selected = TileTotal; }
-    else if (Input::ButtonPressed(KEY_DLEFT) && --m_Selected < 0) { m_Selected = 0; }
-    else if (Input::ButtonPressed(KEY_DRIGHT) && ++m_Selected > TileTotal) { m_Selected = TileTotal; }
+    if (input::button_pressed(KEY_DUP) && (m_Selected -= 7) < 0) { m_Selected = 0; }
+    else if (input::button_pressed(KEY_DDOWN) && (m_Selected += 7) > TileTotal) { m_Selected = TileTotal; }
+    else if (input::button_pressed(KEY_DLEFT) && --m_Selected < 0) { m_Selected = 0; }
+    else if (input::button_pressed(KEY_DRIGHT) && ++m_Selected > TileTotal) { m_Selected = TileTotal; }
 
     // I know some of these are magic numbers and I can't remember how I came up with them. I just remember this being like a
     // balancing act.

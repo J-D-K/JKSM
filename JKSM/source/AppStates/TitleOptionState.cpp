@@ -2,7 +2,6 @@
 
 #include "FS/FS.hpp"
 #include "FS/SaveMount.hpp"
-#include "Input.hpp"
 #include "JKSM.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
@@ -11,6 +10,7 @@
 #include "appstates/ConfirmState.hpp"
 #include "appstates/MessageState.hpp"
 #include "fslib.hpp"
+#include "input.hpp"
 
 namespace
 {
@@ -59,7 +59,7 @@ void TitleOptionState::update()
 {
     m_optionsMenu.Update();
 
-    if (Input::ButtonPressed(KEY_A))
+    if (input::button_pressed(KEY_A))
     {
         switch (m_optionsMenu.GetSelected())
         {
@@ -199,7 +199,7 @@ void TitleOptionState::update()
             break;
         }
     }
-    else if (Input::ButtonPressed(KEY_B)) { BaseState::deactivate(); }
+    else if (input::button_pressed(KEY_B)) { BaseState::deactivate(); }
 }
 
 void TitleOptionState::draw_top(SDL_Surface *target)

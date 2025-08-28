@@ -4,7 +4,6 @@
 #include "Config.hpp"
 #include "Data/Data.hpp"
 #include "FS/FS.hpp"
-#include "Input.hpp"
 #include "Keyboard.hpp"
 #include "SDL/SDL.hpp"
 #include "StringUtil.hpp"
@@ -14,6 +13,7 @@
 #include "appstates/SettingsState.hpp"
 #include "appstates/TextTitleSelect.hpp"
 #include "appstates/TitleSelectionState.hpp"
+#include "input.hpp"
 #include "logging/logger.hpp"
 
 #include <3ds.h>
@@ -124,7 +124,7 @@ bool JKSM::IsRunning() const { return m_IsRunning; }
 
 void JKSM::Update()
 {
-    Input::Update();
+    input::update();
 
     // This needs to be done here so the purging loop works correctly.
     if (!m_StateStack.empty()) { m_StateStack.top()->update(); }
@@ -151,8 +151,8 @@ void JKSM::Update()
     }
 
     // Global JKSM controls.
-    if (Input::ButtonPressed(KEY_START)) { m_IsRunning = false; } // Only allow state switching if the top isn't a semi-lock
-    else if (Input::ButtonPressed(KEY_L) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
+    if (input::button_pressed(KEY_START)) { m_IsRunning = false; } // Only allow state switching if the top isn't a semi-lock
+    else if (input::button_pressed(KEY_L) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         if (--m_CurrentState < 0)
         {
@@ -167,7 +167,7 @@ void JKSM::Update()
             m_StateStack.top()->give_focus();
         }
     }
-    else if (Input::ButtonPressed(KEY_R) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
+    else if (input::button_pressed(KEY_R) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         if (++m_CurrentState == m_StateTotal)
         {
@@ -183,7 +183,7 @@ void JKSM::Update()
             m_StateStack.top()->give_focus();
         }
     }
-    else if (Input::ButtonPressed(KEY_SELECT) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
+    else if (input::button_pressed(KEY_SELECT) && m_StateStack.top()->get_type() != BaseState::StateFlags::SemiLock)
     {
         JKSM::SetPlayCoins();
     }

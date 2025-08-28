@@ -5,7 +5,6 @@
 #include "FS/FS.hpp"
 #include "FS/IO.hpp"
 #include "FS/SaveMount.hpp"
-#include "Input.hpp"
 #include "JKSM.hpp"
 #include "Keyboard.hpp"
 #include "SDL/SDL.hpp"
@@ -16,6 +15,7 @@
 #include "appstates/ConfirmState.hpp"
 #include "appstates/ProgressTaskState.hpp"
 #include "appstates/TaskState.hpp"
+#include "input.hpp"
 
 #include <string_view>
 
@@ -77,7 +77,7 @@ void BackupMenuState::update()
     }
 
     // New Backup
-    if (Input::ButtonPressed(KEY_A) && m_backupMenu.GetSelected() == 0)
+    if (input::button_pressed(KEY_A) && m_backupMenu.GetSelected() == 0)
     {
         // Buffer for actual backup name.
         char16_t BackupName[0x40] = {0};
@@ -88,11 +88,11 @@ void BackupMenuState::update()
         StringUtil::GetDateTimeString(DefaultText, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
 
         // Shortcut checks
-        if (Input::ButtonHeld(KEY_R))
+        if (input::button_held(KEY_R))
         {
             StringUtil::GetDateTimeString(BackupName, 0x40, StringUtil::DateFormats::DATE_FMT_YMD);
         }
-        else if (Input::ButtonHeld(KEY_L))
+        else if (input::button_held(KEY_L))
         {
             StringUtil::GetDateTimeString(BackupName, 0x40, StringUtil::DateFormats::DATE_FMT_YDM);
         }
@@ -107,7 +107,7 @@ void BackupMenuState::update()
 
         JKSM::PushState(std::make_shared<ProgressTaskState>(this, CreateNewBackup, BackupPath, m_data, this));
     }
-    else if (Input::ButtonPressed(KEY_A) && m_backupMenu.GetSelected() > 0)
+    else if (input::button_pressed(KEY_A) && m_backupMenu.GetSelected() > 0)
     {
         // Confirm struct
         std::shared_ptr<TargetStruct> DataStruct(new TargetStruct);
@@ -126,7 +126,7 @@ void BackupMenuState::update()
             OverwriteBackup,
             DataStruct));
     }
-    else if (Input::ButtonPressed(KEY_Y) && m_backupMenu.GetSelected() > 0)
+    else if (input::button_pressed(KEY_Y) && m_backupMenu.GetSelected() > 0)
     {
         // Create confirmation struct.
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
@@ -148,7 +148,7 @@ void BackupMenuState::update()
             RestoreBackup,
             ConfirmStruct));
     }
-    else if (Input::ButtonPressed(KEY_X) && m_backupMenu.GetSelected() > 0)
+    else if (input::button_pressed(KEY_X) && m_backupMenu.GetSelected() > 0)
     {
         // Confirm struct
         std::shared_ptr<TargetStruct> ConfirmStruct(new TargetStruct);
@@ -168,7 +168,7 @@ void BackupMenuState::update()
                                                                                   DeleteBackup,
                                                                                   ConfirmStruct));
     }
-    else if (Input::ButtonPressed(KEY_B)) { BaseState::deactivate(); }
+    else if (input::button_pressed(KEY_B)) { BaseState::deactivate(); }
 }
 
 void BackupMenuState::draw_top(SDL_Surface *target) { m_creatingState->draw_top(target); }

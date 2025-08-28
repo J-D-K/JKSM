@@ -1,5 +1,4 @@
 #pragma once
-#include "Input.hpp"
 #include "JKSM.hpp"
 #include "Strings.hpp"
 #include "System/Task.hpp"
@@ -7,6 +6,7 @@
 #include "appstates/BaseState.hpp"
 #include "appstates/ProgressTaskState.hpp"
 #include "appstates/TaskState.hpp"
+#include "input.hpp"
 
 #include <3ds.h>
 #include <memory>
@@ -40,12 +40,12 @@ class ConfirmState final : public BaseState
 
         void update() override
         {
-            if (Input::ButtonPressed(KEY_A) && !m_hold)
+            if (input::button_pressed(KEY_A) && !m_hold)
             {
                 BaseState::deactivate();
                 JKSM::PushState(std::make_shared<StateType>(m_creatingState, m_onConfirmation, m_dataStruct));
             }
-            else if (Input::ButtonPressed(KEY_A) && m_hold && !m_triggerGuard)
+            else if (input::button_pressed(KEY_A) && m_hold && !m_triggerGuard)
             {
                 // Record starting ticks and set APressed.
                 m_startingTicks = SDL_GetTicks();
@@ -55,7 +55,7 @@ class ConfirmState final : public BaseState
                 m_yesString = Strings::GetStringByName(Strings::Names::HoldingText, 0);
                 m_yesX      = 88 - (m_noto->GetTextWidth(12, m_yesString.c_str()) / 2);
             }
-            else if (Input::ButtonHeld(KEY_A) && m_hold && m_triggerGuard)
+            else if (input::button_held(KEY_A) && m_hold && m_triggerGuard)
             {
                 int CurrentTicks = SDL_GetTicks() - m_startingTicks;
 
@@ -78,7 +78,7 @@ class ConfirmState final : public BaseState
                     m_yesX = 88 - (m_noto->GetTextWidth(12, m_yesString.c_str()) / 2);
                 }
             }
-            else if (Input::ButtonReleased(KEY_A) && m_hold && m_triggerGuard)
+            else if (input::button_released(KEY_A) && m_hold && m_triggerGuard)
             {
                 // Reset press
                 m_triggerGuard = false;
@@ -87,7 +87,7 @@ class ConfirmState final : public BaseState
                 m_yesString = Strings::GetStringByName(Strings::Names::YesNo, 0);
                 m_yesX      = 88 - (m_noto->GetTextWidth(12, m_yesString.c_str()) / 2);
             }
-            else if (Input::ButtonPressed(KEY_B)) { BaseState::deactivate(); }
+            else if (input::button_pressed(KEY_B)) { BaseState::deactivate(); }
         }
 
         void draw_top(SDL_Surface *target) override

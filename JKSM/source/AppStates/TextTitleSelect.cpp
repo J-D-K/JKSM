@@ -1,9 +1,9 @@
 #include "appstates/TextTitleSelect.hpp"
 
 #include "Assets.hpp"
-#include "Input.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "input.hpp"
 
 TextTitleSelect::TextTitleSelect(Data::SaveDataType saveType)
     : BaseSelectionState(saveType)
@@ -20,7 +20,7 @@ void TextTitleSelect::update()
 {
     m_titleMenu.Update();
 
-    if (Input::ButtonPressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleData.at(m_titleMenu.GetSelected())); }
+    if (input::button_pressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleData.at(m_titleMenu.GetSelected())); }
 }
 
 void TextTitleSelect::draw_top(SDL_Surface *target)

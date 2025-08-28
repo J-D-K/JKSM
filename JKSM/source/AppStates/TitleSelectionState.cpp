@@ -1,9 +1,9 @@
 #include "appstates/TitleSelectionState.hpp"
 
 #include "Assets.hpp"
-#include "Input.hpp"
 #include "StringUtil.hpp"
 #include "Strings.hpp"
+#include "input.hpp"
 
 #include <array>
 
@@ -18,8 +18,8 @@ void TitleSelectionState::update()
 {
     m_titleView.Update();
 
-    if (Input::ButtonPressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleView.GetSelectedTitleData()); }
-    else if (Input::ButtonPressed(KEY_X)) { BaseSelectionState::create_option_state(m_titleView.GetSelectedTitleData()); }
+    if (input::button_pressed(KEY_A)) { BaseSelectionState::create_backup_state(m_titleView.GetSelectedTitleData()); }
+    else if (input::button_pressed(KEY_X)) { BaseSelectionState::create_option_state(m_titleView.GetSelectedTitleData()); }
 }
 
 void TitleSelectionState::draw_top(SDL_Surface *target)
